@@ -3,14 +3,14 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_helper.dart';
 
-class NotificationsScreen extends StatefulWidget {
-  const NotificationsScreen({super.key});
+class OwnerNotificationsScreen extends StatefulWidget {
+  const OwnerNotificationsScreen({super.key});
 
   @override
-  State<NotificationsScreen> createState() => _NotificationsScreenState();
+  State<OwnerNotificationsScreen> createState() => _OwnerNotificationsScreenState();
 }
 
-class _NotificationsScreenState extends State<NotificationsScreen> {
+class _OwnerNotificationsScreenState extends State<OwnerNotificationsScreen> {
   final List<Map<String, dynamic>> _notifications = [
     {
       'icon':    Icons.check_circle_rounded,

@@ -19,4 +19,10 @@ class AppGradients {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
+
+  static const circle = LinearGradient(
+    colors: [AppColors.darkText, AppColors.primaryPink],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 }

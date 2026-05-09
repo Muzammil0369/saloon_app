@@ -14,7 +14,7 @@ class AppColors {
   static const Color success     = Color(0xFF2A9A50);
   static const Color successBg   = Color(0xFFEDF7F0);
   static const Color errorRed    = Color(0xFFE53935);
-  static const Color divider     = Color(0xFFF5EFF2);
+  static const Color divider     = Color(0xFFAAAAAA);
 
   // ── Dark ──
   static const Color darkBackground = Color(0xFF0E0A0C);

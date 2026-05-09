@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
-import 'package:saloon_app/features/combine/combine_screens/login_screen.dart';
+import 'package:saloon_app/core/theme/theme_helper.dart';
+import 'package:saloon_app/features/auth/screens/role_select_screen.dart';
 import 'package:saloon_app/shared/widgets/app_button.dart';
+import 'login_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -37,7 +39,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     if (_currentPage == _pages.length - 1) {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        MaterialPageRoute(builder: (_) => const RoleSelectScreen()),
       );
     } else {
       _controller.nextPage(
@@ -47,54 +49,47 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     }
   }
 
-  // void _goToLogin() {
-  //   Navigator.pushReplacement(
-  //     context,
-  //     MaterialPageRoute(builder: (_) => const LoginScreen()),
-  //   );
-  // }
-
-  Widget _buildDot(int index) {
+  Widget _buildDot(int index, ThemeHelper theme) {
     return AnimatedContainer(
       duration: const Duration(milliseconds: 200),
       margin: const EdgeInsets.symmetric(horizontal: 4),
       height: 8,
-      width: _currentPage == index ? 20 : 8,
+      width: _currentPage == index ? 40 : 20,
       decoration: BoxDecoration(
         color: _currentPage == index
             ? AppColors.primaryPink
-            : AppColors.mutedText,
+            : theme.lightPinkColor,
         borderRadius: BorderRadius.circular(4),
+        boxShadow: [
+          BoxShadow(
+            color: theme.isDark
+                ? Colors.white.withOpacity(0.4)
+                : AppColors.primaryPink.withOpacity(0.15),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
     );
   }
 
   @override
   void dispose() {
-    _controller.dispose(); // ✅ was missing — memory leak fix
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = ThemeHelper(context);
+
     return Scaffold(
+      backgroundColor: theme.lightPinkColor,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             children: [
-              // const SizedBox(height: 32),
-              //
-              // // Logo + tagline
-              // Text('SalonApp', style: AppTextStyles.displayLarge),
-              // const SizedBox(height: 6),
-              // Text(
-              //   'Salon Booking Made Easy',
-              //   style: AppTextStyles.bodySmall,
-              // ),
-              //
-              // const SizedBox(height: 24),
-
               // Page view
               Expanded(
                 child: PageView.builder(
@@ -119,7 +114,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         // Title
                         Text(
                           _pages[index]["title"]!,
-                          style: AppTextStyles.displayMedium,
+                          style: AppTextStyles.displayMedium?.copyWith(
+                            color: theme.textColor,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 12),
@@ -127,7 +124,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                         // Description
                         Text(
                           _pages[index]["description"]!,
-                          style: AppTextStyles.bodyMedium,
+                          style: AppTextStyles.bodyMedium?.copyWith(
+                            color: theme.mutedTextColor,
+                          ),
                           textAlign: TextAlign.center,
                         ),
                         const SizedBox(height: 32),
@@ -142,7 +141,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(
                   _pages.length,
-                      (index) => _buildDot(index),
+                      (index) => _buildDot(index, theme),
                 ),
               ),
 
@@ -151,23 +150,10 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               // Button
               AppButton(
                 label: _currentPage == _pages.length - 1
-                    ? 'Get Started 🎉'
+                    ? 'Get Started'
                     : 'Next',
                 onTap: _nextPage,
               ),
-
-              const SizedBox(height: 14),
-
-              // Already have account
-              // GestureDetector(
-              //   onTap: _goToLogin,
-              //   child: Text(
-              //     'I already have an account',
-              //     style: AppTextStyles.bodySmall.copyWith(
-              //       decoration: TextDecoration.underline,
-              //     ),
-              //   ),
-              // ),
 
               const SizedBox(height: 24),
             ],

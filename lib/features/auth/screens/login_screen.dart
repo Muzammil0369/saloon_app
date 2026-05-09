@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
+import 'package:saloon_app/core/theme/theme_helper.dart';
+import 'package:saloon_app/features/owner/owner_main_wrapper.dart';
 import 'package:saloon_app/shared/widgets/app_button.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -16,34 +18,29 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = ThemeHelper(context);
+
     return Scaffold(
+      backgroundColor: theme.backgroundColor,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
-              // Back button
-              // GestureDetector(
-              //   onTap: () => Navigator.pop(context),
-              //   child: Container(
-              //     width: 38, height: 38,
-              //     decoration: BoxDecoration(
-              //       color: AppColors.lightPink,
-              //       borderRadius: BorderRadius.circular(12),
-              //     ),
-              //     child: const Icon(Icons.arrow_back_ios_new_rounded,
-              //         size: 16, color: AppColors.primaryPink),
-              //   ),
-              // ),
-
               const SizedBox(height: 24),
 
               // Title
-              Text('Welcome Back! 👋', style: AppTextStyles.displayMedium),
+              Text('Welcome \nBack! 👋',
+                style: AppTextStyles.headingLarge.copyWith(
+                  fontSize: 38,
+                  color: theme.textColor,
+                ),
+              ),
               const SizedBox(height: 6),
-              Text('Sign in to your account', style: AppTextStyles.bodySmall),
+              Text('Sign in to your account',
+                style: AppTextStyles.bodySmall?.copyWith(color: theme.mutedTextColor),
+              ),
 
               const SizedBox(height: 28),
 
@@ -52,18 +49,18 @@ class _LoginScreenState extends State<LoginScreen> {
                 height: 46,
                 padding: const EdgeInsets.all(4),
                 decoration: BoxDecoration(
-                  color: AppColors.lightPink,
+                  color: theme.lightPinkColor,
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
                   children: [
                     _tabButton('Login', _isLogin, () {
                       setState(() => _isLogin = true);
-                    }),
-                    const SizedBox(width: 5,),
+                    }, theme),
+                    const SizedBox(width: 5),
                     _tabButton('Sign Up', !_isLogin, () {
                       setState(() => _isLogin = false);
-                    }),
+                    }, theme),
                   ],
                 ),
               ),
@@ -73,10 +70,21 @@ class _LoginScreenState extends State<LoginScreen> {
               // Phone field
               TextField(
                 keyboardType: TextInputType.phone,
+                style: TextStyle(color: theme.textColor),
                 decoration: InputDecoration(
                   hintText: 'Phone Number',
-                  prefixIcon: const Icon(Icons.phone_outlined,
-                      color: AppColors.mutedText, size: 20),
+                  hintStyle: TextStyle(color: theme.mutedTextColor),
+                  prefixIcon: Icon(Icons.phone_outlined, color: theme.mutedTextColor, size: 20),
+                  filled: true,
+                  fillColor: theme.cardColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: theme.borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: theme.borderColor),
+                  ),
                 ),
               ),
 
@@ -85,10 +93,21 @@ class _LoginScreenState extends State<LoginScreen> {
               // Name field — only on Sign Up
               if (!_isLogin) ...[
                 TextField(
+                  style: TextStyle(color: theme.textColor),
                   decoration: InputDecoration(
                     hintText: 'Full Name',
-                    prefixIcon: const Icon(Icons.person_outline,
-                        color: AppColors.mutedText, size: 20),
+                    hintStyle: TextStyle(color: theme.mutedTextColor),
+                    prefixIcon: Icon(Icons.person_outline, color: theme.mutedTextColor, size: 20),
+                    filled: true,
+                    fillColor: theme.cardColor,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: theme.borderColor),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: theme.borderColor),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -97,20 +116,28 @@ class _LoginScreenState extends State<LoginScreen> {
               // Password field
               TextField(
                 obscureText: _obscurePassword,
+                style: TextStyle(color: theme.textColor),
                 decoration: InputDecoration(
                   hintText: 'Password',
-                  prefixIcon: const Icon(Icons.lock_outline,
-                      color: AppColors.mutedText, size: 20),
+                  hintStyle: TextStyle(color: theme.mutedTextColor),
+                  prefixIcon: Icon(Icons.lock_outline, color: theme.mutedTextColor, size: 20),
                   suffixIcon: GestureDetector(
-                    onTap: () =>
-                        setState(() => _obscurePassword = !_obscurePassword),
+                    onTap: () => setState(() => _obscurePassword = !_obscurePassword),
                     child: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_off_outlined
-                          : Icons.visibility_outlined,
-                      color: AppColors.mutedText,
+                      _obscurePassword ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                      color: theme.mutedTextColor,
                       size: 20,
                     ),
+                  ),
+                  filled: true,
+                  fillColor: theme.cardColor,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: theme.borderColor),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: theme.borderColor),
                   ),
                 ),
               ),
@@ -122,8 +149,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   alignment: Alignment.centerRight,
                   child: GestureDetector(
                     onTap: () {},
-                    child: Text('Forgot Password?',
-                        style: AppTextStyles.linkText),
+                    child: Text('Forgot Password?', style: AppTextStyles.linkText),
                   ),
                 ),
               ],
@@ -141,24 +167,37 @@ class _LoginScreenState extends State<LoginScreen> {
               // Divider
               Row(
                 children: [
-                  const Expanded(child: Divider()),
+                  Expanded(child: Divider(color: theme.borderColor)),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 12),
-                    child: Text('or', style: AppTextStyles.bodySmall),
+                    child: Text('or', style: AppTextStyles.bodySmall?.copyWith(color: theme.mutedTextColor)),
                   ),
-                  const Expanded(child: Divider()),
+                  Expanded(child: Divider(color: theme.borderColor)),
                 ],
               ),
 
               const SizedBox(height: 18),
 
               // Google button
-              AppButton(
-                label: 'Continue with Google',
-                onTap: () {},
-                isOutline: true,
-                icon: Image.asset('assets/google_icon.png',
-                    width: 18, height: 18),
+              Container(
+                height: 48,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: theme.borderColor),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset('assets/google.png', height: 26),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Continue with Google',
+                      style: AppTextStyles.buttonText?.copyWith(color: theme.textColor),
+                    ),
+                  ],
+                ),
               ),
 
               const SizedBox(height: 28),
@@ -168,17 +207,21 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   children: [
                     Text('Are you a salon owner?',
-                        style: AppTextStyles.bodySmall),
+                      style: AppTextStyles.bodySmall?.copyWith(color: theme.mutedTextColor),
+                    ),
                     const SizedBox(height: 4),
                     GestureDetector(
-                      onTap: () {},
-                      child: Text('Login as Owner →',
-                          style: AppTextStyles.linkText),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => OwnerMainWrapper()),
+                        );
+                      },
+                      child: Text('Login as Owner →', style: AppTextStyles.linkText),
                     ),
                   ],
                 ),
               ),
-
             ],
           ),
         ),
@@ -186,7 +229,7 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _tabButton(String label, bool isActive, VoidCallback onTap) {
+  Widget _tabButton(String label, bool isActive, VoidCallback onTap, ThemeHelper theme) {
     return Expanded(
       child: GestureDetector(
         onTap: onTap,
@@ -194,12 +237,14 @@ class _LoginScreenState extends State<LoginScreen> {
           duration: const Duration(milliseconds: 200),
           height: double.infinity,
           decoration: BoxDecoration(
-            color: isActive ? Colors.white : Colors.transparent,
+            color: isActive ? theme.cardColor : Colors.transparent,
             borderRadius: BorderRadius.circular(10),
             boxShadow: isActive
                 ? [BoxShadow(
-                color: AppColors.primaryPink.withOpacity(0.12),
-                blurRadius: 8, offset: const Offset(0, 2))]
+              color: AppColors.primaryPink.withOpacity(0.12),
+              blurRadius: 8,
+              offset: const Offset(0, 2),
+            )]
                 : [],
           ),
           alignment: Alignment.center,
@@ -209,7 +254,7 @@ class _LoginScreenState extends State<LoginScreen> {
               fontFamily: 'Syne',
               fontSize: 12,
               fontWeight: FontWeight.w700,
-              color: isActive ? AppColors.primaryPink : AppColors.mutedText,
+              color: isActive ? AppColors.primaryPink : theme.mutedTextColor,
             ),
           ),
         ),

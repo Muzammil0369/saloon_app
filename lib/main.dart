@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:saloon_app/core/theme/theme_controller.dart';
+import 'package:get/get.dart';
 import 'core/theme/app_theme.dart';
-import 'features/combine/combine_screens/onboarding_screen.dart';
+import 'core/theme/theme_controller.dart';
+import 'features/auth/screens/onboarding_screen.dart';
 
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await ThemeController.init();
+  await initServices();
   runApp(const MyApp());
+}
+
+Future<void> initServices() async {
+  Get.put(ThemeController());
 }
 
 class MyApp extends StatelessWidget {
@@ -14,18 +19,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: ThemeController.mode,
-      builder: (context, mode, _) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          theme:     AppTheme.light,
-          darkTheme: AppTheme.dark,
-          themeMode: mode,           // ← listens to controller
-          home: const OnboardingScreen(),
-        );
-      },
-    );
+    final themeController = Get.find<ThemeController>();
+
+    return Obx(() => GetMaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light,
+      darkTheme: AppTheme.dark,
+      themeMode: themeController.themeMode.value,
+      home: const OnboardingScreen(),
+    ));
   }
 }
-

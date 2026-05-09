@@ -1,25 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ThemeController {
-  static final ValueNotifier<ThemeMode> mode =
-  ValueNotifier(ThemeMode.system);
+class ThemeController extends GetxController {
+  var isDarkMode = false.obs;
+  var themeMode = ThemeMode.light.obs;
 
-  static Future<void> init() async {
-    final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString('themeMode') ?? 'system';
-    mode.value = switch (saved) {
-      'light' => ThemeMode.light,
-      'dark'  => ThemeMode.dark,
-      _       => ThemeMode.system,
-    };
+  @override
+  void onInit() {
+    super.onInit();
+    _loadTheme();
   }
 
-  static Future<void> toggle() async {
+  Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    mode.value = mode.value == ThemeMode.light
-        ? ThemeMode.dark
-        : ThemeMode.light;
-    prefs.setString('themeMode', mode.value.name);
+    final saved = prefs.getString('themeMode') ?? 'light';
+    isDarkMode.value = saved == 'dark';
+    themeMode.value = saved == 'dark' ? ThemeMode.dark : ThemeMode.light;
+  }
+
+  void toggleTheme() {
+    isDarkMode.value = !isDarkMode.value;
+    themeMode.value = isDarkMode.value ? ThemeMode.dark : ThemeMode.light;
+    _saveTheme();
+  }
+
+  void _saveTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    prefs.setString('themeMode', themeMode.value.name);
   }
 }
