@@ -1,156 +1,146 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_charts/charts.dart';
+import 'package:saloon_app/core/theme/app_colors.dart';
+import 'package:saloon_app/core/theme/app_gradients.dart';
+import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_gradients.dart';
-import '../../../core/theme/app_text_styles.dart';
 
 class OwnerEarningsScreen extends StatefulWidget {
   const OwnerEarningsScreen({super.key});
+
   @override
   State<OwnerEarningsScreen> createState() => _OwnerEarningsScreenState();
 }
 
 class _OwnerEarningsScreenState extends State<OwnerEarningsScreen> {
-  BarChartGroupData _bar(int x, double y) {
-    return BarChartGroupData(x: x, barRods: [
-      BarChartRodData(toY: y, width: 35, borderRadius: BorderRadius.circular(6),
-        gradient: x == 3 ? AppGradients.primary : null,
-        color: x == 3 ? null : AppColors.border,
-      ),
-    ]);
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = ThemeHelper(context);
 
+    final List<_ChartData> chartData = [
+      _ChartData('Mon', 4500),
+      _ChartData('Tue', 3200),
+      _ChartData('Wed', 5100),
+      _ChartData('Thu', 2800),
+      _ChartData('Fri', 6500),
+      _ChartData('Sat', 8200),
+      _ChartData('Sun', 7500),
+    ];
+
     return Scaffold(
-      backgroundColor: theme.lightPinkColor,
+      backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        title: Text('Earnings', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: false,
-        title: Text('Earnings', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        centerTitle: true,
       ),
       body: SingleChildScrollView(
-        child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Stats Strip
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 8),
-                  decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(20)),
-                  child: Column(children: [
-                    Text('THIS MONTH', style: AppTextStyles.tagline?.copyWith(color: Colors.white70)),
-                    const SizedBox(height: 2),
-                    Text('Rs. 84,000', style: AppTextStyles.headingLarge.copyWith(color: Colors.white, fontSize: 30)),
-                    const SizedBox(height: 2),
-                    Text('▲ +18% from last month', style: AppTextStyles.bodyLarge?.copyWith(color: Colors.green)),
-                  ]),
-                ),
-                const SizedBox(height: 18),
-
-                // Weekly Breakdown
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(20), boxShadow: [theme.softShadow]),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Weekly Total Card ──
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: AppGradients.primary,
+                borderRadius: BorderRadius.circular(24),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('This Week', style: AppTextStyles.label.copyWith(color: Colors.white.withOpacity(0.8))),
+                  const SizedBox(height: 8),
+                  Text('Rs. 37,800.00', style: AppTextStyles.displayLarge?.copyWith(color: Colors.white)),
+                  const SizedBox(height: 12),
+                  Row(
                     children: [
-                      Text('Weekly Breakdown', style: AppTextStyles.headingMedium?.copyWith(fontWeight: FontWeight.w900, fontSize: 20, color: theme.textColor)),
-                      const SizedBox(height: 16),
-                      SizedBox(
-                        height: 120,
-                        child: BarChart(
-                          BarChartData(
-                            borderData: FlBorderData(show: false),
-                            gridData: FlGridData(show: false),
-                            titlesData: FlTitlesData(
-                              leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                              bottomTitles: AxisTitles(sideTitles: SideTitles(
-                                showTitles: true,
-                                getTitlesWidget: (value, _) {
-                                  const days = ['M','T','W','T','F','S','S'];
-                                  return Text(days[value.toInt()], style: AppTextStyles.label?.copyWith(color: theme.mutedTextColor));
-                                },
-                              )),
-                            ),
-                            barGroups: [_bar(0,40),_bar(1,60),_bar(2,45),_bar(3,85),_bar(4,55),_bar(5,70),_bar(6,50)],
-                          ),
-                        ),
-                      ),
+                      const Icon(Icons.trending_up_rounded, color: Colors.greenAccent, size: 16),
+                      const SizedBox(width: 4),
+                      Text('+12% from last week', style: AppTextStyles.label.copyWith(color: Colors.greenAccent)),
                     ],
                   ),
-                ),
-                const SizedBox(height: 16),
-
-                // Monthly Goal
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(16), boxShadow: [theme.softShadow]),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Monthly Goal', style: AppTextStyles.headingMedium?.copyWith(fontWeight: FontWeight.w900, fontSize: 20, color: theme.textColor)),
-                      const SizedBox(height: 12),
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(6),
-                        child: LinearProgressIndicator(
-                          value: 0.84, minHeight: 10,
-                          backgroundColor: theme.grey100(),
-                          valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPink),
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                        Text('Rs.0', style: TextStyle(fontSize: 13, color: theme.mutedTextColor, fontWeight: FontWeight.w500)),
-                        Text('Rs.84K / 100K', style: AppTextStyles.displayMedium?.copyWith(color: AppColors.primaryPink, fontSize: 14, fontWeight: FontWeight.w600)),
-                      ]),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 14),
-
-                Text('Top Services', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
-                const SizedBox(height: 14),
-                _serviceCard(Icons.cut, 'Haircut', '48 bookings this month', 'Rs.24K', theme),
-                const SizedBox(height: 1),
-                _serviceCard(Icons.woman, 'Bridal Package', '5 bookings this month', 'Rs.40K', theme),
-              ],
+                ],
+              ),
             ),
-          ),
+
+            const SizedBox(height: 32),
+
+            // ── Bar Chart ──
+            Text('Daily Performance', style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
+            const SizedBox(height: 16),
+            Container(
+              height: 300,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.cardColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: theme.borderColor),
+              ),
+              child: SfCartesianChart(
+                primaryXAxis: CategoryAxis(
+                  majorGridLines: const MajorGridLines(width: 0),
+                  labelStyle: TextStyle(color: theme.mutedTextColor),
+                ),
+                primaryYAxis: NumericAxis(
+                  isVisible: false,
+                ),
+                plotAreaBorderWidth: 0,
+                series: <CartesianSeries<_ChartData, String>>[
+                  ColumnSeries<_ChartData, String>(
+                    dataSource: chartData,
+                    xValueMapper: (_ChartData data, _) => data.x,
+                    yValueMapper: (_ChartData data, _) => data.y,
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                    gradient: AppGradients.primary,
+                  )
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // ── Transactions ──
+            Text('Recent Payouts', style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
+            const SizedBox(height: 16),
+            _payoutItem('Oct 20, 2026', 'Rs. 12,400', 'Completed', theme),
+            _payoutItem('Oct 13, 2026', 'Rs. 9,800', 'Completed', theme),
+          ],
         ),
       ),
     );
   }
 
-  Widget _serviceCard(IconData icon, String name, String sub, String price, ThemeHelper theme) {
+  Widget _payoutItem(String date, String amount, String status, ThemeHelper theme) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(14), boxShadow: [theme.softShadow]),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, color: AppColors.primaryPink),
-        ),
-        const SizedBox(width: 12),
-        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(name, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: theme.textColor)),
-          const SizedBox(height: 2),
-          Text(sub, style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor)),
-        ])),
-        Text(price, style: AppTextStyles.displayMedium?.copyWith(color: AppColors.primaryPink, fontSize: 16, fontWeight: FontWeight.w600)),
-      ]),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.borderColor),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(date, style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+              Text(status, style: AppTextStyles.label.copyWith(color: Colors.green)),
+            ],
+          ),
+          Text(amount, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
+        ],
+      ),
     );
   }
+}
+
+class _ChartData {
+  _ChartData(this.x, this.y);
+  final String x;
+  final double y;
 }

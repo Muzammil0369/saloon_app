@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_navigation/src/extension_navigation.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_gradients.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
@@ -89,7 +91,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                 children: [
                   _gridItem(Icons.calendar_month_rounded, 'Schedule', Colors.blue, () => widget.onTabChange(1), theme),
                   _gridItem(Icons.trending_up_rounded, 'Earnings', Colors.green, () => widget.onTabChange(2), theme),
-                  _gridItem(Icons.people_rounded, 'Staff', Colors.orange, () {}, theme),
+                  _gridItem(Icons.people_rounded, 'Staff', Colors.orange, () {
+                    Get.snackbar('Staff', 'Feature coming soon', backgroundColor: theme.cardColor, colorText: theme.textColor);
+                  }, theme),
                   _gridItem(Icons.settings_rounded, 'Settings', Colors.purple, () => widget.onTabChange(3), theme),
                 ],
               ),
@@ -145,43 +149,63 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   }
 
   Widget _appointmentCard(String time, String ampm, String name, String service, ThemeHelper theme) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [theme.softShadow],
-      ),
-      child: Row(children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-          decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(10)),
-          child: Column(children: [
-            Text(time, style: AppTextStyles.headingSmall?.copyWith(color: AppColors.primaryPink)),
-            Text(ampm, style: AppTextStyles.label?.copyWith(color: AppColors.primaryPink)),
+    bool isVisible = true;
+    return StatefulBuilder(
+      builder: (context, setLocalState) {
+        if (!isVisible) return const SizedBox.shrink();
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: BorderRadius.circular(14),
+            boxShadow: [theme.softShadow],
+          ),
+          child: Row(children: [
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+              decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(10)),
+              child: Column(children: [
+                Text(time, style: AppTextStyles.headingSmall?.copyWith(color: AppColors.primaryPink)),
+                Text(ampm, style: AppTextStyles.label?.copyWith(color: AppColors.primaryPink)),
+              ]),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text(name, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: theme.textColor)),
+                const SizedBox(height: 2),
+                Text(service, style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor)),
+              ]),
+            ),
+            GestureDetector(
+              onTap: () {
+                Get.snackbar('Accepted', 'Appointment for $name confirmed!', 
+                  backgroundColor: AppColors.success, colorText: Colors.white);
+                setLocalState(() => isVisible = false);
+              },
+              child: Container(
+                width: 34, height: 34,
+                decoration: BoxDecoration(color: AppColors.successBg, borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.check_rounded, size: 18, color: AppColors.success),
+              ),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () {
+                Get.snackbar('Rejected', 'Appointment for $name cancelled', 
+                  backgroundColor: Colors.redAccent, colorText: Colors.white);
+                setLocalState(() => isVisible = false);
+              },
+              child: Container(
+                width: 34, height: 34,
+                decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(8)),
+                child: const Icon(Icons.close_rounded, size: 18, color: AppColors.primaryPink),
+              ),
+            ),
           ]),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(name, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: theme.textColor)),
-            const SizedBox(height: 2),
-            Text(service, style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor)),
-          ]),
-        ),
-        Container(
-          width: 30, height: 30,
-          decoration: BoxDecoration(color: AppColors.successBg, borderRadius: BorderRadius.circular(8)),
-          child: const Icon(Icons.check_rounded, size: 16, color: AppColors.success),
-        ),
-        const SizedBox(width: 6),
-        Container(
-          width: 30, height: 30,
-          decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(8)),
-          child: const Icon(Icons.close_rounded, size: 16, color: AppColors.primaryPink),
-        ),
-      ]),
+        );
+      }
     );
   }
 }

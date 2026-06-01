@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:saloon_app/features/owner/registration/owner_otp_screen.dart';
-import 'package:saloon_app/shared/widgets/progress_step_bar.dart';
+import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
-
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../shared/widgets/app_button.dart';
+import 'package:saloon_app/features/owner/registration/owner_otp_screen.dart';
+import 'package:saloon_app/shared/widgets/app_button.dart';
+import 'package:saloon_app/shared/widgets/progress_step_bar.dart';
 
 class OwnerPhoneScreen extends StatefulWidget {
   const OwnerPhoneScreen({super.key});
@@ -25,33 +23,31 @@ class _OwnerPhoneScreenState extends State<OwnerPhoneScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Owner Registration', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor,fontSize: 16)),
-        leading: GestureDetector(
-          onTap: () => Navigator.pop(context),
-          child: Padding(
-            padding: const EdgeInsets.only(top: 8, left: 12, bottom: 8),
-            child: Container(
-              decoration: BoxDecoration(
-                color: theme.lightPinkColor,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(Icons.arrow_back, color: theme.textColor),
-            ),
-          ),
+        title: Text('Salon Registration', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_rounded, color: theme.textColor),
+          onPressed: () => Navigator.pop(context),
         ),
       ),
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              ProgressStepBar(totalSteps: 5, currentStep: 1),
+              const ProgressStepBar(totalSteps: 6, currentStep: 1),
               const SizedBox(height: 30),
-              Text('Phone Number 📱', style: AppTextStyles.displayLarge?.copyWith(color: theme.textColor)),
-              Text('We\'ll verify your identity via OTP', style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor)),
-              const SizedBox(height: 30),
+
+              Text('Owner Phone 📱',
+                style: AppTextStyles.displayLarge?.copyWith(fontSize: 25, color: theme.textColor),
+              ),
+              const SizedBox(height: 8),
+              Text('Register your salon and grow your business',
+                  style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor)),
+              
+              const SizedBox(height: 40),
+
+              // Phone Input
               Container(
                 height: 54,
                 decoration: BoxDecoration(
@@ -62,11 +58,14 @@ class _OwnerPhoneScreenState extends State<OwnerPhoneScreen> {
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      width: 80,
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
                       decoration: BoxDecoration(
                         border: Border(right: BorderSide(color: theme.borderColor, width: 1.5)),
                       ),
-                      child: Text('PK +92', style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w700, color: theme.textColor)),
+                      child: Center(
+                        child: Text('+92', style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+                      ),
                     ),
                     Expanded(
                       child: TextField(
@@ -74,10 +73,8 @@ class _OwnerPhoneScreenState extends State<OwnerPhoneScreen> {
                         style: TextStyle(color: theme.textColor),
                         decoration: InputDecoration(
                           hintText: '3XX XXXXXXX',
-                          hintStyle: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                          hintStyle: TextStyle(color: theme.mutedTextColor),
                           border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
                           contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                         ),
                       ),
@@ -85,11 +82,15 @@ class _OwnerPhoneScreenState extends State<OwnerPhoneScreen> {
                   ],
                 ),
               ),
-              Text('Standard SMS rates may apply', style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor)),
-              const SizedBox(height: 30),
-              AppButton(label: 'Send OTP', onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => OwnerOTPScreen()));
-              }),
+              
+              const SizedBox(height: 40),
+
+              AppButton(
+                label: 'Send Verification Code',
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => const OwnerOTPScreen()));
+                },
+              ),
             ],
           ),
         ),

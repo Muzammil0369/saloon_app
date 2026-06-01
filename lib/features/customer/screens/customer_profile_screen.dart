@@ -5,6 +5,10 @@ import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_helper.dart';
 import '../../../core/theme/theme_controller.dart';
+import '../customer_main_wrapper.dart';
+import 'favourite_salons_screen.dart';
+import 'saved_addresses_screen.dart';
+import 'help_support_screen.dart';
 
 class CustomerProfileScreen extends StatefulWidget {
   const CustomerProfileScreen({super.key});
@@ -16,6 +20,8 @@ class CustomerProfileScreen extends StatefulWidget {
 class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   bool _notificationsOn = true;
   bool _darkModeOn = false;
+  String _userName = 'Muzammil Khan';
+  String _userPhone = '+92 300 1234567';
 
   @override
   void initState() {
@@ -23,14 +29,86 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     _darkModeOn = Get.find<ThemeController>().isDarkMode.value;
   }
 
-  final List<Map<String, dynamic>> _menuItems = [
-    {'icon': Icons.calendar_today_rounded, 'label': 'My Bookings',       'bg': AppColors.lightPink,        'color': AppColors.primaryPink},
-    {'icon': Icons.favorite_rounded,       'label': 'Favourite Salons',  'bg': const Color(0xFFFFE8EE),    'color': Colors.pinkAccent},
-    {'icon': Icons.account_balance_wallet_rounded, 'label': 'Payment Methods', 'bg': const Color(0xFFE8F5E9), 'color': AppColors.success},
-    {'icon': Icons.location_on_rounded,    'label': 'Saved Addresses',   'bg': const Color(0xFFE3F2FD),    'color': Colors.blue},
-    {'icon': Icons.lock_rounded,           'label': 'Privacy & Security','bg': const Color(0xFFF3E5F5),    'color': Colors.purple},
-    {'icon': Icons.help_rounded,           'label': 'Help & Support',    'bg': const Color(0xFFFFF8E1),    'color': Colors.orange},
-  ];
+  void _showEditProfile() {
+    final TextEditingController nameCtrl = TextEditingController(text: _userName);
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final theme = ThemeHelper(context);
+        return Container(
+          padding: EdgeInsets.only(
+            left: 24, right: 24, top: 24,
+            bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          ),
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Edit Profile', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+              const SizedBox(height: 24),
+              Text('Full Name', style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
+              const SizedBox(height: 8),
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.lightPinkColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: TextField(
+                  controller: nameCtrl,
+                  style: TextStyle(color: theme.textColor),
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 52,
+                child: ElevatedButton(
+                  onPressed: () {
+                    setState(() => _userName = nameCtrl.text);
+                    Navigator.pop(context);
+                    Get.snackbar('Profile Updated', 'Your changes have been saved.',
+                        backgroundColor: AppColors.success, colorText: Colors.white);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primaryPink,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: Text('Save Changes', style: AppTextStyles.buttonText),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _handleLogout() {
+    Get.dialog(
+      AlertDialog(
+        backgroundColor: Theme.of(context).cardColor,
+        title: Text('Logout', style: TextStyle(color: ThemeHelper(context).textColor)),
+        content: Text('Are you sure you want to logout?', style: TextStyle(color: ThemeHelper(context).mutedTextColor)),
+        actions: [
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
+          TextButton(
+            onPressed: () => Get.offAllNamed('/'),
+            child: const Text('Logout', style: TextStyle(color: Colors.redAccent)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +134,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                   decoration: BoxDecoration(
                     color: theme.cardColor,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [theme.cardShadow],
+                    boxShadow: [theme.softShadow],
                   ),
                   child: Row(
                     children: [
@@ -86,16 +164,14 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Muzammil', style: AppTextStyles.headingMedium?.copyWith(color: theme.textColor)),
+                            Text(_userName, style: AppTextStyles.headingMedium?.copyWith(color: theme.textColor)),
                             const SizedBox(height: 2),
-                            Text('+92 300 1234567', style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor)),
-                            const SizedBox(height: 4),
-                            Text('3 bookings this month', style: AppTextStyles.label.copyWith(color: AppColors.primaryPink, fontWeight: FontWeight.w600)),
+                            Text(_userPhone, style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor)),
                           ],
                         ),
                       ),
                       GestureDetector(
-                        onTap: () {},
+                        onTap: _showEditProfile,
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                           decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(10)),
@@ -105,31 +181,14 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
-                // Stats Row
-                Container(
-                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
-                  decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(16)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _statItem('8', 'Total Bookings'),
-                      Container(width: 1, height: 32, color: Colors.white.withOpacity(0.3)),
-                      _statItem('3', 'This Month'),
-                      Container(width: 1, height: 32, color: Colors.white.withOpacity(0.3)),
-                      _statItem('2', 'Favourites'),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Quick Settings
+                // Settings Container
                 Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(16),
+                    borderRadius: BorderRadius.circular(20),
                     boxShadow: [theme.softShadow],
                   ),
                   child: Column(
@@ -142,90 +201,61 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                         onToggle: () => setState(() => _notificationsOn = !_notificationsOn),
                         theme: theme,
                       ),
-                      const SizedBox(height: 12),
-                      Divider(height: 1, color: theme.borderColor),
-                      const SizedBox(height: 12),
+                      const Padding(padding: EdgeInsets.symmetric(vertical: 8), child: Divider()),
                       _buildToggle(
                         icon: Icons.dark_mode_rounded,
                         iconColor: Colors.purple,
                         title: 'Dark Mode',
                         value: _darkModeOn,
                         onToggle: () {
-                          setState(() {
-                            _darkModeOn = !_darkModeOn;
-                          });
-                          Get.find<ThemeController>().toggleTheme(); // Instant!
+                          setState(() => _darkModeOn = !_darkModeOn);
+                          Get.find<ThemeController>().toggleTheme();
                         },
                         theme: theme,
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
 
                 // Menu Items
-                Container(
-                  decoration: BoxDecoration(
-                    color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [theme.softShadow],
-                  ),
-                  child: Column(
-                    children: List.generate(_menuItems.length, (i) {
-                      final item = _menuItems[i];
-                      return Column(
-                        children: [
-                          GestureDetector(
-                            onTap: () {},
-                            child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 36, height: 36,
-                                    decoration: BoxDecoration(color: item['bg'] as Color, borderRadius: BorderRadius.circular(10)),
-                                    child: Icon(item['icon'] as IconData, size: 18, color: item['color'] as Color),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(item['label'], style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w500, color: theme.textColor)),
-                                  ),
-                                  Icon(Icons.arrow_forward_ios_rounded, size: 14, color: theme.mutedTextColor),
-                                ],
-                              ),
-                            ),
-                          ),
-                          if (i < _menuItems.length - 1) Divider(height: 1, indent: 64, endIndent: 16, color: theme.borderColor),
-                        ],
-                      );
-                    }),
-                  ),
-                ),
-                const SizedBox(height: 20),
+                _menuTile(Icons.favorite_rounded, 'Favourite Salons', 'Salons you love', Colors.pinkAccent, theme, () {
+                   Get.to(() => const FavouriteSalonsScreen());
+                }),
+                _menuTile(Icons.account_balance_wallet_rounded, 'Payment Methods', 'Manage your cards', AppColors.success, theme, () {
+                   Get.toNamed('/wallet');
+                }),
+                _menuTile(Icons.location_on_rounded, 'Saved Addresses', 'Office, Home...', Colors.blue, theme, () {
+                   Get.to(() => const SavedAddressesScreen());
+                }),
+                _menuTile(Icons.help_rounded, 'Help & Support', 'FAQs and Contact', Colors.orange, theme, () {
+                   Get.to(() => const HelpSupportScreen());
+                }),
 
-                // Logout
+                const SizedBox(height: 32),
+
+                // Logout Button
                 GestureDetector(
-                  onTap: () {},
+                  onTap: _handleLogout,
                   child: Container(
                     width: double.infinity,
-                    height: 50,
+                    height: 52,
                     decoration: BoxDecoration(
                       color: theme.cardColor,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: theme.lightPinkColor, width: 1.5),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
                     ),
-                    alignment: Alignment.center,
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.logout_rounded, size: 18, color: AppColors.primaryPink),
-                        const SizedBox(width: 8),
-                        Text('Logout', style: AppTextStyles.bodyMedium?.copyWith(color: AppColors.primaryPink, fontWeight: FontWeight.w700)),
+                        const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
+                        const SizedBox(width: 10),
+                        Text('Logout Account', style: AppTextStyles.buttonText?.copyWith(color: Colors.redAccent)),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 40),
               ],
             ),
           ),
@@ -234,54 +264,45 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     );
   }
 
-  Widget _buildToggle({
-    required IconData icon,
-    required Color iconColor,
-    required String title,
-    required bool value,
-    required VoidCallback onToggle,
-    required ThemeHelper theme,
-  }) {
+  Widget _buildToggle({required IconData icon, required Color iconColor, required String title, required bool value, required VoidCallback onToggle, required ThemeHelper theme}) {
     return Row(
       children: [
         Container(
-          width: 36, height: 36,
-          decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(10)),
-          child: Icon(icon, size: 18, color: iconColor),
+          width: 40, height: 40,
+          decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(12)),
+          child: Icon(icon, size: 20, color: iconColor),
         ),
         const SizedBox(width: 12),
-        Expanded(child: Text(title, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w500, color: theme.textColor))),
-        GestureDetector(
-          onTap: onToggle,
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: 40, height: 22,
-            decoration: BoxDecoration(
-              color: value ? AppColors.primaryPink : theme.borderColor,
-              borderRadius: BorderRadius.circular(11),
-            ),
-            child: AnimatedAlign(
-              duration: const Duration(milliseconds: 200),
-              alignment: value ? Alignment.centerRight : Alignment.centerLeft,
-              child: Container(
-                margin: const EdgeInsets.all(3),
-                width: 16, height: 16,
-                decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-              ),
-            ),
-          ),
+        Expanded(child: Text(title, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: theme.textColor))),
+        Switch(
+          value: value,
+          onChanged: (_) => onToggle(),
+          activeColor: AppColors.primaryPink,
         ),
       ],
     );
   }
 
-  Widget _statItem(String value, String label) {
-    return Column(
-      children: [
-        Text(value, style: AppTextStyles.headingMedium.copyWith(color: Colors.white)),
-        const SizedBox(height: 2),
-        Text(label, style: AppTextStyles.label.copyWith(color: Colors.white70)),
-      ],
+  Widget _menuTile(IconData icon, String title, String subtitle, Color color, ThemeHelper theme, VoidCallback onTap) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [theme.softShadow],
+      ),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          width: 40, height: 40,
+          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+          child: Icon(icon, size: 20, color: color),
+        ),
+        title: Text(title, style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+        subtitle: Text(subtitle, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
+        trailing: Icon(Icons.chevron_right_rounded, color: theme.mutedTextColor),
+      ),
     );
   }
 }

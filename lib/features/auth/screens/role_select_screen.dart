@@ -3,7 +3,6 @@ import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_gradients.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
-import 'package:saloon_app/features/auth/screens/login_screen.dart';
 import 'package:saloon_app/features/customer/registration/customer_phone_screen.dart';
 import 'package:saloon_app/features/owner/registration/owner_phone_screen.dart';
 
@@ -15,278 +14,181 @@ class RoleSelectScreen extends StatefulWidget {
 }
 
 class _RoleSelectScreenState extends State<RoleSelectScreen> {
-  String _selectedLanguage = 'EN';
+  String _selectedRole = 'customer'; // 'customer' or 'owner'
+  String _selectedLang = 'en'; // 'en' or 'ur'
 
   @override
   Widget build(BuildContext context) {
     final theme = ThemeHelper(context);
 
     return Scaffold(
-      backgroundColor: theme.lightPinkColor,
+      backgroundColor: theme.backgroundColor,
       body: SafeArea(
-        child: Stack(
-          children: [
-            // Main Content
-            Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  // Logo Icon
-                  Container(
-                    height: 80,
-                    width: 80,
-                    decoration: BoxDecoration(
-                      gradient: AppGradients.primary,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Icon(
-                      Icons.content_cut_rounded,
-                      size: 40,
-                      color: Colors.white,
-                    ),
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // App Name
-                  Text(
-                    'Salon Book',
-                    style: AppTextStyles.displayLarge?.copyWith(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: theme.textColor,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  // Tagline
-                  Text(
-                    'Who are you?',
-                    style: AppTextStyles.bodyLarge?.copyWith(
-                      color: theme.mutedTextColor,
-                      fontSize: 16,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  // Customer Card
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => CustomerPhoneScreen(),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: theme.borderColor,
-                          width: 1.5,
-                        ),
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            height: 48,
-                            width: 48,
-                            decoration: BoxDecoration(
-                              color: theme.lightPinkColor,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.person_outline_rounded,
-                              size: 24,
-                              color: AppColors.primaryPink,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "I'm a Customer",
-                                  style: AppTextStyles.headingSmall?.copyWith(
-                                    fontWeight: FontWeight.w600,
-                                    color: theme.textColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Book salons near you',
-                                  style: AppTextStyles.taglineSmall?.copyWith(
-                                    color: theme.mutedTextColor,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 14,
-                            color: theme.grey400(),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  // Owner Card
-                  GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OwnerPhoneScreen(),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        gradient: AppGradients.primary,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryPink.withOpacity(0.3),
-                            blurRadius: 15,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        children: [
-                          Container(
-                            height: 48,
-                            width: 48,
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Icon(
-                              Icons.storefront_rounded,
-                              size: 24,
-                              color: Colors.white,
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  "I'm a Salon Owner",
-                                  style: AppTextStyles.headingSmall?.copyWith(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'Register your salon',
-                                  style: AppTextStyles.taglineSmall?.copyWith(
-                                    color: Colors.white.withOpacity(0.8),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 14,
-                            color: Colors.white,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // Sign In Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Already have an account? ",
-                        style: AppTextStyles.taglineSmall?.copyWith(
-                          color: theme.mutedTextColor,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => LoginScreen(),
-                            ),
-                          );
-                        },
-                        child: Text(
-                          'Sign In',
-                          style: AppTextStyles.linkText?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // Language Toggle - Top Right
-            Positioned(
-              top: 12,
-              right: 20,
-              child: GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedLanguage = _selectedLanguage == 'EN' ? 'UR' : 'EN';
-                  });
-                },
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Language Toggle ──
+              Align(
+                alignment: Alignment.topRight,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  padding: const EdgeInsets.all(4),
                   decoration: BoxDecoration(
                     color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: theme.borderColor,
-                      width: 1,
-                    ),
-                    boxShadow: [theme.softShadow],
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: theme.borderColor),
                   ),
                   child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.language, size: 20, color: Colors.lightBlueAccent),
-                      const SizedBox(width: 2),
-                      Text(
-                        _selectedLanguage,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w900,
-                          color: theme.textColor,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
+                      _langBtn('English', 'en'),
+                      _langBtn('اردو', 'ur'),
                     ],
                   ),
                 ),
               ),
+
+              const SizedBox(height: 40),
+
+              Text(
+                _selectedLang == 'en' ? 'Welcome to Glambook! ✨' : 'گلیم بک میں خوش آمدید! ✨',
+                style: AppTextStyles.displayLarge?.copyWith(color: theme.textColor),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                _selectedLang == 'en' 
+                  ? 'Choose how you want to use the app' 
+                  : 'منتخب کریں کہ آپ ایپ کو کیسے استعمال کرنا چاہتے ہیں',
+                style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor),
+              ),
+
+              const SizedBox(height: 50),
+
+              // ── Role Selection ──
+              _roleCard(
+                'customer',
+                _selectedLang == 'en' ? 'I want to book a service' : 'میں سروس بک کرنا چاہتا ہوں',
+                _selectedLang == 'en' ? 'Customer' : 'صارف',
+                Icons.person_rounded,
+                theme,
+              ),
+              const SizedBox(height: 20),
+              _roleCard(
+                'owner',
+                _selectedLang == 'en' ? 'I want to list my salon' : 'میں اپنا سیلون لسٹ کرنا چاہتا ہوں',
+                _selectedLang == 'en' ? 'Salon Owner' : 'سیلون کا مالک',
+                Icons.storefront_rounded,
+                theme,
+              ),
+
+              const Spacer(),
+
+              // ── Continue Button ──
+              GestureDetector(
+                onTap: () {
+                  if (_selectedRole == 'customer') {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const CustomerPhoneScreen()));
+                  } else {
+                    Navigator.push(context, MaterialPageRoute(builder: (context) => const OwnerPhoneScreen()));
+                  }
+                },
+                child: Container(
+                  height: 56,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: AppGradients.primary,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryPink.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 6),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      _selectedLang == 'en' ? 'Continue' : 'جاری رکھیں',
+                      style: AppTextStyles.buttonText?.copyWith(fontSize: 16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _langBtn(String label, String code) {
+    final isSelected = _selectedLang == code;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedLang = code),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryPink : Colors.transparent,
+          borderRadius: BorderRadius.circular(20),
+        ),
+        child: Text(
+          label,
+          style: AppTextStyles.label.copyWith(
+            color: isSelected ? Colors.white : AppColors.mutedText,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _roleCard(String id, String title, String subtitle, IconData icon, ThemeHelper theme) {
+    final isSelected = _selectedRole == id;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedRole = id),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primaryPink.withOpacity(0.05) : theme.cardColor,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isSelected ? AppColors.primaryPink : theme.borderColor,
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected ? [
+            BoxShadow(
+              color: AppColors.primaryPink.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ] : null,
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.lightPinkColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Icon(icon, color: AppColors.primaryPink, size: 30),
             ),
+            const SizedBox(width: 20),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(subtitle, style: AppTextStyles.headingMedium?.copyWith(color: theme.textColor)),
+                  const SizedBox(height: 4),
+                  Text(title, style: AppTextStyles.bodySmall?.copyWith(color: theme.mutedTextColor)),
+                ],
+              ),
+            ),
+            if (isSelected)
+              const Icon(Icons.check_circle_rounded, color: AppColors.primaryPink),
           ],
         ),
       ),

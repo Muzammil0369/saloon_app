@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_helper.dart';
+import 'salon_detail_screen.dart';
 
 class ExploreScreen extends StatefulWidget {
   const ExploreScreen({super.key});
@@ -14,6 +15,7 @@ class ExploreScreen extends StatefulWidget {
   @override
   State<ExploreScreen> createState() => _ExploreScreenState();
 }
+
 
 class _ExploreScreenState extends State<ExploreScreen> {
   // ── State ──
@@ -111,19 +113,19 @@ class _ExploreScreenState extends State<ExploreScreen> {
     for (final query in queries) {
       try {
         final url = Uri.parse(
-          'https://api.tomtom.com/search/2/search/\${Uri.encodeComponent(query)}.json'
-              '?lat=\${pos.latitude}&lon=\${pos.longitude}'
-              '&radius=10000&limit=15&key=\$_apiKey',
+          'https://api.tomtom.com/search/2/search/${Uri.encodeComponent(query)}.json'
+              '?lat=${pos.latitude}&lon=${pos.longitude}'
+              '&radius=10000&limit=15&key=$_apiKey',
         );
 
-        debugPrint('TomTom query: \$query');
+        debugPrint('TomTom query: $query');
         final res = await http.get(url).timeout(const Duration(seconds: 10));
-        debugPrint('Status: \${res.statusCode}');
+        debugPrint('Status: ${res.statusCode}');
 
         if (res.statusCode == 200) {
           final data = json.decode(res.body);
           final results = data['results'] as List?;
-          debugPrint('Found: \${results?.length ?? 0} for \$query');
+          debugPrint('Found: ${results?.length ?? 0} for $query');
 
           if (results != null && results.isNotEmpty) {
             for (final r in results) {
@@ -148,7 +150,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
               _salons.add({
                 'name':          name,
-                'distance':      '\${distKm.toStringAsFixed(1)} km',
+                'distance':      '${distKm.toStringAsFixed(1)} km',
                 'distanceValue': distKm,
                 'rating':        4.0 + (_salons.length % 10) * 0.1,
                 'status':        'Open',
@@ -162,7 +164,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
           }
         }
       } catch (e) {
-        debugPrint('Query error (\$query): \$e');
+        debugPrint('Query error ($query): $e');
       }
     }
 
@@ -495,8 +497,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       itemBuilder: (context, index) {
                         final salon = _filtered[index];
                         return GestureDetector(
-                          onTap: () => _focusSalon(
-                              salon['lat'], salon['lng']),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SalonDetailScreen(salon: salon),
+                              ),
+                            );
+                          },
                           child: Container(
                             margin: const EdgeInsets.only(
                                 bottom: 12),
