@@ -20,10 +20,16 @@ class DatabaseService extends GetxService {
     return _firestore.collection('salons').snapshots();
   }
 
-  Future<void> registerSalon(String uid, Map<String, dynamic> salonData) async {
-    await _firestore.collection('salons').doc(uid).set(salonData);
+  Future<void> registerSalon(String uid, Map<String, dynamic> salonData, GeoPoint location) async {
+    final data = {
+      ...salonData,
+      'location': location,
+      'status': 'pending',
+      'createdAt': FieldValue.serverTimestamp(),
+    };
+    await _firestore.collection('owners').doc(uid).set(data);
     // Also mark user as owner
-    await saveUserProfile(uid, {'role': 'owner'});
+    await saveUserProfile(uid, {'role': 'owner', 'status': 'pending'});
   }
 
   // ── Bookings ──

@@ -37,24 +37,22 @@ Owner: Register → Upload Docs → Verified → Set Slots → Receive Booking �
 - **Full Screen Suite**: All 30+ screens for both Customer and Owner roles are built and themed.
 - **Adaptive Theming**: Full support for Light and Dark modes using `ThemeController` and `ThemeHelper`.
 - **Premium Aesthetics**: Consistent use of Pink gradients, soft shadows, and custom rounded cards.
-- **Onboarding Logic**: Implemented first-launch check using `shared_preferences`.
-- **Customer Home**: Dynamic header, intent-based search, and interactive category/salon lists.
+- **Onboarding Logic**: Implemented first-launch check using `shared_preferences` and centralized `AuthGate`.
 
-### 2. Backend Integration (Firebase)
-- **Service Layer**: Implemented `AuthService` (Phone Auth) and `DatabaseService` (Firestore).
-- **Registration Flow**: Real-world wiring for Customer Phone -> OTP -> Profile Setup.
-- **Data Persistence**: Profiles and roles are saved to Firestore upon successful verification.
-- **Android Configuration**: Optimized `build.gradle` and plugin applications for Firebase services.
+### 2. Backend & Auth Migration
+- **Authentication**: Migrated from Phone Auth to Email/Password authentication for security and reliability.
+- **AuthGate**: Centralized navigation controller to handle role-based redirection (`CustomerMainWrapper`, `OwnerMainWrapper`, `OwnerPendingScreen`).
+- **Owner Approval Flow**: Implemented pending verification screen and status-based routing.
 
 ### 3. Business Management (Owner)
-- **Modular Management**: Separate, functional screens for Service Menus (CRUD) and Salon Galleries.
-- **Live Dashboard**: Interactive appointment queue where owners can Accept/Reject bookings with real-time UI updates.
-- **Analytics**: Integrated bar charts for weekly earnings visualization.
+- **Dynamic Dashboard**: Dashboard stats, earnings charts, and schedule are now live-streamed from Firestore.
+- **Location Pinning**: Implemented custom map-based salon location pinning for owners.
+- **Profile Management**: Dynamic business profile management with real-time Firestore updates.
 
-### 4. Advanced Features
-- **Wallet System**: Functional top-up simulation and transaction history.
-- **QR System**: Customer-side QR generation and Owner-side scanner with simulation logic.
-- **Profile Hub**: Complete account management with functional editing for both user types.
+### 4. Customer Experience
+- **Explore & Search**: Customer map and list now fetch real-time salon data and calculate distances dynamically.
+- **Booking Flow**: Implemented service selection and booking submission to Firestore.
+- **Dynamic Profile**: User information is persisted and accessible via `UserController` throughout the app.
 
 ## Navigation Flow
 Onboarding (Runs once) → Role Select →

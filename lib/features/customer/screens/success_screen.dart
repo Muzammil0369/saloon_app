@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_gradients.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
@@ -7,7 +8,10 @@ import 'package:saloon_app/core/constants/app_radius.dart';
 import 'package:saloon_app/features/customer/customer_main_wrapper.dart';
 
 class SuccessScreen extends StatelessWidget {
-  const SuccessScreen({super.key});
+  final String bookingId;
+  final String dateTime;
+
+  const SuccessScreen({super.key, required this.bookingId, required this.dateTime});
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +61,7 @@ class SuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Your appointment has been successfully booked. You can view it in your bookings section.',
+                'Your appointment has been successfully booked.',
                 style: AppTextStyles.bodyMedium?.copyWith(
                   color: theme.mutedTextColor,
                   height: 1.5,
@@ -77,9 +81,9 @@ class SuccessScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _infoRow(Icons.confirmation_num_outlined, 'Booking ID', '#SB-92834', theme),
+                    _infoRow(Icons.confirmation_num_outlined, 'Booking ID', '#${bookingId.substring(0, 8)}', theme),
                     const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
-                    _infoRow(Icons.calendar_today_rounded, 'Date & Time', 'Oct 24, 2026 · 10:30 AM', theme),
+                    _infoRow(Icons.calendar_today_rounded, 'Date & Time', dateTime, theme),
                   ],
                 ),
               ),
@@ -89,11 +93,7 @@ class SuccessScreen extends StatelessWidget {
               // ── Buttons ──
               GestureDetector(
                 onTap: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CustomerMainWrapper()),
-                    (route) => false,
-                  );
+                  Get.offAll(() => const CustomerMainWrapper());
                 },
                 child: Container(
                   height: 56,
@@ -115,22 +115,6 @@ class SuccessScreen extends StatelessWidget {
                       style: AppTextStyles.buttonText?.copyWith(fontSize: 16),
                     ),
                   ),
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              TextButton(
-                onPressed: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CustomerMainWrapper(initialIndex: 2)),
-                    (route) => false,
-                  );
-                },
-                child: Text(
-                  'View My Bookings',
-                  style: AppTextStyles.linkText?.copyWith(fontSize: 14),
                 ),
               ),
               

@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/constants/app_radius.dart';
-import 'package:saloon_app/features/owner/owner_main_wrapper.dart';
-import '../../../core/theme/theme_controller.dart';
+import 'package:saloon_app/core/services/auth_service.dart';
+import 'package:saloon_app/core/theme/theme_controller.dart';
 import 'owner_gallery_management_screen.dart';
 import 'owner_services_management_screen.dart';
 
@@ -17,8 +18,7 @@ class OwnerProfileScreen extends StatefulWidget {
 }
 
 class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
-  String _salonName = 'Royal Cuts Studio';
-  String _ownerName = 'Ahmed Ali';
+  final ownerId = Get.find<AuthService>().uid;
   bool _isDarkMode = false;
 
   @override
@@ -27,9 +27,9 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     _isDarkMode = Get.find<ThemeController>().isDarkMode.value;
   }
 
-  void _editBusinessInfo() {
-    final nameCtrl = TextEditingController(text: _salonName);
-    final ownerCtrl = TextEditingController(text: _ownerName);
+  void _editBusinessInfo(Map<String, dynamic> data) {
+    final nameCtrl = TextEditingController(text: data['salonName']);
+    final addressCtrl = TextEditingController(text: data['address']);
     
     showModalBottomSheet(
       context: context,
@@ -50,30 +50,29 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Business Info', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+              Text('Edit Business Info', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
               const SizedBox(height: 24),
               _editField('Salon Name', nameCtrl, theme),
               const SizedBox(height: 16),
-              _editField('Owner Name', ownerCtrl, theme),
+              _editField('Address', addressCtrl, theme),
               const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
-                    setState(() {
-                      _salonName = nameCtrl.text;
-                      _ownerName = ownerCtrl.text;
+                  onPressed: () async {
+                    await FirebaseFirestore.instance.collection('owners').doc(ownerId).update({
+                      'salonName': nameCtrl.text.trim(),
+                      'address': addressCtrl.text.trim(),
                     });
                     Navigator.pop(context);
-                    Get.snackbar('Success', 'Business info updated', 
-                      backgroundColor: AppColors.success, colorText: Colors.white);
+                    Get.snackbar('Success', 'Business info updated', backgroundColor: AppColors.success, colorText: Colors.white);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryPink,
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  child: Text('Update Info', style: AppTextStyles.buttonText),
+                  child: Text('Save Changes', style: AppTextStyles.buttonText),
                 ),
               ),
             ],
@@ -94,30 +93,10 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
           child: TextField(
             controller: ctrl,
             style: TextStyle(color: theme.textColor),
-            decoration: const InputDecoration(
-              border: InputBorder.none,
-              contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            ),
+            decoration: const InputDecoration(border: InputBorder.none, contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12)),
           ),
         ),
       ],
-    );
-  }
-
-  void _handleLogout() {
-    Get.dialog(
-      AlertDialog(
-        backgroundColor: Theme.of(context).cardColor,
-        title: Text('Logout', style: TextStyle(color: ThemeHelper(context).textColor)),
-        content: Text('Exit owner dashboard?', style: TextStyle(color: ThemeHelper(context).mutedTextColor)),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
-          TextButton(
-            onPressed: () => Get.offAllNamed('/'),
-            child: const Text('Logout', style: TextStyle(color: Colors.redAccent)),
-          ),
-        ],
-      ),
     );
   }
 
@@ -127,89 +106,91 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
 
     return Scaffold(
       backgroundColor: theme.backgroundColor,
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // ── Profile Header ──
-            Container(
-              padding: const EdgeInsets.fromLTRB(24, 60, 24, 30),
-              decoration: BoxDecoration(
-                color: theme.cardColor,
-                borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppRadius.xxl)),
-                boxShadow: [theme.softShadow],
-              ),
-              child: Column(
-                children: [
-                  const CircleAvatar(
-                    radius: 50,
-                    backgroundColor: AppColors.primaryPink,
-                    child: Icon(Icons.storefront_rounded, size: 50, color: Colors.white),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(_salonName, style: AppTextStyles.displayMedium?.copyWith(color: theme.textColor)),
-                  Text('Owner: $_ownerName', style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
-                  const SizedBox(height: 20),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      _statItem('4.9', 'Rating'),
-                      _verticalDivider(theme),
-                      _statItem('1.2k', 'Bookings'),
-                      _verticalDivider(theme),
-                      _statItem('Verified', 'Status', isSuccess: true),
-                    ],
-                  ),
-                ],
-              ),
-            ),
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('owners').doc(ownerId).snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          final data = snapshot.data!.data() as Map<String, dynamic>;
 
-            const SizedBox(height: 24),
-
-            // ── Business Management ──
-            _sectionHeader('Business Management', theme),
-            _profileTile(Icons.edit_note_rounded, 'Edit Business Info', 'Name and owner details', theme, _editBusinessInfo),
-            _profileTile(Icons.access_time_rounded, 'Business Hours', '9:00 AM - 9:00 PM', theme, () {
-              Get.snackbar('Hours', 'Feature coming soon: Drag to set hours', backgroundColor: theme.cardColor, colorText: theme.textColor);
-            }),
-            _profileTile(Icons.content_cut_rounded, 'Service Menu', 'Manage services & prices', theme, () {
-               Get.to(() => const OwnerServicesManagementScreen());
-            }),
-            _profileTile(Icons.image_outlined, 'Salon Gallery', 'Upload salon photos', theme, () {
-               Get.to(() => const OwnerGalleryManagementScreen());
-            }),
-            
-            const SizedBox(height: 24),
-            
-            _sectionHeader('Settings', theme),
-            _buildToggleTile(Icons.dark_mode_outlined, 'Dark Mode', _isDarkMode, (val) {
-              setState(() => _isDarkMode = val);
-              Get.find<ThemeController>().toggleTheme();
-            }, theme),
-            _profileTile(Icons.notifications_none_rounded, 'Notifications', 'Manage alerts', theme, () {}),
-            
-            const SizedBox(height: 32),
-            
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: GestureDetector(
-                onTap: _handleLogout,
-                child: Container(
-                  height: 52,
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                // ── Profile Header ──
+                Container(
+                  padding: const EdgeInsets.fromLTRB(24, 60, 24, 30),
                   decoration: BoxDecoration(
                     color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                    borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppRadius.xxl)),
+                    boxShadow: [theme.softShadow],
                   ),
-                  child: Center(
-                    child: Text('Logout Business', style: AppTextStyles.buttonText?.copyWith(color: Colors.redAccent)),
+                  child: Column(
+                    children: [
+                      const CircleAvatar(
+                        radius: 50,
+                        backgroundColor: AppColors.primaryPink,
+                        child: Icon(Icons.storefront_rounded, size: 50, color: Colors.white),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(data['salonName'] ?? 'My Salon', style: AppTextStyles.displayMedium?.copyWith(color: theme.textColor)),
+                      Text(data['address'] ?? 'Location', style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
+                      const SizedBox(height: 20),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _statItem('${data['rating'] ?? 0.0}★', 'Rating'),
+                          _verticalDivider(theme),
+                          _statItem('${data['totalBookings'] ?? 0}', 'Bookings'),
+                          _verticalDivider(theme),
+                          _statItem(data['status'] == 'approved' ? 'Verified' : 'Pending', 'Status', isSuccess: data['status'] == 'approved'),
+                        ],
+                      ),
+                    ],
                   ),
                 ),
-              ),
+
+                const SizedBox(height: 24),
+
+                // ── Business Management ──
+                _sectionHeader('Business Management', theme),
+                _profileTile(Icons.edit_note_rounded, 'Edit Business Info', 'Name and address details', theme, () => _editBusinessInfo(data)),
+                _profileTile(Icons.content_cut_rounded, 'Service Menu', 'Manage services & prices', theme, () => Get.to(() => const OwnerServicesManagementScreen())),
+                _profileTile(Icons.image_outlined, 'Salon Gallery', 'Upload salon photos', theme, () => Get.to(() => const OwnerGalleryManagementScreen())),
+                
+                const SizedBox(height: 24),
+                
+                _sectionHeader('Settings', theme),
+                _buildToggleTile(Icons.dark_mode_outlined, 'Dark Mode', _isDarkMode, (val) {
+                  setState(() => _isDarkMode = val);
+                  Get.find<ThemeController>().toggleTheme();
+                }, theme),
+                
+                const SizedBox(height: 32),
+                
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: GestureDetector(
+                    onTap: () {
+                      Get.find<AuthService>().logout();
+                      Get.offAllNamed('/auth-gate');
+                    },
+                    child: Container(
+                      height: 52,
+                      decoration: BoxDecoration(
+                        color: theme.cardColor,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                      ),
+                      child: Center(
+                        child: Text('Logout Business', style: AppTextStyles.buttonText?.copyWith(color: Colors.redAccent)),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 40),
+              ],
             ),
-            
-            const SizedBox(height: 40),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
@@ -234,8 +215,9 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
       ),
       child: ListTile(
         onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: Container(
-          padding: const EdgeInsets.all(10),
+          width: 40, height: 40,
           decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(12)),
           child: Icon(icon, color: AppColors.primaryPink, size: 20),
         ),

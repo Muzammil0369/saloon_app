@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_gradients.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
-import 'package:saloon_app/features/customer/registration/customer_phone_screen.dart';
-import 'package:saloon_app/features/owner/registration/owner_phone_screen.dart';
+import 'package:saloon_app/features/customer/registration/customer_registration_screen.dart';
+import 'package:saloon_app/features/owner/registration/owner_registration_screen.dart';
 
 class RoleSelectScreen extends StatefulWidget {
   const RoleSelectScreen({super.key});
@@ -88,9 +89,9 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
               GestureDetector(
                 onTap: () {
                   if (_selectedRole == 'customer') {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const CustomerPhoneScreen()));
+                    Get.to(() => const CustomerRegistrationScreen());
                   } else {
-                    Navigator.push(context, MaterialPageRoute(builder: (context) => const OwnerPhoneScreen()));
+                    Get.to(() => const OwnerRegistrationScreen());
                   }
                 },
                 child: Container(
@@ -111,6 +112,24 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
                     child: Text(
                       _selectedLang == 'en' ? 'Continue' : 'جاری رکھیں',
                       style: AppTextStyles.buttonText?.copyWith(fontSize: 16),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: GestureDetector(
+                  onTap: () => Get.toNamed('/login'),
+                  child: RichText(
+                    text: TextSpan(
+                      text: _selectedLang == 'en' ? 'Already have an account? ' : 'پہلے سے اکاؤنٹ ہے؟ ',
+                      style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                      children: [
+                        TextSpan(
+                          text: _selectedLang == 'en' ? 'Log In' : 'لاگ ان کریں',
+                          style: AppTextStyles.linkText,
+                        ),
+                      ],
                     ),
                   ),
                 ),

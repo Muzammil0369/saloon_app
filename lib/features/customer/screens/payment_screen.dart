@@ -155,9 +155,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
         child: GestureDetector(
           onTap: () {
+            // In a real flow, you would pass the generated booking ID and date/time here
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const SuccessScreen()),
+              MaterialPageRoute(builder: (context) => const SuccessScreen(
+                bookingId: 'PENDING-PAYMENT', // Placeholder
+                dateTime: 'N/A', // Placeholder
+              )),
             );
           },
           child: Container(

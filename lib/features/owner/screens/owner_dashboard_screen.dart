@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:get/get_core/src/get_main.dart';
-import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_gradients.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
-import 'package:saloon_app/features/owner/screens/owner_schedule_screen.dart';
+import 'package:saloon_app/core/services/auth_service.dart';
 
 class OwnerDashboardScreen extends StatefulWidget {
   final Function(int) onTabChange;
@@ -18,6 +18,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = ThemeHelper(context);
+    final ownerId = Get.find<AuthService>().uid;
 
     return Scaffold(
       backgroundColor: theme.lightPinkColor,
@@ -27,33 +28,39 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
         toolbarHeight: 60,
         automaticallyImplyLeading: false,
         centerTitle: false,
-        title: Row(
-          children: [
-            Container(
-              height: 48, width: 48,
-              decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(14)),
-              child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 24),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Royal Cuts', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
-                  Text('Peshawar, KPK', style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor)),
-                ],
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(color: AppColors.successBg, borderRadius: BorderRadius.circular(20)),
-              child: Row(children: [
-                const Icon(Icons.circle, color: AppColors.success, size: 6),
-                const SizedBox(width: 4),
-                Text('Open', style: AppTextStyles.label.copyWith(color: AppColors.success, fontWeight: FontWeight.w700)),
-              ]),
-            ),
-          ],
+        title: StreamBuilder<DocumentSnapshot>(
+          stream: FirebaseFirestore.instance.collection('owners').doc(ownerId).snapshots(),
+          builder: (context, snapshot) {
+            final data = snapshot.data?.data() as Map<String, dynamic>?;
+            return Row(
+              children: [
+                Container(
+                  height: 48, width: 48,
+                  decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(14)),
+                  child: const Icon(Icons.storefront_rounded, color: Colors.white, size: 24),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(data?['salonName'] ?? 'My Salon', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+                      Text(data?['address'] ?? 'Location', style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor)),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(color: AppColors.successBg, borderRadius: BorderRadius.circular(20)),
+                  child: Row(children: [
+                    const Icon(Icons.circle, color: AppColors.success, size: 6),
+                    const SizedBox(width: 4),
+                    Text(data?['isOpenNow'] == true ? 'Open' : 'Closed', style: AppTextStyles.label.copyWith(color: AppColors.success, fontWeight: FontWeight.w700)),
+                  ]),
+                ),
+              ],
+            );
+          }
         ),
       ),
       body: SafeArea(
@@ -63,55 +70,64 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Stats Strip
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(20)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    _statColumn('12', 'APPOINTMENTS'),
-                    Container(width: 1, height: 36, color: Colors.white.withOpacity(0.3)),
-                    _statColumn('8,400', 'REVENUE (Rs.)'),
-                    Container(width: 1, height: 36, color: Colors.white.withOpacity(0.3)),
-                    _statColumn('4.9★', 'RATING'),
-                  ],
-                ),
+              StreamBuilder<DocumentSnapshot>(
+                stream: FirebaseFirestore.instance.collection('owners').doc(ownerId).snapshots(),
+                builder: (context, snapshot) {
+                  final data = snapshot.data?.data() as Map<String, dynamic>?;
+                  return Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+                    decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(20)),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _statColumn((data?['totalBookings'] ?? 0).toString(), 'APPOINTMENTS'),
+                        Container(width: 1, height: 36, color: Colors.white.withOpacity(0.3)),
+                        _statColumn((data?['walletBalance'] ?? 0).toString(), 'REVENUE (PKR)'),
+                        Container(width: 1, height: 36, color: Colors.white.withOpacity(0.3)),
+                        _statColumn('${data?['rating'] ?? 0.0}★', 'RATING'),
+                      ],
+                    ),
+                  );
+                }
               ),
               const SizedBox(height: 20),
 
-              // Quick Actions Grid
-              GridView.count(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                crossAxisCount: 2,
-                crossAxisSpacing: 12,
-                mainAxisSpacing: 12,
-                childAspectRatio: 1.6,
-                children: [
-                  _gridItem(Icons.calendar_month_rounded, 'Schedule', Colors.blue, () => widget.onTabChange(1), theme),
-                  _gridItem(Icons.trending_up_rounded, 'Earnings', Colors.green, () => widget.onTabChange(2), theme),
-                  _gridItem(Icons.people_rounded, 'Staff', Colors.orange, () {
-                    Get.snackbar('Staff', 'Feature coming soon', backgroundColor: theme.cardColor, colorText: theme.textColor);
-                  }, theme),
-                  _gridItem(Icons.settings_rounded, 'Settings', Colors.purple, () => widget.onTabChange(3), theme),
-                ],
-              ),
-              const SizedBox(height: 20),
-
-              // Today's Queue Header
+              // Pending Requests Header
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("Today's Queue", style: AppTextStyles.headingLarge?.copyWith(fontSize: 16, color: theme.textColor)),
+                  Text("Pending Requests", style: AppTextStyles.headingLarge?.copyWith(fontSize: 16, color: theme.textColor)),
                   GestureDetector(onTap: () => widget.onTabChange(1), child: Text('Manage All', style: AppTextStyles.linkText)),
                 ],
               ),
               const SizedBox(height: 12),
 
-              _appointmentCard('10:00', 'AM', 'Ali Hassan', 'Haircut + Beard · Rs.700', theme),
-              _appointmentCard('11:30', 'AM', 'Sara Khan', 'Bridal Package · Rs.8,000', theme),
-              _appointmentCard('2:00', 'PM', 'Bilal Ahmad', 'Facial · Rs.800', theme),
+              // Booking Stream
+              StreamBuilder<QuerySnapshot>(
+                stream: FirebaseFirestore.instance
+                    .collection('bookings')
+                    .where('ownerId', isEqualTo: ownerId)
+                    .where('status', isEqualTo: 'pending')
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) return Text('Error: ${snapshot.error}');
+                  if (snapshot.connectionState == ConnectionState.waiting) return const CircularProgressIndicator();
+                  
+                  final docs = snapshot.data!.docs;
+                  if (docs.isEmpty) return const Text('No pending requests');
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: docs.length,
+                    itemBuilder: (context, index) {
+                      final data = docs[index].data() as Map<String, dynamic>;
+                      return _appointmentCard(data, theme, docs[index].id);
+                    },
+                  );
+                },
+              ),
             ],
           ),
         ),
@@ -127,85 +143,61 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
     ]);
   }
 
-  Widget _gridItem(IconData icon, String label, Color color, VoidCallback onTap, ThemeHelper theme) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: theme.isDark ? color.withOpacity(0.1) : color.withOpacity(0.05),
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 28, color: color),
-            const SizedBox(height: 8),
-            Text(label, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: theme.textColor)),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _appointmentCard(Map<String, dynamic> data, ThemeHelper theme, String docId) {
+    final date = (data['date'] as Timestamp).toDate();
+    final time = data['timeSlot'] ?? '';
+    final name = data['customerName'] ?? 'Customer';
+    final service = (data['services'] as List).isNotEmpty ? data['services'][0]['name'] : 'Service';
 
-  Widget _appointmentCard(String time, String ampm, String name, String service, ThemeHelper theme) {
-    bool isVisible = true;
-    return StatefulBuilder(
-      builder: (context, setLocalState) {
-        if (!isVisible) return const SizedBox.shrink();
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: BorderRadius.circular(14),
-            boxShadow: [theme.softShadow],
-          ),
-          child: Row(children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(10)),
-              child: Column(children: [
-                Text(time, style: AppTextStyles.headingSmall?.copyWith(color: AppColors.primaryPink)),
-                Text(ampm, style: AppTextStyles.label?.copyWith(color: AppColors.primaryPink)),
-              ]),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(name, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: theme.textColor)),
-                const SizedBox(height: 2),
-                Text(service, style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor)),
-              ]),
-            ),
-            GestureDetector(
-              onTap: () {
-                Get.snackbar('Accepted', 'Appointment for $name confirmed!', 
-                  backgroundColor: AppColors.success, colorText: Colors.white);
-                setLocalState(() => isVisible = false);
-              },
-              child: Container(
-                width: 34, height: 34,
-                decoration: BoxDecoration(color: AppColors.successBg, borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.check_rounded, size: 18, color: AppColors.success),
-              ),
-            ),
-            const SizedBox(width: 8),
-            GestureDetector(
-              onTap: () {
-                Get.snackbar('Rejected', 'Appointment for $name cancelled', 
-                  backgroundColor: Colors.redAccent, colorText: Colors.white);
-                setLocalState(() => isVisible = false);
-              },
-              child: Container(
-                width: 34, height: 34,
-                decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(8)),
-                child: const Icon(Icons.close_rounded, size: 18, color: AppColors.primaryPink),
-              ),
-            ),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [theme.softShadow],
+      ),
+      child: Row(children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(10)),
+          child: Column(children: [
+            Text(time.split(' ')[0], style: AppTextStyles.headingSmall?.copyWith(color: AppColors.primaryPink)),
+            Text(time.split(' ')[1], style: AppTextStyles.label?.copyWith(color: AppColors.primaryPink)),
           ]),
-        );
-      }
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: theme.textColor)),
+            const SizedBox(height: 2),
+            Text(service, style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor)),
+          ]),
+        ),
+        GestureDetector(
+          onTap: () async {
+            await FirebaseFirestore.instance.collection('bookings').doc(docId).update({'status': 'confirmed'});
+            Get.snackbar('Accepted', 'Booking confirmed!', backgroundColor: AppColors.success, colorText: Colors.white);
+          },
+          child: Container(
+            width: 34, height: 34,
+            decoration: BoxDecoration(color: AppColors.successBg, borderRadius: BorderRadius.circular(8)),
+            child: const Icon(Icons.check_rounded, size: 18, color: AppColors.success),
+          ),
+        ),
+        const SizedBox(width: 8),
+        GestureDetector(
+          onTap: () async {
+            await FirebaseFirestore.instance.collection('bookings').doc(docId).update({'status': 'cancelled'});
+            Get.snackbar('Rejected', 'Booking rejected', backgroundColor: Colors.redAccent, colorText: Colors.white);
+          },
+          child: Container(
+            width: 34, height: 34,
+            decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(8)),
+            child: const Icon(Icons.close_rounded, size: 18, color: AppColors.primaryPink),
+          ),
+        ),
+      ]),
     );
   }
 }

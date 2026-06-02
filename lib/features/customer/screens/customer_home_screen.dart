@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_gradients.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
+import 'package:saloon_app/core/controllers/user_controller.dart';
 import 'package:saloon_app/features/customer/screens/notifications_screen.dart';
 import 'package:saloon_app/features/customer/screens/salon_detail_screen.dart';
+import 'package:saloon_app/shared/widgets/salon_card.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
   final Function(int) onTabChange;
@@ -17,8 +21,10 @@ class CustomerHomeScreen extends StatefulWidget {
 }
 
 class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
-  final String userName = 'Muzammil';
+  final userController = Get.find<UserController>();
   int _selectedCategory = 0;
+  List<Map<String, dynamic>> _salons = [];
+  bool _isLoading = true;
 
   String get greeting {
     final hour = DateTime.now().hour;
@@ -36,11 +42,54 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     {'name': 'Hair Color', 'icon': Icons.colorize_rounded},
   ];
 
-  final List<Map<String, dynamic>> topSalons = [
-    {'name': 'Royal Cuts Studio', 'distance': '0.3 km', 'status': 'Open', 'price': '500', 'rating': 4.9},
-    {'name': 'Glamour Zone',      'distance': '0.7 km', 'status': 'Open', 'price': '800', 'rating': 4.8},
-    {'name': 'The Barber Guild',  'distance': '1.2 km', 'status': 'Open', 'price': '600', 'rating': 4.7},
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchRealSalons();
+  }
+
+  Future<void> _fetchRealSalons() async {
+    try {
+      // Get user location
+      Position? userPos;
+      try {
+        userPos = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.medium);
+      } catch (e) {
+        debugPrint('Location error: $e');
+      }
+
+      final snapshot = await FirebaseFirestore.instance.collection('owners').get();
+      setState(() {
+        _salons = snapshot.docs.map((doc) {
+          final data = doc.data();
+          final GeoPoint? salonLoc = data['location'];
+          String distanceText = 'N/A';
+          
+          if (userPos != null && salonLoc != null) {
+            final double distInMeters = Geolocator.distanceBetween(
+              userPos.latitude, userPos.longitude,
+              salonLoc.latitude, salonLoc.longitude,
+            );
+            distanceText = '${(distInMeters / 1000).toStringAsFixed(1)} km';
+          }
+
+          return {
+            'name': data['salonName'] ?? 'Unnamed Salon',
+            'rating': data['rating']?.toDouble() ?? 4.5,
+            'status': data['isOpenNow'] == true ? 'Open' : 'Closed',
+            'price': '500', 
+            'distance': distanceText,
+            'imageUrl': data['salonPhotos'] != null && (data['salonPhotos'] as List).isNotEmpty 
+                ? (data['salonPhotos'] as List).first : null,
+          };
+        }).toList();
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error fetching salons: $e');
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +117,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(greeting, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-                            Text('$userName!', style: AppTextStyles.displayMedium?.copyWith(color: theme.textColor, fontWeight: FontWeight.w800)),
+                            Obx(() => Text('${userController.userName.value}!', style: AppTextStyles.displayMedium?.copyWith(color: theme.textColor, fontWeight: FontWeight.w800))),
                           ],
                         ),
                       ),
@@ -195,17 +244,22 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Top Salons
+                    // Real Salons
                     _sectionHeader('Top Rated Near You', () => widget.onTabChange(1), theme),
                     const SizedBox(height: 16),
-                    ListView.builder(
+                    _isLoading
+                        ? const Center(child: CircularProgressIndicator(color: AppColors.primaryPink))
+                        : ListView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       padding: const EdgeInsets.symmetric(horizontal: 20),
-                      itemCount: topSalons.length,
+                      itemCount: _salons.length,
                       itemBuilder: (context, index) {
-                        final salon = topSalons[index];
-                        return _salonCard(salon, theme);
+                        final salon = _salons[index];
+                        return SalonCard(
+                          salon: salon,
+                          onTap: () => Get.to(() => SalonDetailScreen(salon: salon)),
+                        );
                       },
                     ),
                   ],
@@ -244,64 +298,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           borderRadius: BorderRadius.circular(12),
         ),
         child: Icon(icon, color: AppColors.primaryPink, size: 22),
-      ),
-    );
-  }
-
-  Widget _salonCard(Map<String, dynamic> salon, ThemeHelper theme) {
-    return GestureDetector(
-      onTap: () => Get.to(() => SalonDetailScreen(salon: salon)),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [theme.softShadow],
-        ),
-        child: Row(
-          children: [
-            Container(
-              height: 80, width: 80,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                image: const DecorationImage(image: AssetImage('assets/slide1.png'), fit: BoxFit.cover),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(salon['name'], style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
-                      Row(
-                        children: [
-                          const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
-                          Text('${salon['rating']}', style: AppTextStyles.label.copyWith(fontWeight: FontWeight.bold)),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text('Starting from Rs. ${salon['price']}', style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on_rounded, size: 12, color: AppColors.primaryPink),
-                      const SizedBox(width: 4),
-                      Text(salon['distance'], style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-                      const Spacer(),
-                      Text('Book Now', style: AppTextStyles.label.copyWith(color: AppColors.primaryPink, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

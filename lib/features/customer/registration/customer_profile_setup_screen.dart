@@ -6,6 +6,7 @@ import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/services/auth_service.dart';
 import 'package:saloon_app/core/services/database_service.dart';
 import 'package:saloon_app/features/customer/customer_main_wrapper.dart';
+import 'package:saloon_app/core/controllers/user_controller.dart';
 import 'package:saloon_app/shared/widgets/app_button.dart';
 import 'package:saloon_app/shared/widgets/progress_step_bar.dart';
 
@@ -39,7 +40,8 @@ class _CustomerProfileSetupScreenState extends State<CustomerProfileSetupScreen>
         'createdAt': DateTime.now(),
       });
       
-      Get.offAllNamed('/customer-home');
+      Get.put(UserController());
+      Get.offAllNamed('/login');
     } catch (e) {
       Get.snackbar('Error', 'Failed to save profile. Please try again.', 
         backgroundColor: Colors.redAccent, colorText: Colors.white, snackPosition: SnackPosition.BOTTOM);
@@ -66,9 +68,10 @@ class _CustomerProfileSetupScreenState extends State<CustomerProfileSetupScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ProgressStepBar(totalSteps: 3, currentStep: 3),
+              const ProgressStepBar(totalSteps: 2, currentStep: 2),
               const SizedBox(height: 30),
-              
+
+
               Text('Complete Your Profile ✨',
                 style: AppTextStyles.displayLarge?.copyWith(fontSize: 24, color: theme.textColor),
               ),

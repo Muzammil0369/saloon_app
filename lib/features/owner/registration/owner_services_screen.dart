@@ -7,7 +7,8 @@ import 'package:saloon_app/shared/widgets/app_button.dart';
 import 'package:saloon_app/shared/widgets/progress_step_bar.dart';
 
 class OwnerServicesScreen extends StatefulWidget {
-  const OwnerServicesScreen({super.key});
+  final Map<String, dynamic> salonData;
+  const OwnerServicesScreen({super.key, required this.salonData});
 
   @override
   State<OwnerServicesScreen> createState() => _OwnerServicesScreenState();
@@ -86,7 +87,11 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
               AppButton(
                 label: 'Save & Next',
                 onTap: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const OwnerDocumentsScreen()));
+                  final updatedSalonData = {
+                    ...widget.salonData,
+                    'services': services,
+                  };
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => OwnerDocumentsScreen(salonData: updatedSalonData)));
                 },
               ),
             ],
@@ -120,7 +125,7 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.edit_outlined, size: 20, color: AppColors.primaryPink),
-            onPressed: () {},
+            onPressed: () => _editService(service),
           ),
           IconButton(
             icon: const Icon(Icons.delete_outline_rounded, size: 20, color: Colors.redAccent),
@@ -130,6 +135,49 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _editService(Map<String, String> service) {
+    final nameCtrl = TextEditingController(text: service['name']);
+    final priceCtrl = TextEditingController(text: service['price']);
+    final durCtrl = TextEditingController(text: service['duration']);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        final theme = ThemeHelper(context);
+        return Container(
+          padding: EdgeInsets.only(left: 24, right: 24, top: 24, bottom: MediaQuery.of(context).viewInsets.bottom + 24),
+          decoration: BoxDecoration(color: theme.cardColor, borderRadius: const BorderRadius.vertical(top: Radius.circular(30))),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Edit Service', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+              const SizedBox(height: 20),
+              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
+              const SizedBox(height: 12),
+              TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: 'Price (Rs)')),
+              const SizedBox(height: 12),
+              TextField(controller: durCtrl, decoration: const InputDecoration(labelText: 'Duration (min)')),
+              const SizedBox(height: 20),
+              AppButton(
+                label: 'Save Changes',
+                onTap: () {
+                  setState(() {
+                    service['name'] = nameCtrl.text;
+                    service['price'] = priceCtrl.text;
+                    service['duration'] = durCtrl.text;
+                  });
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

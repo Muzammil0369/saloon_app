@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -7,6 +8,7 @@ import 'package:http/http.dart' as http;
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_helper.dart';
+import '../../../shared/widgets/salon_card.dart';
 import 'salon_detail_screen.dart';
 
 class ExploreScreen extends StatefulWidget {
@@ -37,17 +39,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     zoom: 13,
   );
 
-  // Fallback local salons when API fails
-  final List<Map<String, dynamic>> _localSalons = [
-    {'name': 'Hair Focus Salon',      'distance': '1.2 km', 'distanceValue': 1.2, 'rating': 4.5, 'status': 'Open',   'price': 'Rs.500',   'category': 'Haircut', 'lat': 34.0100, 'lng': 71.5600},
-    {'name': 'Gents Hair Salon',      'distance': '1.5 km', 'distanceValue': 1.5, 'rating': 4.3, 'status': 'Open',   'price': 'Rs.300',   'category': 'Beard',   'lat': 34.0050, 'lng': 71.5400},
-    {'name': 'New Look Beauty Parlor','distance': '2.0 km', 'distanceValue': 2.0, 'rating': 4.6, 'status': 'Open',   'price': 'Rs.800',   'category': 'Facial',  'lat': 33.9900, 'lng': 71.5550},
-    {'name': 'Royal Barbers',         'distance': '2.5 km', 'distanceValue': 2.5, 'rating': 4.4, 'status': 'Open',   'price': 'Rs.400',   'category': 'Haircut', 'lat': 34.0200, 'lng': 71.5350},
-    {'name': 'Golden Scissors',       'distance': '2.8 km', 'distanceValue': 2.8, 'rating': 4.2, 'status': 'Closed', 'price': 'Rs.350',   'category': 'Haircut', 'lat': 33.9980, 'lng': 71.5500},
-    {'name': 'Elite Hair Studio',     'distance': '3.2 km', 'distanceValue': 3.2, 'rating': 4.7, 'status': 'Open',   'price': 'Rs.1,000', 'category': 'Bridal',  'lat': 34.0300, 'lng': 71.5450},
-    {'name': 'Star Beauty Salon',     'distance': '3.5 km', 'distanceValue': 3.5, 'rating': 4.1, 'status': 'Open',   'price': 'Rs.450',   'category': 'Facial',  'lat': 33.9950, 'lng': 71.5420},
-    {'name': 'Modern Cuts',           'distance': '4.0 km', 'distanceValue': 4.0, 'rating': 4.8, 'status': 'Open',   'price': 'Rs.700',   'category': 'Haircut', 'lat': 34.0150, 'lng': 71.5700},
-  ];
+  // Fallback local salons removed — only real Firestore data is now used.
 
   @override
   void initState() {
@@ -57,17 +49,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
   // ── Get real user location ──
   Future<void> _initLocation() async {
-    debugPrint('=== _initLocation started ===');
     try {
       final enabled = await Geolocator.isLocationServiceEnabled();
-      debugPrint('Location enabled: $enabled');
-      // check service
       if (!await Geolocator.isLocationServiceEnabled()) {
         _loadFallback('Location services disabled');
         return;
       }
 
-      // check permission
       LocationPermission perm = await Geolocator.checkPermission();
       if (perm == LocationPermission.denied) {
         perm = await Geolocator.requestPermission();
@@ -78,7 +66,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
         return;
       }
 
-      // get position
       final pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
@@ -86,7 +73,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
       if (!mounted) return;
       setState(() => _userLatLng = LatLng(pos.latitude, pos.longitude));
 
-      // move camera to user
       try {
         final ctrl = await _mapController.future
             .timeout(const Duration(seconds: 5));
@@ -97,8 +83,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         debugPrint('Map controller timeout: $e');
       }
 
-      // fetch from API — if fails use local
-      await _fetchFromApi(pos);
+      await _fetchSalonsFromFirestore();
 
     } catch (e) {
       debugPrint('Location error: $e');
@@ -106,105 +91,59 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
   }
 
-  // ── TomTom API — tries 3 queries ──
-  Future<void> _fetchFromApi(Position pos) async {
-    final queries = ['salon', 'barber', 'beauty parlour'];
+  Future<void> _fetchSalonsFromFirestore() async {
+    try {
+      // Ensure we have user location before fetching
+      if (_userLatLng == null) await _initLocation();
+      if (_userLatLng == null) return;
 
-    for (final query in queries) {
-      try {
-        final url = Uri.parse(
-          'https://api.tomtom.com/search/2/search/${Uri.encodeComponent(query)}.json'
-              '?lat=${pos.latitude}&lon=${pos.longitude}'
-              '&radius=10000&limit=15&key=$_apiKey',
+      final snapshot = await FirebaseFirestore.instance.collection('owners').get();
+      
+      final List<Map<String, dynamic>> salons = snapshot.docs.map((doc) {
+        final data = doc.data();
+        final GeoPoint location = data['location'];
+        
+        // Calculate real distance
+        final double distInMeters = Geolocator.distanceBetween(
+          _userLatLng!.latitude, _userLatLng!.longitude,
+          location.latitude, location.longitude,
         );
+        final double distKm = distInMeters / 1000;
 
-        debugPrint('TomTom query: $query');
-        final res = await http.get(url).timeout(const Duration(seconds: 10));
-        debugPrint('Status: ${res.statusCode}');
+        return {
+          'name': data['salonName'] ?? 'Unnamed Salon',
+          'distance': '${distKm.toStringAsFixed(1)} km',
+          'distanceValue': distKm,
+          'rating': data['rating']?.toDouble() ?? 4.5,
+          'status': data['isOpenNow'] == true ? 'Open' : 'Closed',
+          'price': 'Rs.500', 
+          'category': 'Haircut',
+          'lat': location.latitude,
+          'lng': location.longitude,
+          'address': data['address'] ?? '',
+        };
+      }).toList();
 
-        if (res.statusCode == 200) {
-          final data = json.decode(res.body);
-          final results = data['results'] as List?;
-          debugPrint('Found: ${results?.length ?? 0} for $query');
+      // Sort by distance
+      salons.sort((a, b) => (a['distanceValue'] as double).compareTo(b['distanceValue'] as double));
 
-          if (results != null && results.isNotEmpty) {
-            for (final r in results) {
-              final pos2   = r['position'];
-              final addr   = r['address'];
-              final name   = r['poi']?['name'] ?? 'Salon';
-
-              // skip duplicates
-              if (_salons.any((s) => s['name'] == name)) continue;
-
-              // dist comes as int or double — use num cast
-              final distRaw    = r['dist'];
-              final distMeters = distRaw != null
-                  ? (distRaw as num).toDouble()
-                  : Geolocator.distanceBetween(
-                pos.latitude, pos.longitude,
-                (pos2?['lat'] as num?)?.toDouble() ?? pos.latitude,
-                (pos2?['lon'] as num?)?.toDouble() ?? pos.longitude,
-              );
-
-              final distKm = distMeters / 1000;
-
-              _salons.add({
-                'name':          name,
-                'distance':      '${distKm.toStringAsFixed(1)} km',
-                'distanceValue': distKm,
-                'rating':        4.0 + (_salons.length % 10) * 0.1,
-                'status':        'Open',
-                'price':         'Rs.500',
-                'category':      'Haircut',
-                'lat':           (pos2?['lat'] as num?)?.toDouble() ?? pos.latitude,
-                'lng':           (pos2?['lon'] as num?)?.toDouble() ?? pos.longitude,
-                'address':       addr?['freeformAddress'] ?? '',
-              });
-            }
-          }
-        }
-      } catch (e) {
-        debugPrint('Query error ($query): $e');
+      if (mounted) {
+        setState(() {
+          _salons.clear();
+          _salons.addAll(salons);
+          _isLoading = false;
+        });
+        _addMarkers();
       }
-    }
-
-    if (_salons.isNotEmpty) {
-      _salons.sort((a, b) =>
-          (a['distanceValue'] as double).compareTo(b['distanceValue'] as double));
-      _finishLoading();
-    } else {
-      debugPrint('All queries failed — using local fallback');
-      _loadFallbackWithRealDistance(pos);
+    } catch (e) {
+      debugPrint('Firestore fetch error: $e');
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  // ── Load fallback with real distance calculation ──
-  void _loadFallbackWithRealDistance(Position userPos) {
-    _salons.clear();
-    for (final s in _localSalons) {
-      // calculate real distance from user position
-      final realDist = Geolocator.distanceBetween(
-        userPos.latitude,
-        userPos.longitude,
-        s['lat'],
-        s['lng'],
-      ) / 1000;
-
-      _salons.add({
-        ...s,
-        'distance':      '${realDist.toStringAsFixed(1)} km',
-        'distanceValue': realDist,
-      });
-    }
-    // sort by real distance
-    _salons.sort((a, b) =>
-        (a['distanceValue'] as double)
-            .compareTo(b['distanceValue'] as double));
-    _finishLoading();
-  }
+  // ── Helper methods removed as fallback is no longer used ──
 
   void _loadFallback(String error) {
-    _salons.addAll(_localSalons);
     if (mounted) {
       setState(() {
         _isLoading = false;
@@ -394,266 +333,105 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
             // ── Body ──
             Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
-
-                    // salon count
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(
-                          20, 16, 20, 10),
-                      child: Row(
-                        mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            '${_filtered.length} Salons Nearby',
-                            style: AppTextStyles.headingSmall.copyWith(color: theme.textColor),
+              child: Column(
+                children: [
+                  // salon count
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          '${_filtered.length} Salons Nearby',
+                          style: AppTextStyles.headingSmall.copyWith(color: theme.textColor),
+                        ),
+                        if (_errorMessage != null)
+                          Row(
+                            children: [
+                              Icon(Icons.info_outline_rounded,
+                                  size: 13, color: theme.mutedTextColor),
+                              const SizedBox(width: 4),
+                              Text('Showing local data', style: AppTextStyles.label),
+                            ],
                           ),
-                          if (_errorMessage != null)
-                            Row(
-                              children: [
-                                Icon(
-                                    Icons.info_outline_rounded,
-                                    size: 13,
-                                    color: theme.mutedTextColor),
-                                const SizedBox(width: 4),
-                                Text('Showing local data',
-                                    style: AppTextStyles.label),
-                              ],
-                            ),
-                        ],
-                      ),
+                      ],
                     ),
+                  ),
 
-                    // ── Google Map ──
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(16),
-                        child: SizedBox(
-                          height: 180,
-                          child: GoogleMap(
-                            initialCameraPosition: _userLatLng != null
-                                ? CameraPosition(
-                                target: _userLatLng!, zoom: 14)
-                                : _defaultPosition,
-                            markers: _markers,
-                            onMapCreated: (c) =>
-                                _mapController.complete(c),
-                            myLocationEnabled: false,
-                            zoomControlsEnabled: false,
-                            mapToolbarEnabled: false,
-                          ),
+                  // ── Google Map ──
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: SizedBox(
+                        height: 180,
+                        child: GoogleMap(
+                          initialCameraPosition: _userLatLng != null
+                              ? CameraPosition(target: _userLatLng!, zoom: 14)
+                              : _defaultPosition,
+                          markers: _markers,
+                          onMapCreated: (c) => _mapController.complete(c),
+                          myLocationEnabled: false,
+                          zoomControlsEnabled: true,
+                          mapToolbarEnabled: true,
+                          scrollGesturesEnabled: true,
+                          zoomGesturesEnabled: true,
+                          rotateGesturesEnabled: true,
+                          tiltGesturesEnabled: true,
                         ),
                       ),
                     ),
+                  ),
 
-                    const SizedBox(height: 16),
+                  const SizedBox(height: 16),
 
-                    // results header
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20),
-                      child: Row(
-                        mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                              'Results (${_filtered.length})',
-                              style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
-                          Row(
-                            children: [
-                              Icon(Icons.sort_rounded,
-                                  size: 16,
-                                  color: theme.mutedTextColor),
-                              const SizedBox(width: 4),
-                              Text('Sort',
-                                  style: AppTextStyles.linkText),
-                            ],
-                          ),
-                        ],
-                      ),
+                  // results header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Results (${_filtered.length})',
+                          style: AppTextStyles.headingSmall.copyWith(color: theme.textColor),
+                        ),
+                        Row(
+                          children: [
+                            Icon(Icons.sort_rounded, size: 16, color: theme.mutedTextColor),
+                            const SizedBox(width: 4),
+                            Text('Sort', style: AppTextStyles.linkText),
+                          ],
+                        ),
+                      ],
                     ),
+                  ),
 
-                    const SizedBox(height: 12),
+                  const SizedBox(height: 12),
 
-                    // salon list
-                    _isLoading
-                        ? Padding(
-                          padding: const EdgeInsets.only(top: 140),
-                          child: const Center(
-                          child: CircularProgressIndicator(
-                              color: AppColors.primaryPink)),
-                        )
+                  // salon list - THIS IS THE SCROLLABLE PART
+                  Expanded(
+                    child: _isLoading
+                        ? const Center(
+                      child: CircularProgressIndicator(color: AppColors.primaryPink),
+                    )
                         : ListView.builder(
-                      shrinkWrap: true,
-                      physics:
-                      const NeverScrollableScrollPhysics(),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       itemCount: _filtered.length,
                       itemBuilder: (context, index) {
                         final salon = _filtered[index];
-                        return GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => SalonDetailScreen(salon: salon),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(
-                                bottom: 12),
-                            padding: const EdgeInsets.all(14),
-                            decoration: BoxDecoration(
-                              color: theme.cardColor,
-                              borderRadius:
-                              BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primaryPink
-                                      .withOpacity(0.05),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                // thumb
-                                Container(
-                                  height: 68,
-                                  width: 68,
-                                  decoration: BoxDecoration(
-                                    color: theme.lightPinkColor,
-                                    borderRadius:
-                                    BorderRadius.circular(
-                                        14),
-                                  ),
-                                  child: const Icon(
-                                    Icons.content_cut_rounded,
-                                    size: 28,
-                                    color: AppColors.primaryPink,
-                                  ),
-                                ),
-                                const SizedBox(width: 14),
-                                // info
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                    CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        salon['name'] ?? '',
-                                        style: AppTextStyles
-                                            .cardTitle.copyWith(color: theme.textColor),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                              Icons
-                                                  .location_on_outlined,
-                                              size: 12,
-                                              color: AppColors
-                                                  .mutedText),
-                                          const SizedBox(
-                                              width: 2),
-                                          Text(
-                                              salon['distance'] ??
-                                                  '',
-                                              style: AppTextStyles
-                                                  .label),
-                                          const SizedBox(
-                                              width: 6),
-                                          const Icon(
-                                              Icons.star_rounded,
-                                              size: 12,
-                                              color: Colors.amber),
-                                          const SizedBox(
-                                              width: 2),
-                                          Text(
-                                            salon['rating']
-                                                ?.toStringAsFixed(
-                                                1) ??
-                                                '4.5',
-                                            style: AppTextStyles
-                                                .label
-                                                .copyWith(
-                                                fontWeight:
-                                                FontWeight
-                                                    .w600),
-                                          ),
-                                          const SizedBox(
-                                              width: 6),
-                                          Container(
-                                            height: 6,
-                                            width: 6,
-                                            decoration:
-                                            BoxDecoration(
-                                              shape:
-                                              BoxShape.circle,
-                                              color: salon[
-                                              'status'] ==
-                                                  'Open'
-                                                  ? AppColors
-                                                  .success
-                                                  : Colors.red,
-                                            ),
-                                          ),
-                                          const SizedBox(
-                                              width: 3),
-                                          Text(
-                                            salon['status'] ??
-                                                'Open',
-                                            style: AppTextStyles
-                                                .label
-                                                .copyWith(
-                                              color: salon['status'] ==
-                                                  'Open'
-                                                  ? AppColors
-                                                  .success
-                                                  : Colors.red,
-                                              fontWeight:
-                                              FontWeight.w600,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 6),
-                                      Text(
-                                        'From ${salon['price'] ?? 'Rs.500'}',
-                                        style: AppTextStyles
-                                            .bodyMedium
-                                            .copyWith(
-                                          fontWeight:
-                                          FontWeight.w700,
-                                          color:
-                                          AppColors.primaryPink,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Icon(
-                                    Icons
-                                        .arrow_forward_ios_rounded,
-                                    size: 14,
-                                    color: theme.mutedTextColor),
-                              ],
+                        return SalonCard(
+                          salon: salon,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SalonDetailScreen(salon: salon),
                             ),
                           ),
                         );
                       },
                     ),
-
-                    const SizedBox(height: 20),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ],

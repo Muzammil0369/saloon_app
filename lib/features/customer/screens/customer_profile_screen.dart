@@ -1,13 +1,16 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:saloon_app/features/customer/screens/saved_addresses_screen.dart';
+import 'package:saloon_app/core/controllers/user_controller.dart';
+import '../../../core/services/auth_service.dart';
+import '../../../core/services/database_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_text_styles.dart';
-import '../../../core/theme/theme_helper.dart';
 import '../../../core/theme/theme_controller.dart';
-import '../customer_main_wrapper.dart';
+import '../../../core/theme/theme_helper.dart';
 import 'favourite_salons_screen.dart';
-import 'saved_addresses_screen.dart';
 import 'help_support_screen.dart';
 
 class CustomerProfileScreen extends StatefulWidget {
@@ -18,10 +21,9 @@ class CustomerProfileScreen extends StatefulWidget {
 }
 
 class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
+  final userController = Get.find<UserController>();
   bool _notificationsOn = true;
   bool _darkModeOn = false;
-  String _userName = 'Muzammil Khan';
-  String _userPhone = '+92 300 1234567';
 
   @override
   void initState() {
@@ -30,7 +32,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
   }
 
   void _showEditProfile() {
-    final TextEditingController nameCtrl = TextEditingController(text: _userName);
+    final TextEditingController nameCtrl = TextEditingController(text: userController.userName.value);
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -73,8 +75,17 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                 width: double.infinity,
                 height: 52,
                 child: ElevatedButton(
-                  onPressed: () {
-                    setState(() => _userName = nameCtrl.text);
+                  onPressed: () async {
+                    final newName = nameCtrl.text.trim();
+                    if (newName.isNotEmpty) {
+                      // 1. Update Firestore
+                      final uid = FirebaseAuth.instance.currentUser?.uid;
+                      if (uid != null) {
+                        await Get.find<DatabaseService>().saveUserProfile(uid, {'name': newName});
+                        // 2. Update local state
+                        userController.userName.value = newName;
+                      }
+                    }
                     Navigator.pop(context);
                     Get.snackbar('Profile Updated', 'Your changes have been saved.',
                         backgroundColor: AppColors.success, colorText: Colors.white);
@@ -102,7 +113,10 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         actions: [
           TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
-            onPressed: () => Get.offAllNamed('/'),
+            onPressed: () async {
+              await Get.find<AuthService>().logout();
+              Get.offAllNamed('/auth-gate');
+            },
             child: const Text('Logout', style: TextStyle(color: Colors.redAccent)),
           ),
         ],
@@ -164,9 +178,9 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(_userName, style: AppTextStyles.headingMedium?.copyWith(color: theme.textColor)),
+                            Obx(() => Text(userController.userName.value, style: AppTextStyles.headingMedium?.copyWith(color: theme.textColor))),
                             const SizedBox(height: 2),
-                            Text(_userPhone, style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor)),
+                            Obx(() => Text(userController.userEmail.value, style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor))),
                           ],
                         ),
                       ),

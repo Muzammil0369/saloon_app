@@ -1,22 +1,68 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
-import 'package:saloon_app/features/owner/owner_main_wrapper.dart';
+import 'package:saloon_app/core/services/auth_service.dart';
+import 'package:saloon_app/core/services/database_service.dart';
 import 'package:saloon_app/shared/widgets/app_button.dart';
 import 'package:saloon_app/shared/widgets/progress_step_bar.dart';
 
 class OwnerReviewScreen extends StatefulWidget {
-  const OwnerReviewScreen({super.key});
+  final Map<String, dynamic> salonData;
+  const OwnerReviewScreen({super.key, required this.salonData});
 
   @override
   State<OwnerReviewScreen> createState() => _OwnerReviewScreenState();
 }
 
 class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
+  bool _isLoading = false;
+
+  void _submitVerification() async {
+    setState(() => _isLoading = true);
+    
+    final authService = Get.find<AuthService>();
+    final dbService = Get.find<DatabaseService>();
+    final uid = authService.uid;
+
+    if (uid != null) {
+      try {
+        final location = GeoPoint(widget.salonData['lat'], widget.salonData['lng']);
+        await dbService.registerSalon(uid, widget.salonData, location);
+        
+        setState(() => _isLoading = false);
+        
+        Get.dialog(
+          AlertDialog(
+            title: const Text('Request Submitted'),
+            content: const Text('Your shop registration request is under verification. It may take 24 to 48 hours to complete. You will be notified via SMS/App when approved.'),
+            actions: [
+              TextButton(
+                onPressed: () => Get.offAllNamed('/login'),
+                child: const Text('OK'),
+              ),
+            ],
+          ),
+        );
+      } catch (e) {
+        setState(() => _isLoading = false);
+        Get.snackbar('Error', 'Failed to submit registration: $e', backgroundColor: Colors.redAccent, colorText: Colors.white);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ThemeHelper(context);
+
+    // Prepare list for UI
+    final List<Map<String, String>> items = [
+      {'label': 'Salon Name', 'value': widget.salonData['salonName']},
+      {'label': 'Address', 'value': widget.salonData['address']},
+      {'label': 'Services Count', 'value': (widget.salonData['services'] as List).length.toString()},
+    ];
 
     return Scaffold(
       backgroundColor: theme.lightPinkColor,
@@ -39,84 +85,35 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
               const ProgressStepBar(totalSteps: 6, currentStep: 6),
               const SizedBox(height: 30),
 
-              Text('Final Review 🧐',
+              Text('Review Details 📝',
                 style: AppTextStyles.displayLarge?.copyWith(fontSize: 25, color: theme.textColor),
               ),
-              const SizedBox(height: 8),
-              Text('Double check your information before going live',
-                  style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor)),
-              
               const SizedBox(height: 30),
-
-              _reviewSection('Salon Profile', [
-                {'label': 'Name', 'value': 'Royal Cuts Studio'},
-                {'label': 'Address', 'value': 'Peshawar Cantt'},
-              ], theme),
               
-              const SizedBox(height: 16),
-              
-              _reviewSection('Services', [
-                {'label': 'Haircut', 'value': 'Rs. 500'},
-                {'label': 'Beard Trim', 'value': 'Rs. 300'},
-              ], theme),
-              
-              const SizedBox(height: 16),
-              
-              _reviewSection('Documents', [
-                {'label': 'CNIC', 'value': 'Uploaded'},
-                {'label': 'Interior Photo', 'value': 'Uploaded'},
-              ], theme),
+              ...items.map((item) => Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(16)),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(item['label']!, style: AppTextStyles.bodySmall?.copyWith(color: theme.mutedTextColor)),
+                    Text(item['value']!, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+                  ],
+                ),
+              )),
               
               const SizedBox(height: 40),
 
-              AppButton(
-                label: 'Confirm & Go Live',
-                onTap: () {
-                  Navigator.pushAndRemoveUntil(
-                    context,
-                    MaterialPageRoute(builder: (context) => const OwnerMainWrapper()),
-                    (route) => false,
-                  );
-                },
+              _isLoading 
+              ? const Center(child: CircularProgressIndicator(color: AppColors.primaryPink))
+              : AppButton(
+                label: 'Verify',
+                onTap: _submitVerification,
               ),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _reviewSection(String title, List<Map<String, String>> items, ThemeHelper theme) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: theme.borderColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(title, style: AppTextStyles.headingSmall?.copyWith(color: AppColors.primaryPink)),
-              const Icon(Icons.check_circle_rounded, color: AppColors.success, size: 20),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ...items.map((item) => Padding(
-            padding: const EdgeInsets.only(bottom: 8),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(item['label']!, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-                Text(item['value']!, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
-              ],
-            ),
-          )),
-        ],
       ),
     );
   }

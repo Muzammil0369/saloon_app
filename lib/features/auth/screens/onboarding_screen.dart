@@ -1,10 +1,16 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/features/auth/screens/role_select_screen.dart';
+import 'package:saloon_app/core/services/auth_service.dart';
+import 'package:saloon_app/core/services/database_service.dart';
+import 'package:saloon_app/features/customer/customer_main_wrapper.dart';
+import 'package:saloon_app/features/owner/owner_main_wrapper.dart';
+import 'package:saloon_app/features/owner/registration/owner_pending_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
@@ -54,8 +60,64 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   Future<void> _checkFirstSeen() async {
     final prefs = await SharedPreferences.getInstance();
     final bool seen = (prefs.getBool('seen_onboarding') ?? false);
+    
+    // Check if user is already logged in
+    final authService = Get.find<AuthService>();
+    if (authService.isLoggedIn) {
+      await _navigateBasedOnRole();
+      return;
+    }
+
     if (seen) {
       if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const RoleSelectScreen()),
+      );
+    }
+  }
+
+  Future<void> _navigateBasedOnRole() async {
+    final authService = Get.find<AuthService>();
+    final dbService = Get.find<DatabaseService>();
+    
+    final userDoc = await dbService.getUserProfile(authService.uid!);
+    
+    if (!userDoc.exists) {
+      // Should ideally not happen if they are logged in, but just in case
+      // maybe route to RoleSelect or a setup screen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const RoleSelectScreen()),
+      );
+      return;
+    }
+
+    final data = userDoc.data() as Map<String, dynamic>;
+    final role = data['role'] as String?;
+
+    if (!mounted) return;
+
+    if (role == 'customer') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const CustomerMainWrapper()),
+      );
+    } else if (role == 'owner') {
+      final status = data['status'] as String?;
+      if (status == 'approved') {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const OwnerMainWrapper()),
+        );
+      } else {
+        // Pending or other
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const OwnerPendingScreen()),
+        );
+      }
+    } else {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const RoleSelectScreen()),

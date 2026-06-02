@@ -4,66 +4,39 @@ import 'package:get/get.dart';
 class AuthService extends GetxService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
-  // Observable user state
   Rxn<User> user = Rxn<User>();
 
   @override
   void onInit() {
     super.onInit();
-    // Bind current user to observable
     user.bindStream(_auth.userChanges());
   }
 
-  // ── Phone Authentication ──
-  
-  String? _verificationId;
-  int? _resendToken;
+  // ── Email/Password Authentication ──
 
-  Future<void> sendOTP(String phone, {
-    required Function(String) onCodeSent,
-    required Function(String) onError,
-  }) async {
+  Future<UserCredential?> signUpWithEmail(String email, String password) async {
     try {
-      await _auth.verifyPhoneNumber(
-        phoneNumber: phone,
-        verificationCompleted: (PhoneAuthCredential credential) async {
-          // Auto-resolution (mostly Android)
-          await _auth.signInWithCredential(credential);
-        },
-        verificationFailed: (FirebaseAuthException e) {
-          onError(e.message ?? 'Verification failed');
-        },
-        codeSent: (String vid, int? token) {
-          _verificationId = vid;
-          _resendToken = token;
-          onCodeSent(vid);
-        },
-        codeAutoRetrievalTimeout: (String vid) {
-          _verificationId = vid;
-        },
+      return await _auth.createUserWithEmailAndPassword(
+        email: email, 
+        password: password
       );
     } catch (e) {
-      onError(e.toString());
+      Get.snackbar('Error', e.toString());
+      return null;
     }
   }
 
-  Future<bool> verifyOTP(String smsCode) async {
+  Future<UserCredential?> signInWithEmail(String email, String password) async {
     try {
-      if (_verificationId == null) return false;
-      
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: smsCode,
+      return await _auth.signInWithEmailAndPassword(
+        email: email, 
+        password: password
       );
-      
-      await _auth.signInWithCredential(credential);
-      return true;
     } catch (e) {
-      return false;
+      Get.snackbar('Error', e.toString());
+      return null;
     }
   }
-
-  // ── Generic Logic ──
 
   Future<void> logout() async {
     await _auth.signOut();
