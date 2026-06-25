@@ -21,7 +21,7 @@ class AuthGate extends StatelessWidget {
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
-        }
+          }
         return snapshot.data ?? const OnboardingScreen();
       },
     );
@@ -67,7 +67,7 @@ class AuthGate extends StatelessWidget {
       final ownerData = ownerDoc.data();
       debugPrint('AuthGate: Owner doc content: $ownerData');
       final status = ownerData?['status'] as String?;
-      
+
       debugPrint('AuthGate: Owner status found: "$status"');
 
       if (status == 'approved') {
