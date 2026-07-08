@@ -14,14 +14,24 @@ class ThemeController extends GetxController {
 
   Future<void> _loadTheme() async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = prefs.getString('themeMode') ?? 'light';
-    isDarkMode.value = saved == 'dark';
-    themeMode.value = saved == 'dark' ? ThemeMode.dark : ThemeMode.light;
+    
+    // Check if user has explicitly saved a theme preference
+    final saved = prefs.getString('themeMode');
+    
+    if (saved != null) {
+      isDarkMode.value = saved == 'dark';
+      themeMode.value = saved == 'dark' ? ThemeMode.dark : ThemeMode.light;
+    } else {
+      // First launch: detect system theme
+      final brightness = Get.isPlatformDarkMode;
+      isDarkMode.value = brightness;
+      themeMode.value = brightness ? ThemeMode.dark : ThemeMode.light;
+    }
   }
 
-  void toggleTheme() {
-    isDarkMode.value = !isDarkMode.value;
-    themeMode.value = isDarkMode.value ? ThemeMode.dark : ThemeMode.light;
+  void toggleTheme(bool value) {
+    isDarkMode.value = value;
+    themeMode.value = value ? ThemeMode.dark : ThemeMode.light;
     _saveTheme();
   }
 

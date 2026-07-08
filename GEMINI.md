@@ -250,3 +250,14 @@ Current Next Phase:
 Phase A – Payment & Financial Architecture
 
 This should be considered the next major milestone of the project.
+
+
+## Today's Completed Work (Added)
+- **Explore Screen Enhancements**: Map zoom controls, sort functionality (nearest, price, rating), salon count badge, "Salon Near You" header with sort button
+- **Customer Main Wrapper**: Custom animated bottom navigation with sliding indicator, AppColors integration, dark mode support, QR scanner FAB on Home tab
+- **Owner Main Wrapper**: Matching bottom nav style, center-docked QR scanner FAB, 4-tab layout (Stats, Schedule, Earnings, Profile)
+- **Customer Home Screen**: Pull-to-refresh, real-time Firestore salon list, distance sorting, error/empty states, location refresh
+- **Data Sync Fix**: BookingController updated to parse embedded `services` array from Firestore, handles String/int/double types for price and duration
+- **Owner Services Management**: Connected to Firestore - reads/writes to `owners/{ownerId}/services` array, real-time sync with customer side
+- **Owner Gallery Management**: Connected to Firestore - loads `salonPhotos` from Firestore, image picker integration, delete functionality, upload placeholder ready for Cloudinary
+- **Bug Fixes**: Resolved AnimatedContainer BoxShadow assertion errors, fixed type casting issues, eliminated multiple loading indicators, fixed navigation parameter passing

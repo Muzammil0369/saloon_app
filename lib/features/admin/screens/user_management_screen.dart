@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/features/admin/theme/admin_colors.dart';
 import 'package:saloon_app/features/admin/widgets/admin_common_widgets.dart';

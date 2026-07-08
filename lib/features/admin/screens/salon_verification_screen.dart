@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import 'package:saloon_app/features/admin/theme/admin_colors.dart';
 import 'package:saloon_app/features/admin/controllers/admin_controller.dart';
 import 'package:saloon_app/features/admin/widgets/admin_scaffold.dart';
-import 'package:saloon_app/features/admin/widgets/admin_common_widgets.dart';
 
 class SalonVerificationScreen extends StatelessWidget {
   const SalonVerificationScreen({super.key});

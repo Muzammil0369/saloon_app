@@ -8,12 +8,17 @@ import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/controllers/booking_controller.dart';
 import 'package:saloon_app/shared/widgets/app_button.dart';
 import 'package:saloon_app/features/customer/screens/success_screen.dart';
-
 import '../../../core/services/auth_service.dart';
 
 class BookingScreen extends StatefulWidget {
   final Map<String, dynamic> salon;
-  const BookingScreen({super.key, required this.salon});
+  final String ownerId; // Add ownerId parameter
+
+  const BookingScreen({
+    super.key,
+    required this.salon,
+    required this.ownerId, // Make it required
+  });
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
@@ -56,8 +61,14 @@ class _BookingScreenState extends State<BookingScreen> {
                 });
               },
               calendarStyle: CalendarStyle(
-                selectedDecoration: const BoxDecoration(color: AppColors.primaryPink, shape: BoxShape.circle),
-                todayDecoration: BoxDecoration(color: AppColors.primaryPink.withOpacity(0.5), shape: BoxShape.circle),
+                selectedDecoration: const BoxDecoration(
+                  color: AppColors.primaryPink,
+                  shape: BoxShape.circle,
+                ),
+                todayDecoration: BoxDecoration(
+                  color: AppColors.primaryPink.withOpacity(0.5),
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
             const SizedBox(height: 30),
@@ -75,9 +86,16 @@ class _BookingScreenState extends State<BookingScreen> {
                     decoration: BoxDecoration(
                       color: isSelected ? AppColors.primaryPink : theme.cardColor,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: isSelected ? AppColors.primaryPink : theme.borderColor),
+                      border: Border.all(
+                        color: isSelected ? AppColors.primaryPink : theme.borderColor,
+                      ),
                     ),
-                    child: Text(time, style: TextStyle(color: isSelected ? Colors.white : theme.textColor)),
+                    child: Text(
+                      time,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : theme.textColor,
+                      ),
+                    ),
                   ),
                 );
               }).toList(),
@@ -85,8 +103,8 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 40),
             AppButton(
               label: 'Confirm Booking',
-              onTap: (_selectedDay != null && _selectedTime != null) 
-                  ? _submitBooking 
+              onTap: (_selectedDay != null && _selectedTime != null)
+                  ? _submitBooking
                   : () => Get.snackbar('Required', 'Please select date and time'),
             ),
           ],
@@ -100,12 +118,12 @@ class _BookingScreenState extends State<BookingScreen> {
 
     final authService = Get.find<AuthService>();
     final bookingRef = FirebaseFirestore.instance.collection('bookings').doc();
-    
+
     final bookingData = {
       'bookingId': bookingRef.id,
       'customerId': authService.uid,
-      'ownerId': widget.salon['ownerId'] ?? '', // Ensure salon map has ownerId
-      'salonName': widget.salon['name'],
+      'ownerId': widget.ownerId, // Use ownerId directly
+      'salonName': widget.salon['name'] ?? 'Unnamed Salon',
       'services': _bookingController.selectedServices,
       'totalPrice': _bookingController.totalPrice.toInt(),
       'date': Timestamp.fromDate(_selectedDay!),
@@ -117,14 +135,19 @@ class _BookingScreenState extends State<BookingScreen> {
     try {
       await bookingRef.set(bookingData);
       setState(() => _isLoading = false);
-      
+
       Get.to(() => SuccessScreen(
         bookingId: bookingRef.id,
         dateTime: '${_selectedDay!.toString().split(' ')[0]} · $_selectedTime',
       ));
     } catch (e) {
       setState(() => _isLoading = false);
-      Get.snackbar('Error', 'Failed to book: $e', backgroundColor: Colors.redAccent, colorText: Colors.white);
+      Get.snackbar(
+        'Error',
+        'Failed to book: $e',
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
     }
   }
 }

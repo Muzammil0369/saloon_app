@@ -18,6 +18,13 @@ class OwnerMainWrapper extends StatefulWidget {
 class _OwnerMainWrapperState extends State<OwnerMainWrapper> {
   late int _selectedIndex;
 
+  final List<Map<String, dynamic>> _navItems = [
+    {'icon': Icons.dashboard_rounded, 'activeIcon': Icons.dashboard, 'label': 'Stats', 'color': AppColors.primaryPink},
+    {'icon': Icons.calendar_month_rounded, 'activeIcon': Icons.calendar_month, 'label': 'Schedule', 'color': const Color(0xFF4ECDC4)},
+    {'icon': Icons.payments_rounded, 'activeIcon': Icons.payments, 'label': 'Earnings', 'color': const Color(0xFFF59E0B)},
+    {'icon': Icons.storefront_rounded, 'activeIcon': Icons.store, 'label': 'Profile', 'color': const Color(0xFFA78BFA)},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -31,8 +38,10 @@ class _OwnerMainWrapperState extends State<OwnerMainWrapper> {
   @override
   Widget build(BuildContext context) {
     final theme = ThemeHelper(context);
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final List<Widget> _screens = [
+    final List<Widget> screens = [
       OwnerDashboardScreen(onTabChange: _onTabChange),
       const OwnerScheduleScreen(),
       const OwnerEarningsScreen(),
@@ -42,29 +51,88 @@ class _OwnerMainWrapperState extends State<OwnerMainWrapper> {
     return Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
-        children: _screens,
+        children: screens,
       ),
+
+      // FAB - Always visible for owner
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const QRScannerScreen()));
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const QRScannerScreen()),
+          );
         },
         backgroundColor: AppColors.primaryPink,
         child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) => setState(() => _selectedIndex = index),
-        selectedItemColor: AppColors.primaryPink,
-        unselectedItemColor: theme.mutedTextColor,
-        backgroundColor: theme.cardColor,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.dashboard_rounded), label: 'Stats'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_month_rounded), label: 'Schedule'),
-          BottomNavigationBarItem(icon: Icon(Icons.payments_rounded), label: 'Earnings'),
-          BottomNavigationBarItem(icon: Icon(Icons.storefront_rounded), label: 'Profile'),
-        ],
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+      // Bottom Nav
+      bottomNavigationBar: Container(
+        height: 70 + bottomPadding,
+        padding: EdgeInsets.only(bottom: bottomPadding),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : AppColors.surface,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? AppColors.darkBorder : AppColors.border,
+              width: 0.5,
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(_navItems.length, (index) {
+            final isSelected = _selectedIndex == index;
+            final item = _navItems[index];
+            final Color activeColor = item['color'] as Color;
+
+            return GestureDetector(
+              onTap: () => _onTabChange(index),
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: 64,
+                padding: const EdgeInsets.only(top: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Sliding indicator line
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      margin: EdgeInsets.only(bottom: isSelected ? 8 : 0),
+                      width: isSelected ? 24 : 0,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: isSelected ? activeColor : Colors.transparent,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    // Icon
+                    Icon(
+                      isSelected ? item['activeIcon'] as IconData : item['icon'] as IconData,
+                      size: 22,
+                      color: isSelected
+                          ? activeColor
+                          : (isDark ? AppColors.darkMutedText : AppColors.mutedText),
+                    ),
+                    const SizedBox(height: 2),
+                    // Label
+                    Text(
+                      item['label'] as String,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isSelected
+                            ? activeColor
+                            : (isDark ? AppColors.darkMutedText : AppColors.mutedText),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ),
       ),
     );
   }

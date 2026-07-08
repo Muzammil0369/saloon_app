@@ -45,7 +45,11 @@ void main() async {
   }
 
   Get.put(ThemeController());
-  Get.put(AuthService());
+  
+  // Initialize Auth Service and wait for it to restore state
+  final authService = Get.put(AuthService());
+  await authService.initializeAuth(); 
+  
   Get.put(DatabaseService());
   Get.put(UserController());
   

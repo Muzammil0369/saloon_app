@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text('Sign in to continue to Glambook.',
-                  style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                  style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor),
                 ),
                 const SizedBox(height: 48),
 
@@ -144,7 +144,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   child: Column(
                     children: [
                       Text('Not registered yet?',
-                        style: AppTextStyles.bodySmall?.copyWith(color: theme.mutedTextColor),
+                        style: AppTextStyles.bodySmall.copyWith(color: theme.mutedTextColor),
                       ),
                       const SizedBox(height: 16),
                       GestureDetector(
@@ -156,7 +156,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text('Create an Account 🚀',
-                            style: AppTextStyles.linkText?.copyWith(fontWeight: FontWeight.bold),
+                            style: AppTextStyles.linkText.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),
                       ),

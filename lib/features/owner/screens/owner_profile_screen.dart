@@ -18,12 +18,14 @@ class OwnerProfileScreen extends StatefulWidget {
 }
 
 class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
-  final ownerId = Get.find<AuthService>().uid;
+  late final String ownerId;
   bool _isDarkMode = false;
 
   @override
   void initState() {
     super.initState();
+    ownerId = Get.find<AuthService>().uid ?? '';
+    print('OwnerProfileScreen: Fetching document for collection: owners, doc: $ownerId');
     _isDarkMode = Get.find<ThemeController>().isDarkMode.value;
   }
 
@@ -109,40 +111,68 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('owners').doc(ownerId).snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
+          if (snapshot.hasError) {
+            print('Error in OwnerProfileScreen: ${snapshot.error}');
+            return Center(child: Text('Error: ${snapshot.error}'));
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (!snapshot.hasData || !snapshot.data!.exists || snapshot.data!.data() == null) {
+            print('OwnerProfileScreen: No data, exists=${snapshot.data?.exists}, data=${snapshot.data?.data()}');
+            return const Center(child: Text('No Profile Data Found'));
+          }
           final data = snapshot.data!.data() as Map<String, dynamic>;
 
           return SingleChildScrollView(
             child: Column(
+
               children: [
                 // ── Profile Header ──
                 Container(
-                  padding: const EdgeInsets.fromLTRB(24, 60, 24, 30),
+                  padding: const EdgeInsets.fromLTRB(24, 70, 24, 30),
                   decoration: BoxDecoration(
                     color: theme.cardColor,
                     borderRadius: const BorderRadius.vertical(bottom: Radius.circular(AppRadius.xxl)),
                     boxShadow: [theme.softShadow],
                   ),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      const CircleAvatar(
-                        radius: 50,
-                        backgroundColor: AppColors.primaryPink,
-                        child: Icon(Icons.storefront_rounded, size: 50, color: Colors.white),
+                      Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.primaryPink, width: 2)),
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor: AppColors.primaryPink,
+                          backgroundImage: (data['salonPhotos'] != null && (data['salonPhotos'] as List).isNotEmpty)
+                              ? NetworkImage(data['salonPhotos'][0])
+                              : null,
+                          child: (data['salonPhotos'] == null || (data['salonPhotos'] as List).isEmpty)
+                              ? const Icon(Icons.storefront_rounded, size: 50, color: Colors.white)
+                              : null,
+                        ),
                       ),
                       const SizedBox(height: 16),
-                      Text(data['salonName'] ?? 'My Salon', style: AppTextStyles.displayMedium?.copyWith(color: theme.textColor)),
+                      Text(data['salonName'] ?? 'My Salon', style: AppTextStyles.displayMedium?.copyWith(fontSize: 24,color: theme.textColor, fontWeight: FontWeight.bold)),
                       Text(data['address'] ?? 'Location', style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
-                      const SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          _statItem('${data['rating'] ?? 0.0}★', 'Rating'),
-                          _verticalDivider(theme),
-                          _statItem('${data['totalBookings'] ?? 0}', 'Bookings'),
-                          _verticalDivider(theme),
-                          _statItem(data['status'] == 'approved' ? 'Verified' : 'Pending', 'Status', isSuccess: data['status'] == 'approved'),
-                        ],
+                      const SizedBox(height: 24),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: theme.backgroundColor,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _statItem('${data['rating'] ?? 0.0}★', 'Rating'),
+                            Container(height: 30, width: 1, color: theme.borderColor),
+                            _statItem('${data['totalBookings'] ?? 0}', 'Bookings'),
+                            Container(height: 30, width: 1, color: theme.borderColor),
+                            _statItem(data['status'] == 'approved' ? 'Verified' : 'Pending', 'Status', isSuccess: data['status'] == 'approved'),
+                          ],
+                        ),
                       ),
                     ],
                   ),
@@ -159,10 +189,31 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                 const SizedBox(height: 24),
                 
                 _sectionHeader('Settings', theme),
-                _buildToggleTile(Icons.dark_mode_outlined, 'Dark Mode', _isDarkMode, (val) {
-                  setState(() => _isDarkMode = val);
-                  Get.find<ThemeController>().toggleTheme();
-                }, theme),
+                Obx(() => _buildToggleTile(
+                    Icons.dark_mode_outlined,
+                    'Dark Mode',
+                    Get.find<ThemeController>().isDarkMode.value,
+                    (val) => Get.find<ThemeController>().toggleTheme(val),
+                    theme
+                )),
+                _buildToggleTile(
+                    Icons.store_rounded,
+                    'Open Salon',
+                    data['isOpenNow'] ?? false,
+                    (val) async {
+                        await FirebaseFirestore.instance.collection('owners').doc(ownerId).update({'isOpenNow': val});
+                    },
+                    theme
+                ),
+                _buildToggleTile(
+                    Icons.map_rounded,
+                    'Show on Map',
+                    data['showOnMap'] ?? true,
+                    (val) async {
+                        await FirebaseFirestore.instance.collection('owners').doc(ownerId).update({'showOnMap': val});
+                    },
+                    theme
+                ),
                 
                 const SizedBox(height: 32),
                 
@@ -181,7 +232,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
                       ),
                       child: Center(
-                        child: Text('Logout Business', style: AppTextStyles.buttonText?.copyWith(color: Colors.redAccent)),
+                        child: Text('Logout Business', style: AppTextStyles.buttonText?.copyWith(color: Colors.redAccent, fontWeight: FontWeight.bold)),
                       ),
                     ),
                   ),

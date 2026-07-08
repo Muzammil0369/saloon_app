@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -276,7 +275,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                 // ── Title ──
                                 Text(
                                   page["title"],
-                                  style: AppTextStyles.displayMedium?.copyWith(
+                                  style: AppTextStyles.displayMedium.copyWith(
                                     color: theme.textColor,
                                     fontSize: 28,
                                     fontWeight: FontWeight.w800,
@@ -290,7 +289,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                 // ── Description ──
                                 Text(
                                   page["description"],
-                                  style: AppTextStyles.bodyLarge?.copyWith(
+                                  style: AppTextStyles.bodyLarge.copyWith(
                                     color: theme.mutedTextColor,
                                     height: 1.6,
                                     fontSize: 15,

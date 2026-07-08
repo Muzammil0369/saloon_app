@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/shared/widgets/app_button.dart';
+import '../../../core/services/auth_service.dart';
 
 class OwnerServicesManagementScreen extends StatefulWidget {
   const OwnerServicesManagementScreen({super.key});
@@ -13,16 +15,54 @@ class OwnerServicesManagementScreen extends StatefulWidget {
 }
 
 class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementScreen> {
-  final List<Map<String, String>> _services = [
-    {'name': 'Classic Haircut', 'price': '500', 'duration': '30'},
-    {'name': 'Beard Trim', 'price': '300', 'duration': '20'},
-    {'name': 'Facial Spa', 'price': '1200', 'duration': '45'},
-  ];
+  bool _isLoading = false;
 
-  void _showAddServiceModal({Map<String, String>? existingService, int? index}) {
+  String get _ownerId => Get.find<AuthService>().uid!;
+
+  // Stream owner data from Firestore
+  Stream<Map<String, dynamic>> _getOwnerData() {
+    return FirebaseFirestore.instance
+        .collection('owners')
+        .doc(_ownerId)
+        .snapshots()
+        .map((doc) => doc.data() ?? {});
+  }
+
+  // Get current services list
+  List<Map<String, dynamic>> _getServices(Map<String, dynamic>? ownerData) {
+    if (ownerData == null) return [];
+    final services = ownerData['services'];
+    if (services == null || services is! List) return [];
+
+    return services
+        .whereType<Map<String, dynamic>>()
+        .toList();
+  }
+
+  // Save services to Firestore
+  Future<void> _saveServices(List<Map<String, dynamic>> services) async {
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseFirestore.instance
+          .collection('owners')
+          .doc(_ownerId)
+          .update({'services': services});
+      Get.snackbar('Success', 'Services updated');
+    } catch (e) {
+      Get.snackbar('Error', 'Failed to save services');
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  void _showServiceModal({
+    Map<String, dynamic>? existingService,
+    int? index,
+    List<Map<String, dynamic>>? allServices,
+  }) {
     final nameCtrl = TextEditingController(text: existingService?['name'] ?? '');
-    final priceCtrl = TextEditingController(text: existingService?['price'] ?? '');
-    final durCtrl = TextEditingController(text: existingService?['duration'] ?? '');
+    final priceCtrl = TextEditingController(text: (existingService?['price'] ?? '').toString());
+    final durCtrl = TextEditingController(text: (existingService?['duration'] ?? '').toString());
 
     showModalBottomSheet(
       context: context,
@@ -43,10 +83,12 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(existingService == null ? 'Add Service' : 'Edit Service', 
-                style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+              Text(
+                existingService == null ? 'Add Service' : 'Edit Service',
+                style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor),
+              ),
               const SizedBox(height: 24),
-              _buildField('Service Name', 'e.g. Hair Coloring', nameCtrl, theme),
+              _buildField('Service Name', 'e.g. Classic Haircut', nameCtrl, theme),
               const SizedBox(height: 16),
               Row(
                 children: [
@@ -60,18 +102,28 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
                 label: existingService == null ? 'Add to Menu' : 'Save Changes',
                 onTap: () {
                   if (nameCtrl.text.isEmpty || priceCtrl.text.isEmpty) return;
-                  setState(() {
-                    final data = {
-                      'name': nameCtrl.text,
-                      'price': priceCtrl.text,
-                      'duration': durCtrl.text,
-                    };
-                    if (index == null) {
-                      _services.add(data);
-                    } else {
-                      _services[index] = data;
-                    }
-                  });
+
+                  final newService = <String, dynamic>{
+                    'name': nameCtrl.text.trim(),
+                    'price': int.tryParse(priceCtrl.text.trim()) ?? 0,
+                    'duration': int.tryParse(durCtrl.text.trim()) ?? 30,
+                  };
+
+                  List<Map<String, dynamic>> updatedServices = allServices != null
+                      ? List<Map<String, dynamic>>.from(allServices)
+                      : [];
+
+                  if (index == null || index >= updatedServices.length) {
+                    // Add new
+                    newService['id'] = DateTime.now().millisecondsSinceEpoch.toString();
+                    updatedServices.add(newService);
+                  } else {
+                    // Update existing - keep the ID
+                    newService['id'] = existingService?['id'] ?? DateTime.now().millisecondsSinceEpoch.toString();
+                    updatedServices[index] = newService;
+                  }
+
+                  _saveServices(updatedServices);
                   Navigator.pop(context);
                 },
               ),
@@ -89,7 +141,10 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
         Text(label, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
         const SizedBox(height: 8),
         Container(
-          decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(12)),
+          decoration: BoxDecoration(
+            color: theme.lightPinkColor,
+            borderRadius: BorderRadius.circular(12),
+          ),
           child: TextField(
             controller: ctrl,
             keyboardType: isNum ? TextInputType.number : TextInputType.text,
@@ -118,52 +173,109 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
         centerTitle: true,
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: theme.textColor),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Get.back(),
         ),
       ),
-      body: _services.isEmpty 
-      ? Center(child: Text('No services added yet', style: TextStyle(color: theme.mutedTextColor)))
-      : ListView.builder(
-        padding: const EdgeInsets.all(24),
-        itemCount: _services.length,
-        itemBuilder: (context, index) {
-          final s = _services[index];
-          return Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: theme.cardColor,
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: theme.borderColor),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(s['name']!, style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
-                      Text('Rs. ${s['price']} · ${s['duration']} min', style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-                    ],
-                  ),
+      body: StreamBuilder<Map<String, dynamic>>(
+        stream: _getOwnerData(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator(color: AppColors.primaryPink));
+          }
+
+          final services = _getServices(snapshot.data);
+
+          if (services.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.spa_outlined, size: 64, color: theme.mutedTextColor),
+                  const SizedBox(height: 12),
+                  Text('No services added yet', style: TextStyle(color: theme.mutedTextColor)),
+                ],
+              ),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(24),
+            itemCount: services.length,
+            itemBuilder: (context, index) {
+              final s = services[index];
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: theme.borderColor),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.edit_outlined, color: AppColors.primaryPink, size: 20),
-                  onPressed: () => _showAddServiceModal(existingService: s, index: index),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44, height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.lightPink,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: const Icon(Icons.content_cut, color: AppColors.primaryPink, size: 20),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            s['name'] ?? 'Unnamed',
+                            style: AppTextStyles.bodyLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: theme.textColor,
+                            ),
+                          ),
+                          Text(
+                            'Rs. ${s['price']} · ${s['duration']} min',
+                            style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, color: AppColors.primaryPink, size: 20),
+                      onPressed: () => _showServiceModal(
+                        existingService: s,
+                        index: index,
+                        allServices: services,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
+                      onPressed: () {
+                        final updatedServices = List<Map<String, dynamic>>.from(services)..removeAt(index);
+                        _saveServices(updatedServices);
+                      },
+                    ),
+                  ],
                 ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent, size: 20),
-                  onPressed: () => setState(() => _services.removeAt(index)),
-                ),
-              ],
-            ),
+              );
+            },
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _showAddServiceModal(),
-        backgroundColor: AppColors.primaryPink,
-        child: const Icon(Icons.add_rounded, color: Colors.white),
+      floatingActionButton: StreamBuilder<Map<String, dynamic>>(
+        stream: _getOwnerData(),
+        builder: (context, snapshot) {
+          // Explicitly type the list
+          final List<Map<String, dynamic>> services = snapshot.hasData
+              ? _getServices(snapshot.data)
+              : <Map<String, dynamic>>[];
+
+          return FloatingActionButton(
+            onPressed: () => _showServiceModal(allServices: services),
+            backgroundColor: AppColors.primaryPink,
+            child: const Icon(Icons.add_rounded, color: Colors.white),
+          );
+        },
       ),
     );
   }

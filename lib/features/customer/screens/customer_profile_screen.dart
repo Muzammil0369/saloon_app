@@ -223,7 +223,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                         value: _darkModeOn,
                         onToggle: () {
                           setState(() => _darkModeOn = !_darkModeOn);
-                          Get.find<ThemeController>().toggleTheme();
+                          Get.find<ThemeController>().toggleTheme(_darkModeOn);
                         },
                         theme: theme,
                       ),

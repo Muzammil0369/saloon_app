@@ -72,15 +72,16 @@ class _OwnerEarningsScreenState extends State<OwnerEarningsScreen> {
                   width: double.infinity,
                   padding: const EdgeInsets.all(24),
                   decoration: BoxDecoration(
-                    gradient: AppGradients.primary,
+                    color: AppColors.primaryPink,
                     borderRadius: BorderRadius.circular(24),
+                    boxShadow: [theme.softShadow], // Added soft shadow
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text('Total Earnings', style: AppTextStyles.label.copyWith(color: Colors.white.withOpacity(0.8))),
+                      Text('Total Earnings', style: AppTextStyles.label.copyWith(color: Colors.white.withOpacity(0.9))),
                       const SizedBox(height: 8),
-                      Text('Rs. ${totalEarnings.toStringAsFixed(0)}', style: AppTextStyles.displayLarge?.copyWith(color: Colors.white)),
+                      Text('Rs. ${totalEarnings.toStringAsFixed(0)}', style: AppTextStyles.displayLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                     ],
                   ),
                 ),
@@ -95,13 +96,13 @@ class _OwnerEarningsScreenState extends State<OwnerEarningsScreen> {
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: theme.cardColor,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: theme.borderColor),
+                    borderRadius: BorderRadius.circular(24), // Increased radius
+                    boxShadow: [theme.softShadow], // Added soft shadow
                   ),
                   child: SfCartesianChart(
                     primaryXAxis: CategoryAxis(
                       majorGridLines: const MajorGridLines(width: 0),
-                      labelStyle: TextStyle(color: theme.mutedTextColor),
+                      labelStyle: TextStyle(color: theme.mutedTextColor, fontFamily: 'DM Sans'),
                     ),
                     primaryYAxis: NumericAxis(isVisible: false),
                     plotAreaBorderWidth: 0,
@@ -110,8 +111,9 @@ class _OwnerEarningsScreenState extends State<OwnerEarningsScreen> {
                         dataSource: chartData,
                         xValueMapper: (_ChartData data, _) => data.x,
                         yValueMapper: (_ChartData data, _) => data.y,
-                        borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
+                        borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
                         color: AppColors.primaryPink,
+                        width: 0.6, // Slimmer bars for modern look
                       )
                     ],
                   ),

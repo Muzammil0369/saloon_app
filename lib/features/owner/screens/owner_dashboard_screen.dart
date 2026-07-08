@@ -74,24 +74,17 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                 stream: FirebaseFirestore.instance.collection('owners').doc(ownerId).snapshots(),
                 builder: (context, snapshot) {
                   final data = snapshot.data?.data() as Map<String, dynamic>?;
-                  return Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
-                    decoration: BoxDecoration(gradient: AppGradients.primary, borderRadius: BorderRadius.circular(20)),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _statColumn((data?['totalBookings'] ?? 0).toString(), 'APPOINTMENTS'),
-                        Container(width: 1, height: 36, color: Colors.white.withOpacity(0.3)),
-                        _statColumn((data?['walletBalance'] ?? 0).toString(), 'REVENUE (PKR)'),
-                        Container(width: 1, height: 36, color: Colors.white.withOpacity(0.3)),
-                        _statColumn('${data?['rating'] ?? 0.0}★', 'RATING'),
-                      ],
-                    ),
+                  
+                  return Row(
+                    children: [
+                      _statCard('Bookings', (data?['totalBookings'] ?? 0).toString(), Icons.calendar_month_rounded, theme),
+                      const SizedBox(width: 12),
+                      _statCard('Revenue', '${data?['walletBalance'] ?? 0}', Icons.payments_rounded, theme),
+                    ],
                   );
                 }
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 24),
 
               // Pending Requests Header
               Row(
@@ -130,6 +123,33 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _statCard(String title, String value, IconData icon, ThemeHelper theme) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [theme.softShadow],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: AppColors.primaryPink, size: 20),
+                const SizedBox(width: 8),
+                Text(title, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(value, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
+          ],
         ),
       ),
     );

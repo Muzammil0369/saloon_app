@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:get/get.dart';
 
 class AuthService extends GetxService {
@@ -44,4 +45,11 @@ class AuthService extends GetxService {
 
   bool get isLoggedIn => _auth.currentUser != null;
   String? get uid => _auth.currentUser?.uid;
+
+  Future<void> initializeAuth() async {
+    debugPrint('AuthService: Waiting for auth state...');
+    // idTokenChanges() is often more reliable for initial session restoration
+    await _auth.idTokenChanges().first;
+    debugPrint('AuthService: Auth state restored. User: ${_auth.currentUser?.uid}');
+  }
 }

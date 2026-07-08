@@ -19,6 +19,14 @@ class CustomerMainWrapper extends StatefulWidget {
 class _CustomerMainWrapperState extends State<CustomerMainWrapper> {
   late int _selectedIndex;
 
+  final List<Map<String, dynamic>> _navItems = [
+    {'icon': Icons.home_rounded, 'activeIcon': Icons.home, 'label': 'Home', 'color': AppColors.primaryPink},
+    {'icon': Icons.search_rounded, 'activeIcon': Icons.explore, 'label': 'Explore', 'color': const Color(0xFF4ECDC4)},
+    {'icon': Icons.calendar_today_rounded, 'activeIcon': Icons.calendar_month, 'label': 'Bookings', 'color': const Color(0xFFA78BFA)},
+    {'icon': Icons.account_balance_wallet_rounded, 'activeIcon': Icons.wallet, 'label': 'Wallet', 'color': const Color(0xFFF59E0B)},
+    {'icon': Icons.person_rounded, 'activeIcon': Icons.person, 'label': 'Profile', 'color': const Color(0xFF6EE7B7)},
+  ];
+
   @override
   void initState() {
     super.initState();
@@ -32,6 +40,8 @@ class _CustomerMainWrapperState extends State<CustomerMainWrapper> {
   @override
   Widget build(BuildContext context) {
     final theme = ThemeHelper(context);
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final List<Widget> screens = [
       CustomerHomeScreen(onTabChange: _changeTab),
@@ -46,28 +56,87 @@ class _CustomerMainWrapperState extends State<CustomerMainWrapper> {
         index: _selectedIndex,
         children: screens,
       ),
-      floatingActionButton: _selectedIndex == 0 ? FloatingActionButton(
+
+      // FAB
+      floatingActionButton: _selectedIndex == 0
+          ? FloatingActionButton(
         onPressed: () {
-          Navigator.push(context, MaterialPageRoute(builder: (context) => const QRScreen()));
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const QRScreen()),
+          );
         },
         backgroundColor: AppColors.primaryPink,
         child: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),
-      ) : null,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _changeTab,
-        selectedItemColor: AppColors.primaryPink,
-        unselectedItemColor: theme.mutedTextColor,
-        backgroundColor: theme.cardColor,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home_rounded), label: 'Home'),
-          BottomNavigationBarItem(icon: Icon(Icons.search_rounded), label: 'Explore'),
-          BottomNavigationBarItem(icon: Icon(Icons.calendar_today_rounded), label: 'Bookings'),
-          BottomNavigationBarItem(icon: Icon(Icons.account_balance_wallet_rounded), label: 'Wallet'),
-          BottomNavigationBarItem(icon: Icon(Icons.person_rounded), label: 'Profile'),
-        ],
+      )
+          : null,
+
+      // Bottom Nav
+      bottomNavigationBar: Container(
+        height: 70 + bottomPadding,
+        padding: EdgeInsets.only(bottom: bottomPadding),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkSurface : AppColors.surface,
+          border: Border(
+            top: BorderSide(
+              color: isDark ? AppColors.darkBorder : AppColors.border,
+              width: 0.5,
+            ),
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(_navItems.length, (index) {
+            final isSelected = _selectedIndex == index;
+            final item = _navItems[index];
+            final Color activeColor = item['color'] as Color;
+
+            return GestureDetector(
+              onTap: () => _changeTab(index),
+              behavior: HitTestBehavior.opaque,
+              child: Container(
+                width: 64,
+                padding: const EdgeInsets.only(top: 8),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Sliding indicator line
+                    AnimatedContainer(
+                      duration: const Duration(milliseconds: 250),
+                      margin: EdgeInsets.only(bottom: isSelected ? 8 : 0),
+                      width: isSelected ? 24 : 0,
+                      height: 3,
+                      decoration: BoxDecoration(
+                        color: isSelected ? activeColor : Colors.transparent,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    // Icon
+                    Icon(
+                      isSelected ? item['activeIcon'] as IconData : item['icon'] as IconData,
+                      size: 22,
+                      color: isSelected
+                          ? activeColor
+                          : (isDark ? AppColors.darkMutedText : AppColors.mutedText),
+                    ),
+                    const SizedBox(height: 2),
+                    // Label
+                    Text(
+                      item['label'] as String,
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isSelected
+                            ? activeColor
+                            : (isDark ? AppColors.darkMutedText : AppColors.mutedText),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
+        ),
       ),
     );
   }

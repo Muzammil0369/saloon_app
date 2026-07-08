@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/services/auth_service.dart';
 import 'package:saloon_app/core/services/database_service.dart';
-import 'package:saloon_app/features/admin/admin_main_wrapper.dart';
 
 import '../../../core/constants/app_radius.dart';
 
