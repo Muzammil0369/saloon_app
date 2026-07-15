@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
@@ -9,13 +11,52 @@ class SalonCard extends StatelessWidget {
 
   const SalonCard({super.key, required this.salon, required this.onTap});
 
+  // Get the best available image
+  ImageProvider _getImage() {
+    // 1. Check for logo
+    final logo = salon['logo'];
+    if (logo != null && logo.toString().isNotEmpty) {
+      return _getImageProvider(logo.toString());
+    }
+
+    // 2. Check for thumbnail
+    final thumbnail = salon['thumbnail'];
+    if (thumbnail != null && thumbnail.toString().isNotEmpty) {
+      return _getImageProvider(thumbnail.toString());
+    }
+
+    // 3. Check for imageUrl
+    final imageUrl = salon['imageUrl'];
+    if (imageUrl != null && imageUrl.toString().isNotEmpty) {
+      return _getImageProvider(imageUrl.toString());
+    }
+
+    // 4. Check for ownerProfileImage
+    final ownerImage = salon['ownerProfileImage'];
+    if (ownerImage != null && ownerImage.toString().isNotEmpty) {
+      return _getImageProvider(ownerImage.toString());
+    }
+
+    // 5. Fallback to placeholder
+    return const AssetImage('assets/slide1.png');
+  }
+
+  ImageProvider _getImageProvider(String url) {
+    if (url.startsWith('http')) {
+      return NetworkImage(url);
+    }
+    if (url.startsWith('data:image')) {
+      try {
+        final bytes = base64Decode(url.split(',').last);
+        return MemoryImage(bytes);
+      } catch (_) {}
+    }
+    return const AssetImage('assets/slide1.png');
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = ThemeHelper(context);
-    // Use salon image URL if available, else fallback to placeholder
-    final image = salon['imageUrl'] != null 
-        ? NetworkImage(salon['imageUrl']) 
-        : const AssetImage('assets/slide1.png') as ImageProvider;
 
     return GestureDetector(
       onTap: onTap,
@@ -29,14 +70,29 @@ class SalonCard extends StatelessWidget {
         ),
         child: Row(
           children: [
+            // Salon Image/Logo
             Container(
-              height: 80, width: 80,
+              height: 80,
+              width: 80,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
-                image: DecorationImage(image: image, fit: BoxFit.cover),
+                color: AppColors.lightPink,
+                image: DecorationImage(
+                  image: _getImage(),
+                  fit: BoxFit.cover,
+                ),
               ),
+              // Show store icon if no image
+              child: (salon['logo'] == null &&
+                  salon['thumbnail'] == null &&
+                  salon['imageUrl'] == null &&
+                  salon['ownerProfileImage'] == null)
+                  ? const Icon(Icons.store, color: AppColors.primaryPink, size: 30)
+                  : null,
             ),
             const SizedBox(width: 16),
+
+            // Info
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -44,37 +100,60 @@ class SalonCard extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(salon['name'] ?? 'Salon', style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+                      Expanded(
+                        child: Text(
+                          salon['name'] ?? 'salon'.tr,
+                          style: AppTextStyles.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: theme.textColor,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       Row(
                         children: [
                           const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
-                          Text('${salon['rating']}', style: AppTextStyles.label.copyWith(fontWeight: FontWeight.bold)),
+                          Text(
+                            '${salon['rating'] ?? 0.0}',
+                            style: AppTextStyles.label.copyWith(fontWeight: FontWeight.bold),
+                          ),
                         ],
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text('Starting from Rs. ${salon['price']}', style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
+                  Text(
+                    '${'starting_from_rs'.tr} ${salon['price'] ?? '500'}',
+                    style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
+                  ),
                   const SizedBox(height: 8),
                   Row(
                     children: [
                       Icon(Icons.location_on_rounded, size: 12, color: AppColors.primaryPink),
                       const SizedBox(width: 4),
-                      Text(salon['distance'] ?? 'N/A', style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-                      const Spacer(),
+                      Expanded(
+                        child: Text(
+                          salon['distance'] ?? 'N/A',
+                          style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       // Status Indicator
                       Container(
                         height: 8, width: 8,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: salon['status'] == 'Open' ? AppColors.success : Colors.red,
+                          color: salon['status'] == 'open'.tr ? AppColors.success : Colors.red,
                         ),
                       ),
                       const SizedBox(width: 4),
                       Text(
-                        salon['status'] ?? 'Closed',
+                        salon['status'] ?? 'closed'.tr,
                         style: AppTextStyles.label.copyWith(
-                          color: salon['status'] == 'Open' ? AppColors.success : Colors.red,
+                          color: salon['status'] == 'open'.tr ? AppColors.success : Colors.red,
                           fontWeight: FontWeight.bold,
                         ),
                       ),

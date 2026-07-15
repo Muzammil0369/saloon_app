@@ -23,7 +23,7 @@ class AuthGate extends StatelessWidget {
         debugPrint('AuthGate: FutureBuilder state: ${snapshot.connectionState}, hasData: ${snapshot.hasData}');
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
-          }
+        }
         return snapshot.data ?? const OnboardingScreen();
       },
     );
@@ -47,7 +47,6 @@ class AuthGate extends StatelessWidget {
       return const LoginScreen();
     }
 
-    // User is logged in, check role
     final dbService = Get.find<DatabaseService>();
     final uid = authService.uid;
     debugPrint('AuthGate: UID: $uid');
@@ -66,40 +65,56 @@ class AuthGate extends StatelessWidget {
 
     final data = userDoc.data() as Map<String, dynamic>;
     final role = data['role'] as String?;
-    debugPrint('AuthGate: User role: $role');
+    final userStatus = data['status'] as String?;
+    debugPrint('AuthGate: User role: $role, User status: $userStatus');
 
     if (role == 'customer') {
       debugPrint('AuthGate: Redirecting to CustomerMainWrapper');
       return const CustomerMainWrapper();
     } else if (role == 'owner') {
-      // Check owners collection for status
+      // ✅ Check BOTH users and owners collections
       debugPrint('AuthGate: Checking owner approval for UID: $uid');
       try {
         final ownerDoc = await FirebaseFirestore.instance.collection('owners').doc(uid).get();
+        final ownerStatus = ownerDoc.data()?['status'] as String?;
 
-        if (!ownerDoc.exists) {
-          debugPrint('AuthGate: Owner document does not exist for UID: $uid');
-          return const OwnerPendingScreen();
-        }
+        debugPrint('AuthGate: Owner doc status: "$ownerStatus", User doc status: "$userStatus"');
 
-        final ownerData = ownerDoc.data();
-        debugPrint('AuthGate: Owner doc content: $ownerData');
-        final status = ownerData?['status'] as String?;
+        // ✅ Check either collection for approved/active status
+        final isApproved = (ownerStatus != null && ownerStatus.trim().toLowerCase() == 'approved') ||
+            (userStatus != null && userStatus.trim().toLowerCase() == 'active');
 
-        debugPrint('AuthGate: Owner status found: "$status" (type: ${status.runtimeType})');
+        if (isApproved) {
+          debugPrint('AuthGate: ✅ Owner is APPROVED - Redirecting to OwnerMainWrapper');
 
-        if (status != null && status.trim().toLowerCase() == 'approved') {
-          debugPrint('AuthGate: Redirecting to OwnerMainWrapper');
+          // Sync status if mismatched
+          if (ownerStatus != 'approved' && userStatus == 'active') {
+            await FirebaseFirestore.instance.collection('owners').doc(uid).update({
+              'status': 'approved',
+              'isActive': true,
+              'showOnMap': true,
+            });
+          }
+          if (userStatus != 'active' && ownerStatus == 'approved') {
+            await FirebaseFirestore.instance.collection('users').doc(uid).update({
+              'status': 'active',
+            });
+          }
+
           return const OwnerMainWrapper();
+        } else if (ownerStatus == 'rejected' || userStatus == 'rejected') {
+          debugPrint('AuthGate: ❌ Owner was REJECTED');
+          return const OwnerPendingScreen();
         } else {
-          debugPrint('AuthGate: Status not approved, redirecting to OwnerPendingScreen');
+          debugPrint('AuthGate: ⏳ Owner still PENDING');
           return const OwnerPendingScreen();
         }
       } catch (e) {
         debugPrint('AuthGate: Error fetching owner doc: $e');
-        return const LoginScreen(); // Or handle error
+        return const LoginScreen();
       }
     }
+
     debugPrint('AuthGate: Role unknown, redirecting to RoleSelectScreen');
     return const RoleSelectScreen();
   }

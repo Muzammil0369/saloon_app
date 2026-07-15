@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
@@ -13,7 +14,7 @@ class HelpSupportScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('Help & Support', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('help'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -27,18 +28,18 @@ class HelpSupportScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Frequently Asked Questions', style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
+            Text('faq_title'.tr, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
             const SizedBox(height: 16),
-            _faqTile('How to book an appointment?', 'Go to home, select a salon, choose services and pick a slot.', theme),
-            _faqTile('What is the advance payment?', 'We require 50% advance to confirm your slot and avoid no-shows.', theme),
-            _faqTile('Can I cancel my booking?', 'Yes, you can cancel up to 2 hours before the appointment.', theme),
-            
+            _faqTile('faq_how_to_book'.tr, 'faq_how_to_book_answer'.tr, theme),
+            _faqTile('faq_advance_payment'.tr, 'faq_advance_payment_answer'.tr, theme),
+            _faqTile('faq_cancel_booking'.tr, 'faq_cancel_booking_answer'.tr, theme),
+
             const SizedBox(height: 32),
-            Text('Contact Us', style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
+            Text('contact_us'.tr, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
             const SizedBox(height: 16),
-            _contactTile(Icons.email_outlined, 'Email Support', 'support@glambook.pk', theme),
-            _contactTile(Icons.phone_outlined, 'Call Support', '+92 321 0000000', theme),
-            _contactTile(Icons.chat_bubble_outline_rounded, 'WhatsApp Chat', '+92 321 1111111', theme),
+            _contactTile(Icons.email_outlined, 'email_support'.tr, 'support@glambook.pk', theme),
+            _contactTile(Icons.phone_outlined, 'call_support'.tr, '+92 321 0000000', theme),
+            _contactTile(Icons.chat_bubble_outline_rounded, 'whatsapp_chat'.tr, '+92 321 1111111', theme),
           ],
         ),
       ),

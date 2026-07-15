@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
@@ -11,10 +12,9 @@ class FavouriteSalonsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ThemeHelper(context);
 
-    // Add ownerId to each salon (you should fetch these from Firestore in production)
     final List<Map<String, dynamic>> favourites = [
       {
-        'ownerId': 'owner_id_1', // Add ownerId
+        'ownerId': 'owner_id_1',
         'name': 'Royal Cuts Studio',
         'distance': '0.3 km',
         'status': 'Open',
@@ -22,7 +22,7 @@ class FavouriteSalonsScreen extends StatelessWidget {
         'rating': 4.9
       },
       {
-        'ownerId': 'owner_id_2', // Add ownerId
+        'ownerId': 'owner_id_2',
         'name': 'Glamour Zone',
         'distance': '0.7 km',
         'status': 'Open',
@@ -34,7 +34,7 @@ class FavouriteSalonsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('Favourites', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('favourite_salons'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -44,7 +44,7 @@ class FavouriteSalonsScreen extends StatelessWidget {
         ),
       ),
       body: favourites.isEmpty
-          ? Center(child: Text('No favourites yet', style: TextStyle(color: theme.mutedTextColor)))
+          ? Center(child: Text('no_favourites'.tr, style: TextStyle(color: theme.mutedTextColor)))
           : ListView.builder(
         padding: const EdgeInsets.all(20),
         itemCount: favourites.length,
@@ -56,7 +56,7 @@ class FavouriteSalonsScreen extends StatelessWidget {
               MaterialPageRoute(
                 builder: (_) => SalonDetailScreen(
                   ownerId: salon['ownerId'],
-                  salon: salon, // Pass both parameters
+                  salon: salon,
                 ),
               ),
             ),

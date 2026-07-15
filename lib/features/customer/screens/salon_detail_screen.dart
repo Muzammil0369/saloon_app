@@ -1,19 +1,29 @@
+
+import 'dart:convert';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:saloon_app/core/theme/app_colors.dart';
-import 'package:saloon_app/core/theme/app_gradients.dart';
-import 'package:saloon_app/core/theme/app_text_styles.dart';
-import 'package:saloon_app/core/theme/theme_helper.dart';
-import 'package:saloon_app/core/constants/app_radius.dart';
-import 'package:saloon_app/core/controllers/booking_controller.dart';
-import 'package:saloon_app/features/customer/screens/booking_screen.dart';
-import 'package:cached_network_image/cached_network_image.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:get/get_instance/src/extension_instance.dart';
+import 'package:get/get_navigation/src/extension_navigation.dart';
+import 'package:get/get_rx/src/rx_workers/rx_workers.dart';
+import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
+
+import '../../../core/constants/app_radius.dart';
+import '../../../core/controllers/booking_controller.dart';
+import '../../../core/controllers/language_controller.dart';
 import '../../../core/services/database_service.dart';
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_gradients.dart';
+import '../../../core/theme/app_text_styles.dart';
+import '../../../core/theme/theme_helper.dart';
+import 'booking_screen.dart';
 
 class SalonDetailScreen extends StatefulWidget {
-  final Map<String, dynamic>? salon; // Keep for backward compatibility
-  final String? ownerId; // New parameter
+  final Map<String, dynamic>? salon;
+  final String? ownerId;
 
   const SalonDetailScreen({
     super.key,
@@ -37,13 +47,59 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
     print('Loading services for ownerId: $_ownerId');
     _bookingController.loadServices(_ownerId);
 
-    // Debug: Listen to services changes
     ever(_bookingController.services, (services) {
       print('Services loaded: ${services.length}');
       for (var s in services) {
         print('  - ${s['name']} | Rs. ${s['price']} | ${s['duration']} min');
       }
     });
+  }
+
+  // Helper to build image from URL or Base64
+  Widget _buildImage(String? url, {double? width, double? height, BoxFit fit = BoxFit.cover}) {
+    if (url == null || url.isEmpty) {
+      return Container(
+        color: Colors.grey[200],
+        child: const Icon(Icons.store, size: 80, color: Colors.white54),
+      );
+    }
+
+    if (url.startsWith('data:image')) {
+      try {
+        final bytes = base64Decode(url.split(',').last);
+        return Image.memory(
+          bytes,
+          width: width,
+          height: height,
+          fit: fit,
+        );
+      } catch (e) {
+        return Container(
+          color: Colors.grey[200],
+          child: const Icon(Icons.broken_image, color: Colors.grey),
+        );
+      }
+    }
+
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: width,
+      height: height,
+      fit: fit,
+      placeholder: (context, url) => Container(
+        color: Colors.grey[200],
+        child: const Center(
+          child: CircularProgressIndicator(
+            strokeWidth: 2,
+            color: AppColors.primaryPink,
+          ),
+        ),
+      ),
+      errorWidget: (context, url, error) => Container(
+        color: Colors.grey[200],
+        child: const Icon(Icons.broken_image, color: Colors.grey),
+      ),
+    );
   }
 
   @override
@@ -55,14 +111,12 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
       body: StreamBuilder<DocumentSnapshot>(
         stream: _dbService.getSalonStream(_ownerId),
         builder: (context, salonSnapshot) {
-          // Loading state
           if (salonSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(
+            return  Center(
               child: CircularProgressIndicator(color: AppColors.primaryPink),
             );
           }
 
-          // Error or no data
           if (!salonSnapshot.hasData || !salonSnapshot.data!.exists) {
             return Center(
               child: Column(
@@ -70,15 +124,16 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                 children: [
                   Icon(Icons.error_outline, size: 48, color: theme.mutedTextColor),
                   const SizedBox(height: 16),
-                  Text('Salon not found', style: TextStyle(color: theme.textColor)),
+                  Text('salon_not_found'.tr, style: TextStyle(color: theme.textColor)),
                 ],
               ),
             );
           }
 
-          // Get fresh salon data from Firestore
           final salonData = salonSnapshot.data!.data() as Map<String, dynamic>;
-          final String salonName = salonData['salonName'] ?? widget.salon?['name'] ?? 'Unnamed Salon';
+          final String salonName = Get.find<LanguageController>().languageCode == 'ur'
+              ? (salonData['salonName_ur'] ?? salonData['salonName'] ?? widget.salon?['name'] ?? 'Unnamed Salon')
+              : (salonData['salonName'] ?? widget.salon?['name'] ?? 'Unnamed Salon');
           final double salonRating = (salonData['rating'] ?? widget.salon?['rating'] ?? 0.0).toDouble();
           final String salonAddress = salonData['address'] ?? widget.salon?['address'] ?? 'No address provided';
           final bool isOpen = salonData['isOpenNow'] ?? widget.salon?['status'] == 'Open';
@@ -107,42 +162,9 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                             decoration: BoxDecoration(
                               gradient: AppGradients.heroBg,
                             ),
-                            child: thumbnail != null && thumbnail.isNotEmpty
-                                ? CachedNetworkImage(
-                              imageUrl: thumbnail,
-                              fit: BoxFit.cover,
-                              placeholder: (context, url) => Container(
-                                color: Colors.grey[200],
-                                child: const Center(
-                                  child: CircularProgressIndicator(
-                                    color: AppColors.primaryPink,
-                                  ),
-                                ),
-                              ),
-                              errorWidget: (context, url, error) => Container(
-                                decoration: BoxDecoration(
-                                  gradient: AppGradients.heroBg,
-                                ),
-                                child: const Icon(
-                                  Icons.store,
-                                  size: 80,
-                                  color: Colors.white54,
-                                ),
-                              ),
-                            )
-                                : Container(
-                              decoration: BoxDecoration(
-                                gradient: AppGradients.heroBg,
-                              ),
-                              child: const Icon(
-                                Icons.store,
-                                size: 80,
-                                color: Colors.white54,
-                              ),
-                            ),
+                            child: _buildImage(thumbnail),
                           ),
                         ),
-                        // Gradient overlay
                         Container(
                           height: 300,
                           decoration: BoxDecoration(
@@ -157,7 +179,6 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                             ),
                           ),
                         ),
-                        // Back button
                         Positioned(
                           top: MediaQuery.of(context).padding.top + 10,
                           left: 10,
@@ -173,7 +194,6 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                             onPressed: () => Get.back(),
                           ),
                         ),
-                        // Salon info overlay
                         Positioned(
                           bottom: 20,
                           left: 20,
@@ -188,7 +208,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                   borderRadius: BorderRadius.circular(AppRadius.sm),
                                 ),
                                 child: Text(
-                                  isOpen ? 'OPEN' : 'CLOSED',
+                                  isOpen ? 'open'.tr.toUpperCase() : 'closed'.tr.toUpperCase(),
                                   style: AppTextStyles.label.copyWith(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
@@ -244,9 +264,9 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _infoItem(Icons.star_rounded, Colors.amber, salonRating.toStringAsFixed(1), 'Rating'),
-                              _infoItem(Icons.location_on_rounded, AppColors.primaryPink, distance, 'Distance'),
-                              _infoItem(Icons.access_time_filled_rounded, Colors.blue, '9AM - 9PM', 'Timing'),
+                              _infoItem(Icons.star_rounded, Colors.amber, salonRating.toStringAsFixed(1), 'rating'.tr),
+                              _infoItem(Icons.location_on_rounded, AppColors.primaryPink, distance, 'distance'.tr),
+                              _infoItem(Icons.access_time_filled_rounded, Colors.blue, '9AM - 9PM', 'timing'.tr),
                             ],
                           ),
                           const SizedBox(height: 20),
@@ -273,7 +293,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Our Services',
+                            'our_services'.tr,
                             style: AppTextStyles.headingSmall.copyWith(color: theme.textColor),
                           ),
                           const SizedBox(height: 16),
@@ -292,7 +312,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                 child: Padding(
                                   padding: const EdgeInsets.all(20),
                                   child: Text(
-                                    'No services available',
+                                    'no_services_available'.tr,
                                     style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
                                   ),
                                 ),
@@ -349,7 +369,6 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                             crossAxisAlignment: CrossAxisAlignment.start,
                                             children: [
                                               Text(
-                                                // Try multiple possible field names
                                                 service['name'] ?? service['serviceName'] ?? 'Unnamed Service',
                                                 style: AppTextStyles.bodyLarge?.copyWith(
                                                   fontWeight: FontWeight.w600,
@@ -393,7 +412,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: Text(
-                          'Gallery',
+                          'gallery'.tr,
                           style: AppTextStyles.headingSmall.copyWith(color: theme.textColor),
                         ),
                       ),
@@ -409,21 +428,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                               padding: const EdgeInsets.only(right: 10),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: CachedNetworkImage(
-                                  imageUrl: salonPhotos[index],
-                                  width: 120,
-                                  fit: BoxFit.cover,
-                                  placeholder: (context, url) => Container(
-                                    color: Colors.grey[200],
-                                    child: const Center(
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    ),
-                                  ),
-                                  errorWidget: (context, url, error) => Container(
-                                    color: Colors.grey[200],
-                                    child: const Icon(Icons.broken_image, color: Colors.grey),
-                                  ),
-                                ),
+                                child: _buildImage(salonPhotos[index], width: 120),
                               ),
                             );
                           },
@@ -447,7 +452,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                       : () {
                     Get.to(() => BookingScreen(
                       ownerId: _ownerId,
-                      salon: widget.salon ?? salonSnapshot.data!.data() as Map<String, dynamic>,
+                      salon: salonSnapshot.data!.data() as Map<String, dynamic>,
                     ));
                   },
                   child: AnimatedContainer(
@@ -471,8 +476,8 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                     child: Center(
                       child: Text(
                         _bookingController.selectedServices.isEmpty
-                            ? 'Select Services'
-                            : 'Book Now (Rs. ${_bookingController.totalPrice.toInt()})',
+                            ? 'select_services'.tr
+                            : '${'book_now'.tr} (Rs. ${_bookingController.totalPrice.toInt()})',
                         style: AppTextStyles.bodyLarge?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../../core/controllers/language_controller.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_helper.dart';
@@ -25,7 +26,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   final Completer<GoogleMapController> _mapController = Completer();
   GoogleMapController? _mapControllerInstance;
 
-  // Sort options
+  // Sort options - Using hardcoded values for switch cases
   String _selectedSort = 'Nearest to Far';
   final List<String> _sortOptions = [
     'Nearest to Far',
@@ -100,7 +101,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         markerId: const MarkerId('user'),
         position: _userLatLng!,
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRose),
-        infoWindow: const InfoWindow(title: 'You are here'),
+        infoWindow: InfoWindow(title: 'you_are_here'.tr),
         zIndex: 2.0,
       ));
     }
@@ -136,8 +137,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         ) / 1000;
       }
 
-      // Parse price as double for sorting
-      double priceValue = 500.0; // Default
+      double priceValue = 500.0;
       if (data['price'] != null) {
         final priceStr = data['price'].toString().replaceAll(RegExp(r'[^0-9.]'), '');
         priceValue = double.tryParse(priceStr) ?? 500.0;
@@ -145,11 +145,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
       return {
         'ownerId': doc.id,
-        'name': data['salonName'] ?? 'Unnamed Salon',
+        'name': Get.find<LanguageController>().languageCode == 'ur'
+            ? (data['salonName_ur'] ?? data['salonName'] ?? 'Unnamed Salon')
+            : (data['salonName'] ?? 'Unnamed Salon'),
         'distance': '${distKm.toStringAsFixed(1)} km',
         'distanceValue': distKm,
         'rating': data['rating']?.toDouble() ?? 4.5,
-        'status': data['isOpenNow'] == true ? 'Open' : 'Closed',
+        'status': data['isOpenNow'] == true ? 'open'.tr : 'closed'.tr,
         'price': data['price'] ?? 'Rs.500',
         'priceValue': priceValue,
         'category': data['category'] ?? 'Haircut',
@@ -163,7 +165,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }).toList();
   }
 
-  // Sort salons based on selected option
+  // ✅ FIXED: Use hardcoded strings in switch cases
   List<Map<String, dynamic>> _sortSalons(List<Map<String, dynamic>> salons) {
     List<Map<String, dynamic>> sortedList = List.from(salons);
 
@@ -191,8 +193,28 @@ class _ExploreScreenState extends State<ExploreScreen> {
     return sortedList;
   }
 
-  // Show sort bottom sheet
+  // Show sort bottom sheet with translated labels
   void _showSortBottomSheet(ThemeHelper theme) {
+    // Get translated sort options
+    final List<String> translatedOptions = _sortOptions.map((option) {
+      switch (option) {
+        case 'Nearest to Far':
+          return 'sort_nearest'.tr;
+        case 'Far to Nearest':
+          return 'sort_far'.tr;
+        case 'Price: Low to High':
+          return 'sort_price_low'.tr;
+        case 'Price: High to Low':
+          return 'sort_price_high'.tr;
+        case 'Rating: High to Low':
+          return 'sort_rating_high'.tr;
+        case 'Rating: Low to High':
+          return 'sort_rating_low'.tr;
+        default:
+          return option;
+      }
+    }).toList();
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -206,7 +228,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Handle bar
             Center(
               child: Container(
                 width: 40,
@@ -219,9 +240,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
             const SizedBox(height: 20),
 
-            // Title
             Text(
-              'Sort By',
+              'sort_by'.tr,
               style: AppTextStyles.headingMedium?.copyWith(
                 color: theme.textColor,
                 fontWeight: FontWeight.bold,
@@ -229,14 +249,15 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ),
             const SizedBox(height: 16),
 
-            // Sort options
-            ...List.generate(_sortOptions.length, (index) {
-              final option = _sortOptions[index];
-              final isSelected = _selectedSort == option;
+            ...List.generate(translatedOptions.length, (index) {
+              final option = translatedOptions[index];
+              final isSelected = _selectedSort == _sortOptions[index];
 
               return InkWell(
                 onTap: () {
-                  setState(() => _selectedSort = option);
+                  setState(() {
+                    _selectedSort = _sortOptions[index];
+                  });
                   Navigator.pop(context);
                 },
                 child: Container(
@@ -253,7 +274,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   child: Row(
                     children: [
                       Icon(
-                        _sortIcons[option],
+                        _sortIcons[_sortOptions[index]],
                         size: 20,
                         color: isSelected ? AppColors.primaryPink : theme.mutedTextColor,
                       ),
@@ -287,7 +308,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       appBar: AppBar(
         automaticallyImplyLeading: false,
         centerTitle: false,
-        title: Text('Find Salons', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('find_salons'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
       ),
       body: SafeArea(
         child: StreamBuilder<QuerySnapshot>(
@@ -298,27 +319,23 @@ class _ExploreScreenState extends State<ExploreScreen> {
             }
 
             if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-              return Center(child: Text('No salons found.', style: TextStyle(color: theme.textColor)));
+              return Center(child: Text('no_salons'.tr, style: TextStyle(color: theme.textColor)));
             }
 
             final allSalons = _parseSalons(snapshot.data!);
             final markers = _computeMarkers(allSalons);
 
-            // Apply filter and sort
-            final filteredSalons = allSalons.where((s) =>
-            _selectedFilter == 'All' || s['category'] == _selectedFilter
-            ).toList();
+            // Filter with translated values
+            final filteredSalons = allSalons.where((s) {
+              if (_selectedFilter == 'All') return true;
+              return s['category'] == _selectedFilter;
+            }).toList();
             final sortedSalons = _sortSalons(filteredSalons);
 
             return Column(
               children: [
-                // Fixed top section (Search + Filters + Map)
                 _buildTopSection(theme, markers, snapshot.connectionState == ConnectionState.waiting),
-
-                // Salon Near You + Sort row
                 _buildSortRow(theme, sortedSalons.length),
-
-                // Scrollable salon list
                 Expanded(
                   child: _buildSalonList(theme, sortedSalons, snapshot.connectionState == ConnectionState.waiting),
                 ),
@@ -331,6 +348,26 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _buildTopSection(ThemeHelper theme, Set<Marker> markers, bool isLoading) {
+    // Get translated filter labels
+    final List<String> translatedFilters = _filters.map((filter) {
+      switch (filter) {
+        case 'All':
+          return 'all'.tr;
+        case 'Haircut':
+          return 'haircut'.tr;
+        case 'Beard':
+          return 'beard'.tr;
+        case 'Facial':
+          return 'facial'.tr;
+        case 'Bridal':
+          return 'bridal'.tr;
+        case 'Nails':
+          return 'nails'.tr;
+        default:
+          return filter;
+      }
+    }).toList();
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -351,9 +388,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: TextField(
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       border: InputBorder.none,
-                      hintText: 'Search salons...',
+                      hintText: 'search'.tr + '...',
                     ),
                     style: AppTextStyles.bodyMedium?.copyWith(color: theme.textColor),
                   ),
@@ -364,30 +401,31 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
         ),
 
-        // Filter chips
+        // Filter chips with translated labels
         SizedBox(
           height: 50,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.only(left: 20),
-            itemCount: _filters.length,
+            itemCount: translatedFilters.length,
             itemBuilder: (context, index) {
-              final selected = _selectedFilter == _filters[index];
+              final isSelected = _selectedFilter == _filters[index];
+              final label = translatedFilters[index];
               return GestureDetector(
                 onTap: () => setState(() => _selectedFilter = _filters[index]),
                 child: Container(
                   margin: const EdgeInsets.only(right: 8),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                   decoration: BoxDecoration(
-                    color: selected ? AppColors.primaryPink : theme.cardColor,
+                    color: isSelected ? AppColors.primaryPink : theme.cardColor,
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: selected ? AppColors.primaryPink : theme.borderColor),
+                    border: Border.all(color: isSelected ? AppColors.primaryPink : theme.borderColor),
                   ),
                   child: Center(
                     child: Text(
-                      _filters[index],
+                      label,
                       style: AppTextStyles.label.copyWith(
-                        color: selected ? Colors.white : theme.mutedTextColor,
+                        color: isSelected ? Colors.white : theme.mutedTextColor,
                       ),
                     ),
                   ),
@@ -434,18 +472,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  // Sort row widget
   Widget _buildSortRow(ThemeHelper theme, int salonCount) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Salon Near You text with count
           Row(
             children: [
               Text(
-                'Salon Near You',
+                'salon_near_you'.tr,
                 style: AppTextStyles.headingSmall?.copyWith(
                   color: theme.textColor,
                   fontWeight: FontWeight.bold,
@@ -469,7 +505,6 @@ class _ExploreScreenState extends State<ExploreScreen> {
             ],
           ),
 
-          // Sort button
           GestureDetector(
             onTap: () => _showSortBottomSheet(theme),
             child: Container(
@@ -489,7 +524,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    'Sort',
+                    'sort'.tr,
                     style: AppTextStyles.label?.copyWith(
                       color: theme.mutedTextColor,
                     ),

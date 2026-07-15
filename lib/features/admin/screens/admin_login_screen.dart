@@ -1,22 +1,93 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/services/auth_service.dart';
 import 'package:saloon_app/core/services/database_service.dart';
-
 import '../../../core/constants/app_radius.dart';
 
-class AdminLoginScreen extends StatelessWidget {
+class AdminLoginScreen extends StatefulWidget {
   const AdminLoginScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final authService = Get.find<AuthService>();
-    final dbService = Get.find<DatabaseService>();
-    
-    final emailController = TextEditingController();
-    final passwordController = TextEditingController();
+  State<AdminLoginScreen> createState() => _AdminLoginScreenState();
+}
 
+class _AdminLoginScreenState extends State<AdminLoginScreen> {
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
+  bool _isLoading = false;
+
+  @override
+  void dispose() {
+    emailController.dispose();
+    passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleLogin() async {
+    final email = emailController.text.trim();
+    final password = passwordController.text.trim();
+
+    if (email.isEmpty || password.isEmpty) {
+      Get.snackbar('Error', 'Please enter email and password',
+          backgroundColor: Colors.red, colorText: Colors.white);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final authService = Get.find<AuthService>();
+      final dbService = Get.find<DatabaseService>();
+
+      // ✅ Use new signInWithEmail with named parameters
+      final result = await authService.signInWithEmail(
+        email: email,
+        password: password,
+      );
+
+      if (!result.success) {
+        setState(() => _isLoading = false);
+        Get.snackbar('Login Failed', result.error ?? 'Invalid credentials',
+            backgroundColor: Colors.red, colorText: Colors.white);
+        return;
+      }
+
+      // Verify if user is admin
+      final uid = authService.uid;
+      if (uid != null) {
+        final userDoc = await dbService.getUserProfile(uid);
+
+        if (!userDoc.exists) {
+          await authService.logout();
+          setState(() => _isLoading = false);
+          Get.snackbar('Access Denied', 'Account not found',
+              backgroundColor: Colors.red, colorText: Colors.white);
+          return;
+        }
+
+        final data = userDoc.data() as Map<String, dynamic>;
+        final role = data['role'] as String?;
+
+        if (role == 'admin') {
+          Get.offAllNamed('/admin-main');
+        } else {
+          await authService.logout();
+          setState(() => _isLoading = false);
+          Get.snackbar('Access Denied', 'You do not have admin privileges.',
+              backgroundColor: Colors.red, colorText: Colors.white);
+        }
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      Get.snackbar('Error', e.toString(),
+          backgroundColor: Colors.red, colorText: Colors.white);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       body: Center(
@@ -41,12 +112,9 @@ class AdminLoginScreen extends StatelessWidget {
               children: [
                 const Icon(Icons.admin_panel_settings, size: 64, color: AppColors.primaryPink),
                 const SizedBox(height: 16),
-                Text(
+                const Text(
                   "Admin Portal",
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.black87,
-                  ),
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black87),
                 ),
                 const SizedBox(height: 8),
                 Text(
@@ -57,6 +125,7 @@ class AdminLoginScreen extends StatelessWidget {
                 const SizedBox(height: 32),
                 TextField(
                   controller: emailController,
+                  keyboardType: TextInputType.emailAddress,
                   decoration: InputDecoration(
                     labelText: "Admin Email",
                     prefixIcon: const Icon(Icons.email_outlined),
@@ -82,41 +151,7 @@ class AdminLoginScreen extends StatelessWidget {
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () async {
-                      try {
-                        // 1. Sign in with Firebase
-                        await authService.signInWithEmail(
-                          emailController.text.trim(),
-                          passwordController.text.trim(),
-                        );
-
-                        // 2. Verify if the user is actually an admin
-                        final uid = authService.uid;
-                        if (uid != null) {
-                          final userDoc = await dbService.getUserProfile(uid);
-                          final data = userDoc.data() as Map<String, dynamic>?;
-                          if (userDoc.exists && data?['role'] == 'admin') {
-                            Get.offAllNamed('/admin-main');
-                          } else {
-                            // Not an admin, sign them out immediately
-                            await authService.logout();
-                            Get.snackbar(
-                              "Access Denied",
-                              "You do not have admin privileges.",
-                              backgroundColor: Colors.red,
-                              colorText: Colors.white,
-                            );
-                          }
-                        }
-                      } catch (e) {
-                        Get.snackbar(
-                          "Login Failed",
-                          e.toString(),
-                          backgroundColor: Colors.red,
-                          colorText: Colors.white,
-                        );
-                      }
-                    },
+                    onPressed: _isLoading ? null : _handleLogin,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryPink,
                       foregroundColor: Colors.white,
@@ -124,7 +159,9 @@ class AdminLoginScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
                     ),
-                    child: const Text("Login to Dashboard", style: TextStyle(fontWeight: FontWeight.bold)),
+                    child: _isLoading
+                        ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                        : const Text("Login to Dashboard", style: TextStyle(fontWeight: FontWeight.bold)),
                   ),
                 ),
               ],

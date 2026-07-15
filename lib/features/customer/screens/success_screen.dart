@@ -11,7 +11,11 @@ class SuccessScreen extends StatelessWidget {
   final String bookingId;
   final String dateTime;
 
-  const SuccessScreen({super.key, required this.bookingId, required this.dateTime});
+  const SuccessScreen({
+    super.key,
+    required this.bookingId,
+    required this.dateTime,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +30,7 @@ class SuccessScreen extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               const Spacer(),
-              
+
               // ── Success Icon ──
               Container(
                 height: 120, width: 120,
@@ -52,7 +56,7 @@ class SuccessScreen extends StatelessWidget {
 
               // ── Message ──
               Text(
-                'Booking Confirmed! 🎉',
+                'booking_success'.tr,
                 style: AppTextStyles.displayMedium?.copyWith(
                   color: theme.textColor,
                   fontSize: 24,
@@ -61,7 +65,7 @@ class SuccessScreen extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Your appointment has been successfully booked.',
+                'booking_success_desc'.tr,
                 style: AppTextStyles.bodyMedium?.copyWith(
                   color: theme.mutedTextColor,
                   height: 1.5,
@@ -81,9 +85,9 @@ class SuccessScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    _infoRow(Icons.confirmation_num_outlined, 'Booking ID', '#${bookingId.substring(0, 8)}', theme),
+                    _infoRow(Icons.confirmation_num_outlined, 'booking_id'.tr, '#${bookingId.substring(0, 8)}', theme),
                     const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: Divider()),
-                    _infoRow(Icons.calendar_today_rounded, 'Date & Time', dateTime, theme),
+                    _infoRow(Icons.calendar_today_rounded, 'date_time'.tr, dateTime, theme),
                   ],
                 ),
               ),
@@ -111,13 +115,13 @@ class SuccessScreen extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      'Go to Home',
+                      'go_to_home'.tr,
                       style: AppTextStyles.buttonText?.copyWith(fontSize: 16),
                     ),
                   ),
                 ),
               ),
-              
+
               const SizedBox(height: 20),
             ],
           ),

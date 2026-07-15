@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/features/owner/registration/owner_documents_screen.dart';
 import 'package:saloon_app/shared/widgets/app_button.dart';
 import 'package:saloon_app/shared/widgets/progress_step_bar.dart';
+
+import 'owner_coworkers_screen.dart';
 
 class OwnerServicesScreen extends StatefulWidget {
   final Map<String, dynamic> salonData;
@@ -30,7 +33,7 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('Services', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('services'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: theme.textColor),
           onPressed: () => Navigator.pop(context),
@@ -42,14 +45,14 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ProgressStepBar(totalSteps: 6, currentStep: 4),
+              const ProgressStepBar(totalSteps: 7, currentStep: 4),
               const SizedBox(height: 30),
 
-              Text('Your Menu ✂️',
+              Text('your_menu'.tr + ' ✂️',
                 style: AppTextStyles.displayLarge?.copyWith(fontSize: 25, color: theme.textColor),
               ),
               const SizedBox(height: 8),
-              Text('List the services you offer',
+              Text('list_services'.tr,
                   style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor)),
               
               const SizedBox(height: 30),
@@ -76,7 +79,7 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
                     children: [
                       const Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryPink),
                       const SizedBox(width: 8),
-                      Text('Add New Service', style: AppTextStyles.buttonText?.copyWith(color: AppColors.primaryPink)),
+                      Text('add_new_service'.tr, style: AppTextStyles.buttonText?.copyWith(color: AppColors.primaryPink)),
                     ],
                   ),
                 ),
@@ -85,13 +88,13 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
               const SizedBox(height: 40),
 
               AppButton(
-                label: 'Save & Next',
+                label: 'save_next'.tr,
                 onTap: () {
                   final updatedSalonData = {
                     ...widget.salonData,
                     'services': services,
                   };
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => OwnerDocumentsScreen(salonData: updatedSalonData)));
+                  Navigator.push(context, MaterialPageRoute(builder: (context) => OwnerCoworkersScreen(salonData: updatedSalonData)));
                 },
               ),
             ],
@@ -118,7 +121,7 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
               children: [
                 Text(service['name']!, style: AppTextStyles.headingSmall?.copyWith(color: theme.textColor)),
                 const SizedBox(height: 4),
-                Text('Rs. ${service['price']} · ${service['duration']} min', 
+                Text('${'rs'.tr} ${service['price']} · ${service['duration']} ${'min'.tr}',
                   style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
               ],
             ),
@@ -155,13 +158,13 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('Edit Service', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+              Text('edit_service'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
               const SizedBox(height: 20),
-              TextField(controller: nameCtrl, decoration: const InputDecoration(labelText: 'Name')),
+              TextField(controller: nameCtrl, decoration: InputDecoration(labelText: 'service_name'.tr)),
               const SizedBox(height: 12),
-              TextField(controller: priceCtrl, decoration: const InputDecoration(labelText: 'Price (Rs)')),
+              TextField(controller: priceCtrl, decoration: InputDecoration(labelText: 'service_price'.tr)),
               const SizedBox(height: 12),
-              TextField(controller: durCtrl, decoration: const InputDecoration(labelText: 'Duration (min)')),
+              TextField(controller: durCtrl, decoration: InputDecoration(labelText: 'service_duration'.tr)),
               const SizedBox(height: 20),
               // In OwnerServicesScreen, update the "Save & Next" button:
               AppButton(

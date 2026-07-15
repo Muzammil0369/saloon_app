@@ -1,7 +1,13 @@
+// lib/features/customer/screens/my_bookings_screen.dart
 import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_text_styles.dart';
-import '../../../core/theme/theme_helper.dart';
+import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
+import 'package:saloon_app/core/theme/app_colors.dart';
+import 'package:saloon_app/core/theme/app_text_styles.dart';
+import 'package:saloon_app/core/theme/theme_helper.dart';
+import 'package:saloon_app/core/services/auth_service.dart';
+import 'package:saloon_app/features/customer/screens/qr_screen.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -11,57 +17,26 @@ class MyBookingsScreen extends StatefulWidget {
 }
 
 class _MyBookingsScreenState extends State<MyBookingsScreen> {
-  int _selectedTab = 0;
-  final List<String> _tabs = ['Upcoming', 'Completed', 'Cancelled'];
+  String _selectedTab = 'upcoming';
+  bool _isNavigating = false;
 
-  final List<Map<String, dynamic>> _upcoming = [
-    {
-      'salon': 'Royal Cuts Studio',
-      'date': 'Tue 29 Apr · 10:00 AM',
-      'services': ['Haircut', 'Beard'],
-      'price': 'Rs.700',
-      'status': 'Confirmed',
-    },
-    {
-      'salon': 'Glamour Zone',
-      'date': 'Wed 30 Apr · 2:00 PM',
-      'services': ['Facial'],
-      'price': 'Rs.800',
-      'status': 'Pending',
-    },
-  ];
+  String get _customerId => Get.find<AuthService>().uid ?? '';
 
-  final List<Map<String, dynamic>> _completed = [
-    {
-      'salon': 'The Barber Guild',
-      'date': 'Mon 15 Apr · 11:00 AM',
-      'services': ['Classic Cut'],
-      'price': 'Rs.600',
-      'status': 'Completed',
-    },
-    {
-      'salon': 'Royal Cuts Studio',
-      'date': 'Mon 1 Apr · 3:00 PM',
-      'services': ['Haircut', 'Facial'],
-      'price': 'Rs.1,300',
-      'status': 'Completed',
-    },
-  ];
+  Stream<QuerySnapshot> _getBookings() {
+    Query query = FirebaseFirestore.instance
+        .collection('bookings')
+        .where('customerId', isEqualTo: _customerId)
+        .orderBy('createdAt', descending: true);
 
-  final List<Map<String, dynamic>> _cancelled = [
-    {
-      'salon': 'Elite Hair Studio',
-      'date': 'Fri 5 Apr · 5:00 PM',
-      'services': ['Hair Color'],
-      'price': 'Rs.1,000',
-      'status': 'Cancelled',
-    },
-  ];
+    if (_selectedTab == 'upcoming') {
+      query = query.where('status', whereIn: ['pending', 'confirmed', 'in_progress']);
+    } else if (_selectedTab == 'completed') {
+      query = query.where('status', whereIn: ['completed', 'paid', 'verified']);
+    } else if (_selectedTab == 'cancelled') {
+      query = query.where('status', isEqualTo: 'cancelled');
+    }
 
-  List<Map<String, dynamic>> get _currentList {
-    if (_selectedTab == 0) return _upcoming;
-    if (_selectedTab == 1) return _completed;
-    return _cancelled;
+    return query.snapshots();
   }
 
   @override
@@ -71,248 +46,299 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        automaticallyImplyLeading: false,
+        title: Text('my_bookings'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('My Bookings', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
-        centerTitle: false,
       ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              // Tabs
-              Container(
-                height: 48,
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: theme.cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  children: List.generate(_tabs.length, (i) {
-                    final selected = _selectedTab == i;
-                    return Expanded(
-                      child: Padding(
-                        padding: EdgeInsets.only(
-                          left: i == 0 ? 0 : 4,
-                          right: i == _tabs.length - 1 ? 0 : 4,
-                        ),
-                        child: GestureDetector(
-                          onTap: () => setState(() => _selectedTab = i),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 200),
-                            decoration: BoxDecoration(
-                              color: selected ? theme.cardColor : Colors.transparent,
-                              borderRadius: BorderRadius.circular(9),
-                              boxShadow: selected
-                                  ? [
-                                BoxShadow(
-                                  color: AppColors.primaryPink.withOpacity(0.4),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ]
-                                  : [],
-                            ),
-                            alignment: Alignment.center,
-                            child: Text(
-                              _tabs[i],
-                              style: AppTextStyles.label.copyWith(
-                                color: selected ? AppColors.primaryPink : theme.mutedTextColor,
-                                fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    );
-                  }),
-                ),
-              ),
+      body: Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                _buildTab('upcoming'.tr, 'upcoming'),
+                _buildTab('completed'.tr, 'completed'),
+                _buildTab('canceled'.tr, 'cancelled'),
+              ],
+            ),
+          ),
+          Expanded(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _getBookings(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator(color: AppColors.primaryPink));
+                }
 
-              const SizedBox(height: 16),
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.calendar_today, size: 64, color: theme.mutedTextColor),
+                        const SizedBox(height: 16),
+                        Text('no_bookings'.tr, style: TextStyle(color: theme.mutedTextColor)),
+                      ],
+                    ),
+                  );
+                }
 
-              // List
-              Expanded(
-                child: _currentList.isEmpty
-                    ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                final bookings = snapshot.data!.docs;
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: bookings.length,
+                  itemBuilder: (context, index) {
+                    final booking = bookings[index].data() as Map<String, dynamic>;
+                    final bookingId = bookings[index].id;
+                    return _buildBookingCard(booking, bookingId, theme);
+                  },
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTab(String label, String value) {
+    final isSelected = _selectedTab == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedTab = value),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primaryPink : Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Center(
+            child: Text(label, style: TextStyle(
+              color: isSelected ? Colors.white : (Theme.of(context).brightness == Brightness.dark ? AppColors.darkMutedText : AppColors.mutedText),
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+            )),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBookingCard(Map<String, dynamic> booking, String bookingId, ThemeHelper theme) {
+    final status = booking['status'] ?? 'pending';
+    final salonName = booking['salonName'] ?? 'Salon';
+    final services = booking['services'] as List? ?? [];
+    final totalPrice = booking['totalPrice'] ?? 0;
+    final date = (booking['date'] as Timestamp?)?.toDate();
+    final timeSlot = booking['timeSlot'] ?? '';
+    final paymentStatus = booking['paymentStatus'] ?? 'unpaid';
+    final qrVerified = booking['qrVerified'] ?? false;
+
+    Color statusColor;
+    String statusLabel;
+    IconData statusIcon;
+
+    switch (status) {
+      case 'pending':
+        statusColor = Colors.grey;
+        statusLabel = 'pending_status'.tr;
+        statusIcon = Icons.hourglass_empty;
+        break;
+      case 'confirmed':
+        statusColor = Colors.blue;
+        statusLabel = 'confirmed_status'.tr;
+        statusIcon = Icons.check_circle_outline;
+        break;
+      case 'in_progress':
+        statusColor = Colors.orange;
+        statusLabel = 'in_progress_status'.tr;
+        statusIcon = Icons.cut;
+        break;
+      case 'completed':
+        statusColor = const Color(0xFF7B1FA2);
+        statusLabel = 'service_done'.tr;
+        statusIcon = Icons.done_all;
+        break;
+      case 'paid':
+        statusColor = Colors.green;
+        statusLabel = 'paid_status'.tr;
+        statusIcon = Icons.payment;
+        break;
+      case 'verified':
+        statusColor = const Color(0xFF00C853);
+        statusLabel = 'verified_status'.tr;
+        statusIcon = Icons.verified;
+        break;
+      case 'cancelled':
+        statusColor = Colors.red;
+        statusLabel = 'cancelled_status'.tr;
+        statusIcon = Icons.cancel;
+        break;
+      default:
+        statusColor = Colors.grey;
+        statusLabel = 'unknown'.tr;
+        statusIcon = Icons.help_outline;
+    }
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      color: theme.cardColor,
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Salon Name + Status
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    salonName,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15,
+                      color: theme.textColor,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: statusColor.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: statusColor.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(Icons.calendar_today_rounded, size: 48, color: theme.borderColor),
-                      const SizedBox(height: 12),
-                      Text('No bookings here', style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
+                      Icon(statusIcon, size: 14, color: statusColor),
+                      const SizedBox(width: 4),
+                      Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w700)),
                     ],
                   ),
-                )
-                    : ListView.separated(
-                  itemCount: _currentList.length,
-                  separatorBuilder: (context, index) => const SizedBox(height: 12),
-                  itemBuilder: (context, index) {
-                    final b = _currentList[index];
-                    final isUpcoming = _selectedTab == 0;
-                    final isCompleted = _selectedTab == 1;
-
-                    return Container(
-                      padding: const EdgeInsets.all(14),
-                      decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [theme.softShadow],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Top row
-                          Row(
-                            children: [
-                              Container(
-                                width: 42,
-                                height: 42,
-                                decoration: BoxDecoration(
-                                  color: theme.lightPinkColor,
-                                  borderRadius: BorderRadius.circular(14),
-                                ),
-                                child: const Icon(Icons.content_cut_rounded, size: 20, color: AppColors.primaryPink),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(b['salon'], style: AppTextStyles.cardTitle?.copyWith(color: theme.textColor)),
-                                    const SizedBox(height: 2),
-                                    Text(b['date'], style: AppTextStyles.label?.copyWith(color: theme.mutedTextColor)),
-                                  ],
-                                ),
-                              ),
-                              // Status badge
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: b['status'] == 'Confirmed'
-                                      ? AppColors.successBg
-                                      : b['status'] == 'Pending'
-                                      ? theme.lightPinkColor
-                                      : b['status'] == 'Cancelled'
-                                      ? const Color(0xFFFFF0F0)
-                                      : theme.backgroundColor,
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Text(
-                                  b['status'],
-                                  style: AppTextStyles.label.copyWith(
-                                    color: b['status'] == 'Confirmed'
-                                        ? AppColors.success
-                                        : b['status'] == 'Pending'
-                                        ? AppColors.primaryPink
-                                        : b['status'] == 'Cancelled'
-                                        ? Colors.red
-                                        : theme.mutedTextColor,
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-
-                          const SizedBox(height: 10),
-                          Divider(height: 1, color: theme.borderColor),
-                          const SizedBox(height: 10),
-
-                          // Service tags
-                          Wrap(
-                            spacing: 6,
-                            runSpacing: 6,
-                            children: (b['services'] as List<String>)
-                                .map((s) => Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: theme.lightPinkColor,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(s,
-                                  style: AppTextStyles.label.copyWith(
-                                      color: AppColors.primaryPink, fontWeight: FontWeight.w600)),
-                            ))
-                                .toList(),
-                          ),
-
-                          const SizedBox(height: 10),
-
-                          // Price + actions
-                          Row(
-                            children: [
-                              Text(b['price'],
-                                  style: AppTextStyles.bodyMedium?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                    color: theme.textColor,
-                                  )),
-                              const Spacer(),
-                              if (isUpcoming) ...[
-                                GestureDetector(
-                                  onTap: () {},
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      color: theme.cardColor,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(color: theme.borderColor),
-                                    ),
-                                    child: Text('Cancel',
-                                        style: AppTextStyles.label.copyWith(
-                                            color: theme.mutedTextColor, fontWeight: FontWeight.w600)),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                GestureDetector(
-                                  onTap: () {},
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [AppColors.primaryPink, AppColors.darkPink],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text('Reschedule',
-                                        style: AppTextStyles.label.copyWith(
-                                            color: Colors.white, fontWeight: FontWeight.w700)),
-                                  ),
-                                ),
-                              ],
-                              if (isCompleted)
-                                GestureDetector(
-                                  onTap: () {},
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                                    decoration: BoxDecoration(
-                                      gradient: const LinearGradient(
-                                        colors: [AppColors.primaryPink, AppColors.darkPink],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text('Book Again',
-                                        style: AppTextStyles.label.copyWith(
-                                            color: Colors.white, fontWeight: FontWeight.w700)),
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    );
-                  },
                 ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Date & Time
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: theme.lightPinkColor,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.calendar_today, size: 13, color: AppColors.primaryPink),
+                  const SizedBox(width: 6),
+                  Text(
+                    date != null ? DateFormat('dd MMM yyyy').format(date) : 'N/A',
+                    style: TextStyle(color: AppColors.primaryPink, fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(Icons.access_time, size: 13, color: AppColors.primaryPink),
+                  const SizedBox(width: 6),
+                  Text(
+                    timeSlot,
+                    style: TextStyle(color: AppColors.primaryPink, fontSize: 12, fontWeight: FontWeight.w600),
+                  ),
+                ],
+              ),
+            ),
+
+            // Services
+            if (services.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Wrap(
+                spacing: 6,
+                runSpacing: 4,
+                children: services.map<Widget>((s) {
+                  final name = s is Map ? (s['name'] ?? s['serviceName'] ?? '') : s.toString();
+                  return Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: AppColors.lightPink,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.primaryPink,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  );
+                }).toList(),
               ),
             ],
-          ),
+
+            const SizedBox(height: 10),
+
+            // Price + Actions
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'Rs. $totalPrice',
+                  style: const TextStyle(
+                    color: AppColors.primaryPink,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+
+                // QR / Verified button
+                if (paymentStatus == 'paid' || status == 'paid' || status == 'verified')
+                  qrVerified == true || status == 'verified'
+                      ? Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.verified, color: Colors.green, size: 14),
+                        SizedBox(width: 4),
+                        Text('Verified', style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.w600)),
+                      ],
+                    ),
+                  )
+                      : TextButton.icon(
+                    onPressed: () {
+                      if (_isNavigating) return;
+                      _isNavigating = true;
+                      Get.to(() => QRScreen(
+                        bookingId: bookingId,
+                        ownerId: booking['ownerId'] ?? '',
+                      ))?.then((_) {
+                        if (mounted) _isNavigating = false;
+                      });
+                    },
+                    icon: const Icon(Icons.qr_code, size: 16),
+                    label: Text('show_qr'.tr, style: const TextStyle(fontSize: 12)),
+                    style: TextButton.styleFrom(
+                      foregroundColor: AppColors.primaryPink,
+                      backgroundColor: AppColors.lightPink,
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                  ),
+              ],
+            ),
+          ],
         ),
       ),
     );

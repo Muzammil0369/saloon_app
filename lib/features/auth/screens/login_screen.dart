@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
@@ -28,27 +29,43 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passwordController.text.trim();
 
     if (email.isEmpty || password.isEmpty) {
-      Get.snackbar('Error', 'Please enter email and password',
-          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      Get.snackbar(
+        'error'.tr,
+        'please_enter_email_password'.tr,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
       return;
     }
 
     setState(() => _isLoading = true);
-    
+
     final authService = Get.find<AuthService>();
     final dbService = Get.find<DatabaseService>();
 
-    final userCredential = await authService.signInWithEmail(email, password);
-    
-    if (userCredential == null) {
+    final result = await authService.signInWithEmail(email: email, password: password);
+
+    if (!result.success) {
+      setState(() => _isLoading = false);
+      Get.snackbar(
+        'login_failed'.tr,
+        result.error ?? 'please_try_again'.tr,
+        backgroundColor: Colors.redAccent,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    final userId = authService.uid;
+    if (userId == null) {
       setState(() => _isLoading = false);
       return;
     }
 
-    final userDoc = await dbService.getUserProfile(userCredential.user!.uid);
-    
+    final userDoc = await dbService.getUserProfile(userId);
+
     if (!userDoc.exists) {
-      Get.snackbar('Error', 'Account not found. Please register first.');
+      Get.snackbar('error'.tr, 'account_not_found'.tr);
       setState(() => _isLoading = false);
       return;
     }
@@ -59,14 +76,16 @@ class _LoginScreenState extends State<LoginScreen> {
     if (role == 'customer') {
       Get.offAll(() => const CustomerMainWrapper());
     } else if (role == 'owner') {
-      final status = data['status'] as String?;
-      if (status == 'approved') {
+      final ownerDoc = await FirebaseFirestore.instance.collection('owners').doc(userId).get();
+      final ownerStatus = ownerDoc.data()?['status'] as String?;
+
+      if (ownerStatus == 'approved') {
         Get.offAll(() => const OwnerMainWrapper());
       } else {
         Get.offAll(() => const OwnerPendingScreen());
       }
     } else {
-      Get.snackbar('Access Denied', 'Invalid user role.');
+      Get.snackbar('access_denied'.tr, 'invalid_user_role'.tr);
       setState(() => _isLoading = false);
     }
   }
@@ -85,14 +104,16 @@ class _LoginScreenState extends State<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Welcome Back! 👋',
+                Text(
+                  'welcome_back'.tr + ' 👋',
                   style: AppTextStyles.headingLarge.copyWith(
                     fontSize: 32,
                     color: theme.textColor,
                   ),
                 ),
                 const SizedBox(height: 12),
-                Text('Sign in to continue to Glambook.',
+                Text(
+                  'sign_in_to_continue'.tr,
                   style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor),
                 ),
                 const SizedBox(height: 48),
@@ -103,28 +124,37 @@ class _LoginScreenState extends State<LoginScreen> {
                   keyboardType: TextInputType.emailAddress,
                   style: TextStyle(color: theme.textColor),
                   decoration: InputDecoration(
-                    hintText: 'Email',
+                    hintText: 'email'.tr,
                     filled: true,
                     fillColor: theme.cardColor,
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: theme.borderColor)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: theme.borderColor),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 16),
-                
+
                 // Password field
                 TextField(
                   controller: _passwordController,
                   obscureText: !_isPasswordVisible,
                   style: TextStyle(color: theme.textColor),
                   decoration: InputDecoration(
-                    hintText: 'Password',
+                    hintText: 'password'.tr,
                     filled: true,
                     fillColor: theme.cardColor,
                     suffixIcon: IconButton(
-                      icon: Icon(_isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: theme.mutedTextColor),
+                      icon: Icon(
+                        _isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                        color: theme.mutedTextColor,
+                      ),
                       onPressed: () => setState(() => _isPasswordVisible = !_isPasswordVisible),
                     ),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: theme.borderColor)),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(color: theme.borderColor),
+                    ),
                   ),
                 ),
 
@@ -133,7 +163,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 _isLoading
                     ? const Center(child: CircularProgressIndicator(color: AppColors.primaryPink))
                     : AppButton(
-                  label: 'Sign In',
+                  label: 'sign_in'.tr,
                   onTap: _handleLogin,
                 ),
 
@@ -143,7 +173,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 Center(
                   child: Column(
                     children: [
-                      Text('Not registered yet?',
+                      Text(
+                        'no_account'.tr,
                         style: AppTextStyles.bodySmall.copyWith(color: theme.mutedTextColor),
                       ),
                       const SizedBox(height: 16),
@@ -155,7 +186,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             color: AppColors.lightPink,
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: Text('Create an Account 🚀',
+                          child: Text(
+                            'create_account'.tr + ' 🚀',
                             style: AppTextStyles.linkText.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:saloon_app/features/admin/screens/admin_settings_screen.dart';
 import 'package:saloon_app/features/admin/widgets/admin_top_bar.dart';
 import 'package:saloon_app/features/admin/screens/audit_log_screen.dart';
-
 import 'controllers/admin_controller.dart';
 import 'screens/admin_dashboard_screen.dart';
 import 'screens/salon_verification_screen.dart';
@@ -21,6 +23,33 @@ class AdminMainWrapper extends StatefulWidget {
 class _AdminMainWrapperState extends State<AdminMainWrapper> {
   int _selectedIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  String _adminName = 'Super Admin';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAdminName();
+  }
+
+  Future<void> _loadAdminName() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    try {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
+
+      if (doc.exists) {
+        final data = doc.data()!;
+        final name = data['name'] ?? data['fullName'] ?? user.email ?? 'Super Admin';
+        if (mounted) {
+          setState(() => _adminName = name);
+        }
+      }
+    } catch (_) {}
+  }
 
   final List<Widget> _screens = [
     const AdminDashboardScreen(),
@@ -29,6 +58,7 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
     const TransactionMonitoringScreen(),
     const UserManagementScreen(),
     const AuditLogScreen(),
+    const AdminSettingsScreen(),
   ];
 
   final List<Map<String, dynamic>> _navItems = [
@@ -38,6 +68,7 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
     {'icon': Icons.analytics_rounded, 'label': 'Transactions'},
     {'icon': Icons.people_alt_rounded, 'label': 'Users'},
     {'icon': Icons.history_rounded, 'label': 'Audit Logs'},
+    {'icon': Icons.settings, 'label': 'Settings'},
   ];
 
   @override
@@ -53,8 +84,10 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
           Expanded(
             child: Column(
               children: [
+                // In AdminMainWrapper, update the AdminTopBar:
                 AdminTopBar(
-                  adminName: "Super Admin",
+                  adminName: _adminName,
+                  adminRole: "Administrator", // Or fetch from Firestore too
                   onMenuPressed: isDesktop ? null : () => _scaffoldKey.currentState?.openDrawer(),
                   onLogout: () => Get.offAllNamed('/admin-login'),
                 ),
@@ -76,13 +109,11 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
     return Container(
       decoration: const BoxDecoration(
         color: AdminColors.surface,
-        border: Border(
-          right: BorderSide(color: AdminColors.border),
-        ),
+        border: Border(right: BorderSide(color: AdminColors.border)),
       ),
       child: Column(
         children: [
-          // Logo Area
+          // Logo
           Container(
             width: double.infinity,
             height: 80,
@@ -99,33 +130,38 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
                   child: const Icon(Icons.auto_awesome, color: AdminColors.primary, size: 24),
                 ),
                 const SizedBox(width: 12),
-                const Text(
-                  "GLAMBOOK",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: AdminColors.primary,
-                    letterSpacing: 1.0,
-                  ),
-                ),
+                const Text("GLAMBOOK", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AdminColors.primary, letterSpacing: 1.0)),
               ],
             ),
           ),
           const SizedBox(height: 20),
-          
-          // Navigation
+
+          // Navigation Items
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: _navItems.length,
-              itemBuilder: (context, index) {
-                return _buildNavItem(index);
-              },
+              itemBuilder: (context, index) => _buildNavItem(index),
             ),
           ),
-          
-          // Bottom Actions
-          _buildBottomActions(),
+
+          // Logout Button (Bottom)
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AdminColors.border)),
+            ),
+            child: InkWell(
+              onTap: () => Get.offAllNamed('/admin-login'),
+              child: const Row(
+                children: [
+                  Icon(Icons.logout, color: AdminColors.danger, size: 20),
+                  SizedBox(width: 12),
+                  Text("Logout", style: TextStyle(color: AdminColors.danger, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -138,12 +174,10 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
       child: InkWell(
         onTap: () {
           setState(() => _selectedIndex = index);
-          // Check if screen is small by checking width
           if (MediaQuery.of(context).size.width <= 1024) {
-             // If not desktop, close drawer after selection
-             if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
-               Navigator.pop(context);
-             }
+            if (_scaffoldKey.currentState?.isDrawerOpen ?? false) {
+              Navigator.pop(context);
+            }
           }
         },
         borderRadius: BorderRadius.circular(8),
@@ -155,87 +189,25 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
           ),
           child: Row(
             children: [
-              Icon(
-                _navItems[index]['icon'],
-                color: isSelected ? AdminColors.primary : AdminColors.textSecondary,
-                size: 22,
-              ),
+              Icon(_navItems[index]['icon'], color: isSelected ? AdminColors.primary : AdminColors.textSecondary, size: 22),
               const SizedBox(width: 12),
-              Text(
-                _navItems[index]['label'],
-                style: TextStyle(
-                  color: isSelected ? AdminColors.primary : AdminColors.textSecondary,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                  fontSize: 14,
+              Expanded(
+                child: Text(
+                  _navItems[index]['label'],
+                  style: TextStyle(
+                    color: isSelected ? AdminColors.primary : AdminColors.textSecondary,
+                    fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                    fontSize: 14,
+                  ),
                 ),
               ),
               if (isSelected)
-                const Spacer(),
-              if (isSelected)
                 Container(
-                  width: 4,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: AdminColors.primary,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                  width: 4, height: 16,
+                  decoration: BoxDecoration(color: AdminColors.primary, borderRadius: BorderRadius.circular(2)),
                 ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomActions() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: const BoxDecoration(
-        border: Border(
-          top: BorderSide(color: AdminColors.border),
-        ),
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _buildNavItemExtra(Icons.settings, "Settings", () => Get.find<AdminController>().goToSettings()),
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: () => Get.offAllNamed('/admin-login'),
-            child: Row(
-              children: [
-                const Icon(Icons.logout, color: AdminColors.danger, size: 20),
-                const SizedBox(width: 12),
-                const Text(
-                  "Logout",
-                  style: TextStyle(color: AdminColors.danger, fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildNavItemExtra(IconData icon, String label, VoidCallback onTap) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        child: Row(
-          children: [
-            Icon(icon, color: AdminColors.textSecondary, size: 22),
-            const SizedBox(width: 12),
-            Text(
-              label,
-              style: const TextStyle(
-                color: AdminColors.textSecondary,
-                fontSize: 14,
-              ),
-            ),
-          ],
         ),
       ),
     );

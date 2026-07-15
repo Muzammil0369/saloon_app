@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -58,7 +59,7 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
   // Pick image from gallery
   Future<void> _pickImage() async {
     if (_images.length >= 10) {
-      Get.snackbar('Limit Reached', 'Maximum 10 photos allowed');
+      Get.snackbar('limit_reached'.tr, 'max_photos'.tr);
       return;
     }
 
@@ -73,7 +74,7 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
         await _uploadImage(File(image.path));
       }
     } catch (e) {
-      Get.snackbar('Error', 'Failed to pick image');
+      Get.snackbar('error'.tr, 'failed_pick_image'.tr);
     }
   }
 
@@ -109,26 +110,26 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
         _isUploading = false;
       });
 
-      Get.snackbar('Success', 'Image uploaded successfully');
+      Get.snackbar('success'.tr, 'image_uploaded'.tr);
     } catch (e) {
       setState(() => _isUploading = false);
-      Get.snackbar('Error', 'Failed to upload image: $e');
+      Get.snackbar('error'.tr, 'failed_upload_image'.tr + ': $e');
     }
   }
 
   // Delete image
   Future<void> _deleteImage(int index) async {
     final confirm = await Get.defaultDialog<bool>(
-      title: 'Delete Image',
-      middleText: 'Are you sure you want to delete this image?',
+      title: 'delete_image'.tr,
+      middleText: 'confirm_delete_image'.tr,
       confirm: ElevatedButton(
         onPressed: () => Get.back(result: true),
         style: ElevatedButton.styleFrom(backgroundColor: AppColors.errorRed),
-        child: const Text('Delete', style: TextStyle(color: Colors.white)),
+        child: Text('delete'.tr, style: TextStyle(color: Colors.white)),
       ),
       cancel: TextButton(
         onPressed: () => Get.back(result: false),
-        child: const Text('Cancel'),
+        child: Text('cancel'.tr),
       ),
     );
 
@@ -147,11 +148,36 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
       });
 
       setState(() => _images = updatedImages);
-      Get.snackbar('Success', 'Image deleted');
+      Get.snackbar('success'.tr, 'image_deleted'.tr);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to delete image');
+      Get.snackbar('error'.tr, 'failed_delete_image'.tr);
     }
   }
+
+  Future<void> _setAsLogo(int index) async {
+    final imageUrl = _images[index];
+
+    await FirebaseFirestore.instance
+        .collection('owners')
+        .doc(_ownerId)
+        .update({
+      'logo': imageUrl,
+      'thumbnail': imageUrl,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+
+    // Also update users collection for customer side
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_ownerId)
+        .update({
+      'profileImage': imageUrl,
+    });
+
+    Get.snackbar('success'.tr, 'logo_updated'.tr,
+        backgroundColor: AppColors.success, colorText: Colors.white);
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -160,7 +186,7 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('Salon Gallery', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('salon_gallery'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -185,9 +211,9 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Photos', style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
+                  Text('photos'.tr, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
                   const SizedBox(height: 8),
-                  Text('Showcase your best work and salon interior',
+                  Text('showcase_work'.tr,
                       style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
                   const SizedBox(height: 24),
 
@@ -200,7 +226,7 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          '${_images.length} photo${_images.length != 1 ? 's' : ''}',
+                          '${_images.length} ${_images.length != 1 ? 'photos'.tr : 'photo'.tr}',
                           style: AppTextStyles.label.copyWith(
                             color: AppColors.primaryPink,
                             fontWeight: FontWeight.w600,
@@ -240,7 +266,7 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
                               children: [
                                 const Icon(Icons.add_a_photo_rounded, color: AppColors.primaryPink, size: 32),
                                 const SizedBox(height: 8),
-                                Text('Add Photo',
+                                Text('add_photo'.tr,
                                     style: AppTextStyles.label.copyWith(
                                         color: AppColors.primaryPink, fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 4),
@@ -255,54 +281,117 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
                       final imageIndex = index - 1;
                       final imageUrl = _images[imageIndex];
 
-                      return Stack(
-                        children: [
-                          Hero(
-                            tag: 'gallery_image_$imageIndex',
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: imageUrl.startsWith('http')
-                                  ? CachedNetworkImage(
-                                imageUrl: imageUrl,
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
-                                placeholder: (context, url) => Container(
-                                  color: Colors.grey[200],
-                                  child: const Center(
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryPink),
+                      return // Replace the Stack section (the image card) with this complete version:
+
+                        Stack(
+                          children: [
+                            // Image
+                            Hero(
+                              tag: 'gallery_image_$imageIndex',
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(20),
+                                child: imageUrl.startsWith('http')
+                                    ? CachedNetworkImage(
+                                  imageUrl: imageUrl,
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                  placeholder: (context, url) => Container(
+                                    color: Colors.grey[200],
+                                    child: const Center(
+                                      child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryPink),
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Container(
+                                    color: Colors.grey[200],
+                                    child: const Icon(Icons.broken_image, color: Colors.grey, size: 40),
+                                  ),
+                                )
+                                    : imageUrl.startsWith('data:image')
+                                    ? Image.memory(
+                                  base64Decode(imageUrl.split(',').last),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                )
+                                    : Image.file(
+                                  File(imageUrl),
+                                  fit: BoxFit.cover,
+                                  width: double.infinity,
+                                  height: double.infinity,
+                                ),
+                              ),
+                            ),
+
+                            // ✅ SET AS LOGO BUTTON
+                            Positioned(
+                              bottom: 8, left: 8,
+                              child: GestureDetector(
+                                onTap: () => _setAsLogo(imageIndex),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primaryPink.withOpacity(0.9),
+                                    borderRadius: BorderRadius.circular(10),
+                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4)],
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.star, color: Colors.white, size: 12),
+                                      SizedBox(width: 4),
+                                      Text('logo'.tr, style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600)),
+                                    ],
                                   ),
                                 ),
-                                errorWidget: (context, url, error) => Container(
-                                  color: Colors.grey[200],
-                                  child: const Icon(Icons.broken_image, color: Colors.grey, size: 40),
-                                ),
-                              )
-                                  : Image.file(
-                                File(imageUrl),
-                                fit: BoxFit.cover,
-                                width: double.infinity,
-                                height: double.infinity,
                               ),
                             ),
-                          ),
-                          Positioned(
-                            top: 8, right: 8,
-                            child: GestureDetector(
-                              onTap: () => _deleteImage(imageIndex),
-                              child: Container(
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  color: AppColors.errorRed,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
+
+                            // ✅ CURRENT LOGO INDICATOR
+                            // Check if this image is currently set as logo
+                            StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance.collection('owners').doc(_ownerId).snapshots(),
+                              builder: (context, snapshot) {
+                                final data = snapshot.data?.data() as Map<String, dynamic>?;
+                                final currentLogo = data?['logo'];
+                                final isLogo = currentLogo == imageUrl;
+
+                                if (isLogo) {
+                                  return Positioned(
+                                    top: 8, left: 8,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: const BoxDecoration(
+                                        color: Colors.amber,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 4)],
+                                      ),
+                                      child: const Icon(Icons.star, color: Colors.white, size: 14),
+                                    ),
+                                  );
+                                }
+                                return const SizedBox();
+                              },
+                            ),
+
+                            // Delete button
+                            Positioned(
+                              top: 8, right: 8,
+                              child: GestureDetector(
+                                onTap: () => _deleteImage(imageIndex),
+                                child: Container(
+                                  padding: const EdgeInsets.all(4),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.errorRed,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
+                                  ),
+                                  child: const Icon(Icons.close_rounded, color: Colors.white, size: 16),
                                 ),
-                                child: const Icon(Icons.close_rounded, color: Colors.white, size: 16),
                               ),
                             ),
-                          ),
-                        ],
-                      );
+                          ],
+                        );
                     },
                   ),
                   const SizedBox(height: 40),
@@ -313,13 +402,13 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
           if (_isUploading)
             Container(
               color: Colors.black.withOpacity(0.5),
-              child: const Center(
+              child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     CircularProgressIndicator(color: Colors.white),
                     SizedBox(height: 16),
-                    Text('Uploading image...', style: TextStyle(color: Colors.white, fontSize: 16)),
+                    Text('uploading_image'.tr, style: TextStyle(color: Colors.white, fontSize: 16)),
                   ],
                 ),
               ),

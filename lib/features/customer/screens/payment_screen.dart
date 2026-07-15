@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_gradients.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
@@ -33,7 +34,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('Payment', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('payment'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -91,11 +92,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     padding: EdgeInsets.symmetric(vertical: 16),
                     child: Divider(),
                   ),
-                  _summaryRow(Icons.calendar_today_rounded, 'Date', '${date.day} ${_getMonth(date.month)}, ${date.year}', theme),
+                  _summaryRow(Icons.calendar_today_rounded, 'date'.tr, '${date.day} ${_getMonth(date.month)}, ${date.year}', theme),
                   const SizedBox(height: 12),
-                  _summaryRow(Icons.access_time_rounded, 'Time', time, theme),
+                  _summaryRow(Icons.access_time_rounded, 'time'.tr, time, theme),
                   const SizedBox(height: 12),
-                  _summaryRow(Icons.person_outline_rounded, 'Staff', staff['name'], theme),
+                  _summaryRow(Icons.person_outline_rounded, 'staff_info'.tr, staff['name'], theme),
                 ],
               ),
             ),
@@ -103,7 +104,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             const SizedBox(height: 32),
 
             // ── Price Breakdown ──
-            Text('Price Details', style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
+            Text('price_details'.tr, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
             const SizedBox(height: 16),
             Container(
               padding: const EdgeInsets.all(20),
@@ -114,14 +115,14 @@ class _PaymentScreenState extends State<PaymentScreen> {
               ),
               child: Column(
                 children: [
-                  _priceRow('Service Total', 'Rs. $totalAmount', false, theme),
+                  _priceRow('service_total'.tr, 'Rs. $totalAmount', false, theme),
                   const SizedBox(height: 12),
-                  _priceRow('Advance Payment (50%)', 'Rs. $advanceAmount', true, theme),
+                  _priceRow('advance_payment'.tr, 'Rs. $advanceAmount', true, theme),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 12),
                     child: Divider(),
                   ),
-                  _priceRow('Payable Now', 'Rs. $advanceAmount', true, theme, isTotal: true),
+                  _priceRow('payable_now'.tr, 'Rs. $advanceAmount', true, theme, isTotal: true),
                 ],
               ),
             ),
@@ -129,13 +130,13 @@ class _PaymentScreenState extends State<PaymentScreen> {
             const SizedBox(height: 32),
 
             // ── Payment Methods ──
-            Text('Select Payment Method', style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
+            Text('payment_method'.tr, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
             const SizedBox(height: 16),
             _methodTile('easypaisa', 'EasyPaisa', 'assets/google.png', theme),
             const SizedBox(height: 12),
             _methodTile('jazzcash', 'JazzCash', 'assets/google.png', theme),
             const SizedBox(height: 12),
-            _methodTile('wallet', 'App Wallet', null, theme, icon: Icons.account_balance_wallet_rounded),
+            _methodTile('wallet', 'app_wallet'.tr, null, theme, icon: Icons.account_balance_wallet_rounded),
 
             const SizedBox(height: 40),
           ],
@@ -155,12 +156,11 @@ class _PaymentScreenState extends State<PaymentScreen> {
         ),
         child: GestureDetector(
           onTap: () {
-            // In a real flow, you would pass the generated booking ID and date/time here
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => const SuccessScreen(
-                bookingId: 'PENDING-PAYMENT', // Placeholder
-                dateTime: 'N/A', // Placeholder
+                bookingId: 'PENDING-PAYMENT',
+                dateTime: 'N/A',
               )),
             );
           },
@@ -172,7 +172,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
             ),
             child: Center(
               child: Text(
-                'Pay Rs. $advanceAmount',
+                '${'pay'.tr} Rs. $advanceAmount',
                 style: AppTextStyles.buttonText?.copyWith(fontSize: 16),
               ),
             ),
@@ -200,18 +200,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
       children: [
         Text(
           label,
-          style: isTotal 
-            ? AppTextStyles.headingSmall.copyWith(color: theme.textColor)
-            : AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+          style: isTotal
+              ? AppTextStyles.headingSmall.copyWith(color: theme.textColor)
+              : AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
         ),
         Text(
           amount,
-          style: isTotal 
-            ? AppTextStyles.headingMedium?.copyWith(color: AppColors.primaryPink)
-            : AppTextStyles.bodyMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-                color: isPink ? AppColors.primaryPink : theme.textColor,
-              ),
+          style: isTotal
+              ? AppTextStyles.headingMedium?.copyWith(color: AppColors.primaryPink)
+              : AppTextStyles.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+            color: isPink ? AppColors.primaryPink : theme.textColor,
+          ),
         ),
       ],
     );
@@ -239,9 +239,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 color: theme.lightPinkColor,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: asset != null 
-                ? Padding(padding: const EdgeInsets.all(8), child: Image.asset(asset))
-                : Icon(icon, color: AppColors.primaryPink, size: 20),
+              child: asset != null
+                  ? Padding(padding: const EdgeInsets.all(8), child: Image.asset(asset))
+                  : Icon(icon, color: AppColors.primaryPink, size: 20),
             ),
             const SizedBox(width: 16),
             Text(

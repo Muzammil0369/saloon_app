@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
@@ -10,14 +11,14 @@ class SavedAddressesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = ThemeHelper(context);
     final List<Map<String, String>> addresses = [
-      {'title': 'Home', 'address': 'House 123, Sector F-10/4, Islamabad'},
-      {'title': 'Office', 'address': 'Silver City Plaza, 2nd Floor, Peshawar'},
+      {'title': 'home'.tr, 'address': 'House 123, Sector F-10/4, Islamabad'},
+      {'title': 'office'.tr, 'address': 'Silver City Plaza, 2nd Floor, Peshawar'},
     ];
 
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('Addresses', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('saved_addresses'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -44,7 +45,7 @@ class SavedAddressesScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(color: theme.lightPinkColor, shape: BoxShape.circle),
-                  child: Icon(addr['title'] == 'Home' ? Icons.home_rounded : Icons.work_rounded, color: AppColors.primaryPink, size: 20),
+                  child: Icon(addr['title'] == 'home'.tr ? Icons.home_rounded : Icons.work_rounded, color: AppColors.primaryPink, size: 20),
                 ),
                 const SizedBox(width: 16),
                 Expanded(

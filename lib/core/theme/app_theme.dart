@@ -14,6 +14,7 @@ class AppTheme {
     ),
     scaffoldBackgroundColor: AppColors.background,
     fontFamily: GoogleFonts.dmSans().fontFamily,
+    fontFamilyFallback: [GoogleFonts.notoSansArabic().fontFamily!],
 
     // AppBar
     appBarTheme: AppBarTheme(

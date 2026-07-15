@@ -47,9 +47,9 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
           .collection('owners')
           .doc(_ownerId)
           .update({'services': services});
-      Get.snackbar('Success', 'Services updated');
+      Get.snackbar('success'.tr, 'services_updated'.tr);
     } catch (e) {
-      Get.snackbar('Error', 'Failed to save services');
+      Get.snackbar('error'.tr, 'failed_save_services'.tr);
     } finally {
       setState(() => _isLoading = false);
     }
@@ -84,22 +84,22 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                existingService == null ? 'Add Service' : 'Edit Service',
+                existingService == null ? 'add_service'.tr : 'edit_service'.tr,
                 style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor),
               ),
               const SizedBox(height: 24),
-              _buildField('Service Name', 'e.g. Classic Haircut', nameCtrl, theme),
+              _buildField('service_name'.tr, 'e.g. Classic Haircut', nameCtrl, theme),
               const SizedBox(height: 16),
               Row(
                 children: [
-                  Expanded(child: _buildField('Price (Rs.)', '500', priceCtrl, theme, isNum: true)),
+                  Expanded(child: _buildField('service_price'.tr, '500', priceCtrl, theme, isNum: true)),
                   const SizedBox(width: 16),
-                  Expanded(child: _buildField('Duration (Min)', '30', durCtrl, theme, isNum: true)),
+                  Expanded(child: _buildField('service_duration'.tr, '30', durCtrl, theme, isNum: true)),
                 ],
               ),
               const SizedBox(height: 32),
               AppButton(
-                label: existingService == null ? 'Add to Menu' : 'Save Changes',
+                label: existingService == null ? 'add_to_menu'.tr : 'save_changes'.tr,
                 onTap: () {
                   if (nameCtrl.text.isEmpty || priceCtrl.text.isEmpty) return;
 
@@ -167,7 +167,7 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('Service Menu', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('service_menu'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -192,7 +192,7 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
                 children: [
                   Icon(Icons.spa_outlined, size: 64, color: theme.mutedTextColor),
                   const SizedBox(height: 12),
-                  Text('No services added yet', style: TextStyle(color: theme.mutedTextColor)),
+                  Text('no_services_added'.tr, style: TextStyle(color: theme.mutedTextColor)),
                 ],
               ),
             );
@@ -234,7 +234,7 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
                             ),
                           ),
                           Text(
-                            'Rs. ${s['price']} · ${s['duration']} min',
+                            '${'rs'.tr} ${s['price']} · ${s['duration']} ${'min'.tr}',
                             style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
                           ),
                         ],

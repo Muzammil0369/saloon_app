@@ -3,12 +3,14 @@ import 'package:saloon_app/features/admin/theme/admin_colors.dart';
 
 class AdminTopBar extends StatelessWidget {
   final String adminName;
+  final String adminRole; // ← ADD THIS
   final VoidCallback onLogout;
   final VoidCallback? onMenuPressed;
 
   const AdminTopBar({
     super.key,
     this.adminName = "Admin",
+    this.adminRole = "Administrator", // ← Default
     required this.onLogout,
     this.onMenuPressed,
   });
@@ -34,14 +36,14 @@ class AdminTopBar extends StatelessWidget {
             ),
             const Spacer(),
           ],
-          
+
           // Notifications
           IconButton(
             icon: const Icon(Icons.notifications_none_outlined, color: AdminColors.textSecondary),
             onPressed: () {},
           ),
           const SizedBox(width: 16),
-          
+
           // Divider
           Container(height: 32, width: 1, color: AdminColors.border),
           const SizedBox(width: 16),
@@ -54,7 +56,7 @@ class AdminTopBar extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(adminName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AdminColors.textPrimary)),
-                  const Text("Super Admin", style: TextStyle(fontSize: 12, color: AdminColors.textSecondary)),
+                  Text(adminRole, style: const TextStyle(fontSize: 12, color: AdminColors.textSecondary)), // ← Dynamic
                 ],
               ),
               const SizedBox(width: 12),

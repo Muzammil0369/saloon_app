@@ -1,10 +1,10 @@
+// lib/features/owner/screens/qr_scanner_screen.dart
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
-import 'package:saloon_app/core/theme/app_text_styles.dart';
-import 'package:saloon_app/core/theme/theme_helper.dart';
-
-import '../../../core/theme/app_gradients.dart';
+import 'package:saloon_app/core/services/security_service.dart';
+import 'package:saloon_app/core/services/auth_service.dart';
+import 'package:get/get.dart';
 
 class QRScannerScreen extends StatefulWidget {
   const QRScannerScreen({super.key});
@@ -14,157 +14,158 @@ class QRScannerScreen extends StatefulWidget {
 }
 
 class _QRScannerScreenState extends State<QRScannerScreen> {
-  @override
-  Widget build(BuildContext context) {
-    final theme = ThemeHelper(context);
+  MobileScannerController? _controller;
+  bool _isVerifying = false;
+  bool _hasScanned = false;
 
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
+  String get _ownerId => Get.find<AuthService>().uid ?? '';
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = MobileScannerController(
+      detectionSpeed: DetectionSpeed.normal,
+      facing: CameraFacing.back,
+      torchEnabled: false,
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onQRDetected(String scannedData) async {
+    if (_hasScanned || _isVerifying) return;
+
+    setState(() {
+      _hasScanned = true;
+      _isVerifying = true;
+    });
+
+    // Vibrate on detection
+    // HapticFeedback.heavyImpact();
+
+    // Verify the secure QR
+    final result = await SecurityService.verifySecureQR(scannedData, _ownerId);
+
+    if (!mounted) return;
+
+    setState(() => _isVerifying = false);
+
+    // Show result
+    _showVerificationResult(result);
+  }
+
+  void _showVerificationResult(VerificationResult result) {
+    final isSuccess = result.success;
+
+    Get.defaultDialog(
+      title: isSuccess ? 'verified'.tr : 'failed'.tr,
+      titleStyle: TextStyle(
+        color: isSuccess ? Colors.green : Colors.red,
+        fontWeight: FontWeight.bold,
+      ),
+      content: Column(
         children: [
-          MobileScanner(
-            onDetect: (capture) {
-              final List<Barcode> barcodes = capture.barcodes;
-              if (barcodes.isNotEmpty) {
-                final code = barcodes.first.rawValue;
-                _showBookingDetails(code ?? 'Unknown');
-              }
-            },
+          Icon(
+            isSuccess ? Icons.check_circle : Icons.cancel,
+            size: 64,
+            color: isSuccess ? Colors.green : Colors.red,
           ),
-          
-          // ── Overlay UI ──
-          Positioned.fill(
-            child: Column(
-              children: [
-                const SizedBox(height: 80),
-                Text(
-                  'Scan Customer QR',
-                  style: AppTextStyles.headingLarge?.copyWith(color: Colors.white),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Align the QR code within the frame',
-                  style: AppTextStyles.bodyMedium?.copyWith(color: Colors.white.withOpacity(0.7)),
-                ),
-                const Spacer(),
-                
-                // ── Scanner Frame ──
-                GestureDetector(
-                  onTap: () => _showBookingDetails('customer_12345_muzammil'), // Simulation
-                  child: Container(
-                    height: 260, width: 260,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.primaryPink, width: 4),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Center(
-                      child: Text('Tap to Simulate Scan', 
-                        style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 12)),
-                    ),
-                  ),
-                ),
-                
-                const Spacer(),
-                
-                // ── Flash Toggle ──
-                Container(
-                  margin: const EdgeInsets.only(bottom: 60),
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.flash_on_rounded, color: Colors.white, size: 28),
-                ),
-              ],
+          const SizedBox(height: 16),
+          Text(result.message, textAlign: TextAlign.center, style: const TextStyle(fontSize: 14)),
+          if (result.code == 'ALREADY_USED')
+            Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text('security_alert'.tr, style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             ),
-          ),
-          
-          // ── Back Button ──
-          Positioned(
-            top: 50, left: 20,
-            child: IconButton(
-              icon: const Icon(Icons.close_rounded, color: Colors.white, size: 30),
-              onPressed: () => Navigator.pop(context),
-            ),
-          ),
         ],
+      ),
+      confirm: ElevatedButton(
+        onPressed: () {
+          Get.back();
+          if (isSuccess) {
+            Get.back(); // Go back to schedule
+          } else {
+            // Allow re-scan
+            setState(() => _hasScanned = false);
+          }
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: isSuccess ? Colors.green : AppColors.primaryPink,
+        ),
+        child: Text(isSuccess ? 'done'.tr : 'scan_again'.tr),
       ),
     );
   }
 
-  void _showBookingDetails(String code) {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: Colors.transparent,
-      builder: (context) {
-        final theme = ThemeHelper(context);
-        return Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: theme.cardColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        title: Text('scan_customer_qr'.tr, style: TextStyle(color: Colors.white)),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      body: Stack(
+        children: [
+          MobileScanner(
+            controller: _controller,
+            onDetect: (capture) {
+              if (capture.barcodes.isNotEmpty && !_hasScanned) {
+                final scannedData = capture.barcodes.first.rawValue ?? '';
+                if (scannedData.isNotEmpty) {
+                  _onQRDetected(scannedData);
+                }
+              }
+            },
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(color: theme.borderColor, borderRadius: BorderRadius.circular(10)),
+
+          // Scanner overlay
+          Center(
+            child: Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.primaryPink, width: 3),
+                borderRadius: BorderRadius.circular(20),
               ),
-              const SizedBox(height: 24),
-              const CircleAvatar(
-                radius: 40,
-                backgroundColor: AppColors.primaryPink,
-                child: Icon(Icons.person_rounded, size: 40, color: Colors.white),
-              ),
-              const SizedBox(height: 16),
-              Text('Muzammil Khan', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
-              Text('ID: #SB-12345', style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.lightPinkColor,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
+            ),
+          ),
+
+          // Instructions
+          Positioned(
+            bottom: 60,
+            left: 0,
+            right: 0,
+            child: Text(
+              'align_qr_frame'.tr,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
+            ),
+          ),
+
+          // Verification indicator
+          if (_isVerifying)
+            Container(
+              color: Colors.black.withOpacity(0.7),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.calendar_today_rounded, color: AppColors.primaryPink),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text('Haircut + Beard Trim', style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
-                          Text('Today, 10:00 AM', style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-                        ],
-                      ),
-                    ),
-                    Text('Rs. 700', style: AppTextStyles.headingSmall?.copyWith(color: AppColors.primaryPink)),
+                    CircularProgressIndicator(color: AppColors.primaryPink),
+                    SizedBox(height: 16),
+                    Text('verifying'.tr, style: TextStyle(color: Colors.white, fontSize: 18)),
                   ],
                 ),
               ),
-              const SizedBox(height: 32),
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Container(
-                  height: 56,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    gradient: AppGradients.primary,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Center(
-                    child: Text('Confirm Check-in', style: AppTextStyles.buttonText),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
+            ),
+        ],
+      ),
     );
   }
 }

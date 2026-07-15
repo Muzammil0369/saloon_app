@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:saloon_app/core/controllers/language_controller.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/features/owner/screens/owner_dashboard_screen.dart';
@@ -19,10 +21,10 @@ class _OwnerMainWrapperState extends State<OwnerMainWrapper> {
   late int _selectedIndex;
 
   final List<Map<String, dynamic>> _navItems = [
-    {'icon': Icons.dashboard_rounded, 'activeIcon': Icons.dashboard, 'label': 'Stats', 'color': AppColors.primaryPink},
-    {'icon': Icons.calendar_month_rounded, 'activeIcon': Icons.calendar_month, 'label': 'Schedule', 'color': const Color(0xFF4ECDC4)},
-    {'icon': Icons.payments_rounded, 'activeIcon': Icons.payments, 'label': 'Earnings', 'color': const Color(0xFFF59E0B)},
-    {'icon': Icons.storefront_rounded, 'activeIcon': Icons.store, 'label': 'Profile', 'color': const Color(0xFFA78BFA)},
+    {'icon': Icons.dashboard_rounded, 'activeIcon': Icons.dashboard, 'label': 'dashboard'.tr, 'color': AppColors.primaryPink},
+    {'icon': Icons.calendar_month_rounded, 'activeIcon': Icons.calendar_month, 'label': 'schedule'.tr, 'color': const Color(0xFF4ECDC4)},
+    {'icon': Icons.payments_rounded, 'activeIcon': Icons.payments, 'label': 'earnings'.tr, 'color': const Color(0xFFF59E0B)},
+    {'icon': Icons.storefront_rounded, 'activeIcon': Icons.store, 'label': 'profile'.tr, 'color': const Color(0xFFA78BFA)},
   ];
 
   @override
@@ -48,7 +50,11 @@ class _OwnerMainWrapperState extends State<OwnerMainWrapper> {
       const OwnerProfileScreen(),
     ];
 
-    return Scaffold(
+    return Directionality(
+      textDirection: Get.find<LanguageController>().languageCode == 'ur' 
+          ? TextDirection.rtl 
+          : TextDirection.ltr,
+      child: Scaffold(
       body: IndexedStack(
         index: _selectedIndex,
         children: screens,
@@ -133,6 +139,7 @@ class _OwnerMainWrapperState extends State<OwnerMainWrapper> {
             );
           }),
         ),
+      ),
       ),
     );
   }

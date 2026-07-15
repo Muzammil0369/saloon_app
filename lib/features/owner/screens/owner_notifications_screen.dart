@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_helper.dart';
@@ -93,11 +94,11 @@ class _OwnerNotificationsScreenState extends State<OwnerNotificationsScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Notifications', style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor,fontSize: 18)),
+                  Text('notifications'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor,fontSize: 18)),
                   if (unreadCount > 0)
                     GestureDetector(
                       onTap: _markAllRead,
-                      child: Text('Mark all read', style: AppTextStyles.linkText),
+                      child: Text('mark_all_read'.tr, style: AppTextStyles.linkText),
                     ),
                 ],
               ),
@@ -112,7 +113,7 @@ class _OwnerNotificationsScreenState extends State<OwnerNotificationsScreen> {
                   children: [
                     Icon(Icons.notifications_none_rounded, size: 48, color: theme.borderColor),
                     const SizedBox(height: 12),
-                    Text('No notifications yet', style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
+                    Text('no_notifications'.tr, style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
                   ],
                 ),
               )

@@ -12,12 +12,12 @@ import '../../../core/services/auth_service.dart';
 
 class BookingScreen extends StatefulWidget {
   final Map<String, dynamic> salon;
-  final String ownerId; // Add ownerId parameter
+  final String ownerId;
 
   const BookingScreen({
     super.key,
     required this.salon,
-    required this.ownerId, // Make it required
+    required this.ownerId,
   });
 
   @override
@@ -42,13 +42,13 @@ class _BookingScreenState extends State<BookingScreen> {
 
     return Scaffold(
       backgroundColor: theme.backgroundColor,
-      appBar: AppBar(title: const Text('Book Appointment')),
+      appBar: AppBar(title: Text('book_appointment'.tr)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Select Date', style: AppTextStyles.headingMedium),
+            Text('select_date'.tr, style: AppTextStyles.headingMedium),
             TableCalendar(
               firstDay: DateTime.now(),
               lastDay: DateTime.now().add(const Duration(days: 7)),
@@ -72,7 +72,7 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
             ),
             const SizedBox(height: 30),
-            Text('Select Time', style: AppTextStyles.headingMedium),
+            Text('select_time'.tr, style: AppTextStyles.headingMedium),
             const SizedBox(height: 16),
             Wrap(
               spacing: 10,
@@ -102,10 +102,10 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
             const SizedBox(height: 40),
             AppButton(
-              label: 'Confirm Booking',
+              label: 'confirm_booking'.tr,
               onTap: (_selectedDay != null && _selectedTime != null)
                   ? _submitBooking
-                  : () => Get.snackbar('Required', 'Please select date and time'),
+                  : () => Get.snackbar('required'.tr, 'please_select'.tr),
             ),
           ],
         ),
@@ -122,7 +122,7 @@ class _BookingScreenState extends State<BookingScreen> {
     final bookingData = {
       'bookingId': bookingRef.id,
       'customerId': authService.uid,
-      'ownerId': widget.ownerId, // Use ownerId directly
+      'ownerId': widget.ownerId,
       'salonName': widget.salon['name'] ?? 'Unnamed Salon',
       'services': _bookingController.selectedServices,
       'totalPrice': _bookingController.totalPrice.toInt(),
@@ -143,8 +143,8 @@ class _BookingScreenState extends State<BookingScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       Get.snackbar(
-        'Error',
-        'Failed to book: $e',
+        'error'.tr,
+        '${'failed_to_book'.tr}: $e',
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );

@@ -4,6 +4,7 @@ import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_gradients.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
+import 'package:saloon_app/core/controllers/language_controller.dart';
 import 'package:saloon_app/features/customer/registration/customer_registration_screen.dart';
 import 'package:saloon_app/features/owner/registration/owner_registration_screen.dart';
 
@@ -15,8 +16,8 @@ class RoleSelectScreen extends StatefulWidget {
 }
 
 class _RoleSelectScreenState extends State<RoleSelectScreen> {
-  String _selectedRole = 'customer'; // 'customer' or 'owner'
-  String _selectedLang = 'en'; // 'en' or 'ur'
+  String _selectedRole = 'customer';
+  final languageController = Get.find<LanguageController>();
 
   @override
   Widget build(BuildContext context) {
@@ -43,8 +44,8 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _langBtn('English', 'en'),
-                      _langBtn('اردو', 'ur'),
+                      _langBtn('english'.tr, 'en'),
+                      _langBtn('urdu'.tr, 'ur'),
                     ],
                   ),
                 ),
@@ -52,33 +53,35 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
 
               const SizedBox(height: 40),
 
-              Text(
-                _selectedLang == 'en' ? 'Welcome to Glambook! ✨' : 'گلیم بک میں خوش آمدید! ✨',
+              Obx(() => Text(
+                languageController.languageCode == 'ur'
+                    ? 'گلیم بک میں خوش آمدید! ✨'
+                    : 'welcome_glambook'.tr,
                 style: AppTextStyles.displayLarge?.copyWith(color: theme.textColor),
-              ),
+              )),
               const SizedBox(height: 12),
-              Text(
-                _selectedLang == 'en' 
-                  ? 'Choose how you want to use the app' 
-                  : 'منتخب کریں کہ آپ ایپ کو کیسے استعمال کرنا چاہتے ہیں',
+              Obx(() => Text(
+                languageController.languageCode == 'ur'
+                    ? 'منتخب کریں کہ آپ ایپ کو کیسے استعمال کرنا چاہتے ہیں'
+                    : 'choose_app_usage'.tr,
                 style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor),
-              ),
+              )),
 
               const SizedBox(height: 50),
 
               // ── Role Selection ──
               _roleCard(
                 'customer',
-                _selectedLang == 'en' ? 'I want to book a service' : 'میں سروس بک کرنا چاہتا ہوں',
-                _selectedLang == 'en' ? 'Customer' : 'صارف',
+                'customer_desc'.tr,
+                'customer'.tr,
                 Icons.person_rounded,
                 theme,
               ),
               const SizedBox(height: 20),
               _roleCard(
                 'owner',
-                _selectedLang == 'en' ? 'I want to list my salon' : 'میں اپنا سیلون لسٹ کرنا چاہتا ہوں',
-                _selectedLang == 'en' ? 'Salon Owner' : 'سیلون کا مالک',
+                'owner_desc'.tr,
+                'salon_owner'.tr,
                 Icons.storefront_rounded,
                 theme,
               ),
@@ -110,7 +113,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
                   ),
                   child: Center(
                     child: Text(
-                      _selectedLang == 'en' ? 'Continue' : 'جاری رکھیں',
+                      'continue'.tr,
                       style: AppTextStyles.buttonText?.copyWith(fontSize: 16),
                     ),
                   ),
@@ -120,18 +123,22 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
               Center(
                 child: GestureDetector(
                   onTap: () => Get.toNamed('/login'),
-                  child: RichText(
+                  child: Obx(() => RichText(
                     text: TextSpan(
-                      text: _selectedLang == 'en' ? 'Already have an account? ' : 'پہلے سے اکاؤنٹ ہے؟ ',
+                      text: languageController.languageCode == 'ur'
+                          ? 'پہلے سے اکاؤنٹ ہے؟ '
+                          : 'already_have_account'.tr + ' ',
                       style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
                       children: [
                         TextSpan(
-                          text: _selectedLang == 'en' ? 'Log In' : 'لاگ ان کریں',
+                          text: languageController.languageCode == 'ur'
+                              ? 'لاگ ان کریں'
+                              : 'sign_in'.tr,
                           style: AppTextStyles.linkText,
                         ),
                       ],
                     ),
-                  ),
+                  )),
                 ),
               ),
               const SizedBox(height: 20),
@@ -143,9 +150,9 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
   }
 
   Widget _langBtn(String label, String code) {
-    final isSelected = _selectedLang == code;
+    final isSelected = languageController.languageCode == code;
     return GestureDetector(
-      onTap: () => setState(() => _selectedLang = code),
+      onTap: () => languageController.switchLanguage(code),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(

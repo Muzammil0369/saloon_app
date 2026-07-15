@@ -4,6 +4,8 @@ import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'language_controller.dart';
+
 class SalonController extends GetxController {
   var salons = <Map<String, dynamic>>[].obs;
   var recentSalons = <Map<String, dynamic>>[].obs;
@@ -27,8 +29,13 @@ class SalonController extends GetxController {
   }
 
   void _updateFilteredList() {
+    final langCode = Get.find<LanguageController>().languageCode;
     filteredSalons.value = salons.where((salon) {
-      final matchesSearch = salon['salonName'].toString().toLowerCase().contains(searchQuery.value.toLowerCase());
+      final String nameToSearch = langCode == 'ur' 
+          ? (salon['salonName_ur'] ?? salon['salonName'] ?? '') 
+          : (salon['salonName'] ?? '');
+          
+      final matchesSearch = nameToSearch.toString().toLowerCase().contains(searchQuery.value.toLowerCase());
       final List<String> salonCategories = (salon['categories'] as List<String>?) ?? [];
       final matchesCategory = selectedCategory.value == 'All' || salonCategories.contains(selectedCategory.value);
       return matchesSearch && matchesCategory;
@@ -145,6 +152,7 @@ class SalonController extends GetxController {
         Map<String, dynamic> salon = {
           'ownerId': doc.id,
           'salonName': data['salonName'] ?? 'Unnamed Salon',
+          'salonName_ur': data['salonName_ur'] ?? '',
           'name': data['salonName'] ?? 'Unnamed Salon',
           'rating': data['rating']?.toDouble() ?? 4.5,
           'status': data['isOpenNow'] == true ? 'Open' : 'Closed',

@@ -11,6 +11,8 @@ import 'package:saloon_app/features/customer/screens/notifications_screen.dart';
 import 'package:saloon_app/features/customer/screens/salon_detail_screen.dart';
 import 'package:saloon_app/shared/widgets/salon_card.dart';
 
+import '../../../core/controllers/language_controller.dart';
+
 class CustomerHomeScreen extends StatefulWidget {
   final Function(int) onTabChange;
 
@@ -27,18 +29,18 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
   String get greeting {
     final hour = DateTime.now().hour;
-    if (hour < 12) return 'Good Morning 🌅';
-    if (hour < 17) return 'Good Afternoon ☀️';
-    return 'Good Evening 🌙';
+    if (hour < 12) return 'good_morning'.tr;
+    if (hour < 17) return 'good_afternoon'.tr;
+    return 'good_evening'.tr;
   }
 
   final List<Map<String, dynamic>> categories = [
-    {'name': 'Haircut',    'icon': Icons.content_cut_rounded},
-    {'name': 'Beard',      'icon': Icons.face_retouching_natural},
-    {'name': 'Facial',     'icon': Icons.spa_rounded},
-    {'name': 'Nails',      'icon': Icons.auto_awesome_rounded},
-    {'name': 'Bridal',     'icon': Icons.favorite_rounded},
-    {'name': 'Hair Color', 'icon': Icons.colorize_rounded},
+    {'name': 'haircut'.tr,    'icon': Icons.content_cut_rounded},
+    {'name': 'beard'.tr,      'icon': Icons.face_retouching_natural},
+    {'name': 'facial'.tr,     'icon': Icons.spa_rounded},
+    {'name': 'nails'.tr,      'icon': Icons.auto_awesome_rounded},
+    {'name': 'bridal'.tr,     'icon': Icons.favorite_rounded},
+    {'name': 'hair_color'.tr, 'icon': Icons.colorize_rounded},
   ];
 
   @override
@@ -58,15 +60,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     }
   }
 
-  // Pull to refresh handler
   Future<void> _onRefresh() async {
-    // Refresh location
     await _getCurrentLocation();
-    // Small delay for smooth animation
     await Future.delayed(const Duration(milliseconds: 500));
   }
 
-  // Helper function to process snapshots for the UI
   List<Map<String, dynamic>> _processSalonSnapshot(QuerySnapshot snapshot, Position? userPos) {
     return snapshot.docs.map((doc) {
       final data = doc.data() as Map<String, dynamic>;
@@ -78,14 +76,18 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           userPos.latitude, userPos.longitude,
           salonLoc.latitude, salonLoc.longitude,
         );
-        distanceText = '${(distInMeters / 1000).toStringAsFixed(1)} km';
+        final double distKm = distInMeters / 1000;
+        String unit = Get.find<LanguageController>().languageCode == 'ur' ? 'km'.tr : 'km';
+        distanceText = '${distKm.toStringAsFixed(1)} $unit';
       }
 
       return {
         'ownerId': doc.id,
-        'name': data['salonName'] ?? 'Unnamed Salon',
+        'name': Get.find<LanguageController>().languageCode == 'ur'
+            ? (data['salonName_ur'] ?? data['salonName'] ?? 'Unnamed Salon')
+            : (data['salonName'] ?? 'Unnamed Salon'),
         'rating': data['rating']?.toDouble() ?? 4.5,
-        'status': data['isOpenNow'] == true ? 'Open' : 'Closed',
+        'status': data['isOpenNow'] == true ? 'open'.tr : 'closed'.tr,
         'price': '500',
         'distance': distanceText,
         'address': data['address'] ?? 'No address provided',
@@ -156,7 +158,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             children: [
                               const Icon(Icons.search_rounded, color: AppColors.primaryPink, size: 20),
                               const SizedBox(width: 12),
-                              Text('Search for salons, stylists...', style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
+                              Text('search_hint'.tr, style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
                               const Spacer(),
                               const Icon(Icons.tune_rounded, color: AppColors.primaryPink, size: 20),
                             ],
@@ -191,14 +193,14 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('30% OFF', style: AppTextStyles.label.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                              Text('percent_off'.tr, style: AppTextStyles.label.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                               const SizedBox(height: 4),
-                              Text('First Grooming\nSession!', style: AppTextStyles.headingLarge?.copyWith(color: Colors.white)),
+                              Text('first_grooming'.tr, style: AppTextStyles.headingLarge?.copyWith(color: Colors.white)),
                               const Spacer(),
                               Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                                child: Text('Claim Now', style: AppTextStyles.label.copyWith(color: AppColors.primaryPink, fontWeight: FontWeight.bold)),
+                                child: Text('claim_now'.tr, style: AppTextStyles.label.copyWith(color: AppColors.primaryPink, fontWeight: FontWeight.bold)),
                               ),
                             ],
                           ),
@@ -211,7 +213,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 const SizedBox(height: 32),
 
                 // Categories
-                _sectionHeader('Categories', () => widget.onTabChange(1), theme),
+                _sectionHeader('categories'.tr, () => widget.onTabChange(1), theme),
                 const SizedBox(height: 16),
                 SizedBox(
                   height: 100,
@@ -254,17 +256,15 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                 const SizedBox(height: 32),
 
                 // Top Rated Near You section
-                _sectionHeader('Top Rated Near You', () => widget.onTabChange(1), theme),
+                _sectionHeader('top_rated_near'.tr, () => widget.onTabChange(1), theme),
                 const SizedBox(height: 16),
 
                 // Salons List
                 StreamBuilder<QuerySnapshot>(
-                  // Remove the showOnMap filter to get ALL salons
                   stream: FirebaseFirestore.instance
                       .collection('owners')
                       .snapshots(),
                   builder: (context, snapshot) {
-                    // Loading state
                     if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                       return const Padding(
                         padding: EdgeInsets.all(40),
@@ -274,7 +274,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                       );
                     }
 
-                    // Error state
                     if (snapshot.hasError) {
                       return Padding(
                         padding: const EdgeInsets.all(20),
@@ -283,12 +282,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             children: [
                               Icon(Icons.error_outline, size: 40, color: theme.mutedTextColor),
                               const SizedBox(height: 8),
-                              Text('Failed to load salons', style: TextStyle(color: theme.mutedTextColor)),
+                              Text('failed_to_load_salons'.tr, style: TextStyle(color: theme.mutedTextColor)),
                               const SizedBox(height: 8),
                               TextButton.icon(
                                 onPressed: _onRefresh,
                                 icon: const Icon(Icons.refresh, size: 16),
-                                label: const Text('Retry'),
+                                label: Text('retry'.tr),
                               ),
                             ],
                           ),
@@ -296,7 +295,6 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                       );
                     }
 
-                    // No data
                     if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
                       return Padding(
                         padding: const EdgeInsets.all(40),
@@ -305,24 +303,21 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             children: [
                               Icon(Icons.store_outlined, size: 48, color: theme.mutedTextColor),
                               const SizedBox(height: 8),
-                              Text('No salons found', style: TextStyle(color: theme.mutedTextColor)),
+                              Text('no_salons'.tr, style: TextStyle(color: theme.mutedTextColor)),
                             ],
                           ),
                         ),
                       );
                     }
 
-                    // Process salon data
                     final salons = _processSalonSnapshot(snapshot.data!, _currentPosition);
 
-                    // Sort by distance
                     salons.sort((a, b) {
                       final distA = a['distance'] == 'N/A' ? double.infinity : double.parse((a['distance'] as String).replaceAll(' km', ''));
                       final distB = b['distance'] == 'N/A' ? double.infinity : double.parse((b['distance'] as String).replaceAll(' km', ''));
                       return distA.compareTo(distB);
                     });
 
-                    // Take top 10 for home screen
                     final displaySalons = salons.length > 10 ? salons.sublist(0, 10) : salons;
 
                     return ListView.builder(
@@ -364,7 +359,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             onTap: onSeeAll,
             child: Row(
               children: [
-                Text('See All', style: AppTextStyles.linkText),
+                Text('see_all'.tr, style: AppTextStyles.linkText),
                 const SizedBox(width: 4),
                 Icon(Icons.arrow_forward_ios, size: 12, color: AppColors.primaryPink),
               ],
