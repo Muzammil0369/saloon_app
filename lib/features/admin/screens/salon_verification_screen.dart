@@ -21,6 +21,7 @@ class SalonVerificationScreen extends StatelessWidget {
         stream: FirebaseFirestore.instance
             .collection('owners')
             .where('status', isEqualTo: 'pending')
+            .where('isCompleted', isEqualTo: true)
             .snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) {

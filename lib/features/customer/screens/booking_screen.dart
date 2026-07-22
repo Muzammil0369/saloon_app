@@ -126,6 +126,7 @@ class _BookingScreenState extends State<BookingScreen> {
   @override
   void initState() {
     super.initState();
+    print('DEBUG: BookingScreen initialized. Current discountRate: ${_bookingController.discountRate.value}');
     _selectedDay = DateTime.now();
     _loadBookedSlotsForDay(_selectedDay!);
   }
@@ -426,15 +427,47 @@ class _BookingScreenState extends State<BookingScreen> {
               }),
             ],
 
+            const SizedBox(height: 30),
+            // Price Summary Section
+            Obx(() => Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: theme.borderColor)),
+              child: Column(
+                children: [
+                  _priceRow('subtotal'.tr, _bookingController.services.where((s) => s['isSelected'] == true).fold(0.0, (sum, s) => sum + (s['price'] as int)), false),
+                  if (_bookingController.discountRate.value > 0)
+                    _priceRow('${'discount'.tr} (${_bookingController.discountRate.value.toInt()}%)', 
+                        _bookingController.services.where((s) => s['isSelected'] == true).fold(0.0, (sum, s) => sum + (s['price'] as int)) * (_bookingController.discountRate.value / 100), true),
+                  const Divider(),
+                  _priceRow('total'.tr, _bookingController.totalPrice, false, isTotal: true),
+                ],
+              ),
+            )),
             const SizedBox(height: 40),
-            AppButton(
-              label: 'confirm_booking'.tr,
+            Obx(() => AppButton(
+              label: '${'confirm_booking'.tr} (Rs. ${_bookingController.totalPrice.toInt()})',
               onTap: (_selectedDay != null && _selectedTime != null && _selectedStaffId != null)
                   ? _submitBooking
                   : () => Get.snackbar('required'.tr, 'please_select'.tr),
-            ),
+            )),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _priceRow(String label, double price, bool isDiscount, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: TextStyle(fontWeight: isTotal ? FontWeight.bold : FontWeight.normal, color: isDiscount ? Colors.green : null)),
+          Text(
+            '${isDiscount ? '-' : ''}Rs. ${price.toInt()}',
+            style: TextStyle(fontWeight: isTotal ? FontWeight.bold : FontWeight.normal, color: isDiscount ? Colors.green : (isTotal ? AppColors.primaryPink : null)),
+          ),
+        ],
       ),
     );
   }
@@ -466,7 +499,8 @@ class _BookingScreenState extends State<BookingScreen> {
     try {
       await bookingRef.set(bookingData);
       setState(() => _isLoading = false);
-
+      _bookingController.discountRate.value = 0.0; // Reset discount
+      
       Get.to(() => SuccessScreen(
         bookingId: bookingRef.id,
         dateTime: '${_selectedDay!.toString().split(' ')[0]} · $_selectedTime',

@@ -4,6 +4,8 @@ import 'package:get/get.dart';
 class BookingController extends GetxController {
   var services = <Map<String, dynamic>>[].obs;
   var isLoading = true.obs;
+  // Make discountRate observable and use it to trigger updates in totalPrice
+  var discountRate = 0.0.obs;
 
   // Load services - tries separate collection first, falls back to owner's embedded services
   Future<void> loadServices(String ownerId) async {
@@ -105,20 +107,31 @@ class BookingController extends GetxController {
   }
 
   double get totalPrice {
-    double total = 0;
+    double subtotal = 0;
     for (var service in services) {
       if (service['isSelected'] == true) {
         final price = service['price'];
         if (price is int) {
-          total += price.toDouble();
+          subtotal += price.toDouble();
         } else if (price is double) {
-          total += price;
+          subtotal += price;
         } else if (price is String) {
-          total += double.tryParse(price) ?? 0;
+          subtotal += double.tryParse(price) ?? 0;
         }
       }
     }
-    return total;
+    
+    // Use .value to get the value from RxDouble
+    final discount = discountRate.value;
+    print('DEBUG: totalPrice getter called. Subtotal: $subtotal, Discount: $discount%');
+    
+    if (discount > 0) {
+      final total = subtotal * (1 - (discount / 100));
+      print('DEBUG: Final total: $total');
+      return total;
+    }
+    print('DEBUG: Final total: $subtotal');
+    return subtotal;
   }
 
   int get totalDuration {

@@ -168,23 +168,14 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
               const SizedBox(height: 20),
               // In OwnerServicesScreen, update the "Save & Next" button:
               AppButton(
-                label: 'Save & Next',
+                label: 'save'.tr, // Changed label to 'save'
                 onTap: () {
-                  // Add unique IDs to services
-                  final servicesWithIds = services.map((s) => {
-                    'id': s['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
-                    'name': s['name'],
-                    'price': int.tryParse(s['price'] ?? '0') ?? 0,
-                    'duration': int.tryParse(s['duration'] ?? '30') ?? 30,
-                  }).toList();
-
-                  final updatedSalonData = {
-                    ...widget.salonData,
-                    'services': servicesWithIds,
-                  };
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (context) => OwnerDocumentsScreen(salonData: updatedSalonData),
-                  ));
+                  setState(() {
+                    service['name'] = nameCtrl.text;
+                    service['price'] = priceCtrl.text;
+                    service['duration'] = durCtrl.text;
+                  });
+                  Navigator.pop(context); // Close the bottom sheet
                 },
               ),
             ],

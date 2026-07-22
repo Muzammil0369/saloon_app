@@ -135,6 +135,7 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
         'showOnMap': false,
         'isOpenNow': false,
         'cnicVerified': false,
+        'isCompleted': true, // ✅ Add completion flag
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, location);

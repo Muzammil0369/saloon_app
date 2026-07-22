@@ -326,6 +326,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
+
                       Row(
                         children: [
                           Text(
@@ -343,8 +344,9 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                                 Icon(Icons.check_circle, size: 14, color: Colors.green),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Paid via ${paymentMethod}',
+                                  'Paid via' '\n${paymentMethod}',
                                   style: TextStyle(color: Colors.green, fontSize: 10),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ],
                             ),

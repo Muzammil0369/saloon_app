@@ -62,20 +62,21 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
   // Selects (in the booking controller) whichever loaded services match the
   // ad's included service names, then jumps to the Services tab so the
   // bottom "Book Now" button becomes enabled with those services pre-picked.
-  void _bookThisOffer(List<Map<String, dynamic>> offerServices) {
+  void _bookThisOffer(List<Map<String, dynamic>> offerServices, double discount, Map<String, dynamic> salonData) {
+    _bookingController.discountRate.value = discount; 
+    
+    // Clear previous selections and select only the offer services
+    _bookingController.clearSelection();
+    
     final offerNames = offerServices.map((s) => (s['name'] ?? '').toString().trim().toLowerCase()).toSet();
-
-    if (_bookingController.services.isEmpty) {
-      Get.snackbar('error'.tr, 'services_still_loading'.tr);
-      return;
-    }
 
     bool matchedAny = false;
     for (var i = 0; i < _bookingController.services.length; i++) {
       final name = (_bookingController.services[i]['name'] ?? '').toString().trim().toLowerCase();
-      final shouldSelect = offerNames.contains(name);
-      if (shouldSelect) matchedAny = true;
-      _bookingController.services[i]['isSelected'] = shouldSelect;
+      if (offerNames.contains(name)) {
+        _bookingController.services[i]['isSelected'] = true;
+        matchedAny = true;
+      }
     }
     _bookingController.services.refresh();
 
@@ -84,7 +85,11 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
       return;
     }
 
-    setState(() => _selectedTab = 0);
+    // Direct navigation to BookingScreen
+    Get.to(() => BookingScreen(
+      ownerId: _ownerId,
+      salon: salonData,
+    ));
   }
 
   // Helper to build image from URL or Base64
@@ -532,6 +537,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                             }
 
                             final adData = adSnapshot.data!.data() as Map<String, dynamic>;
+                            print('DEBUG: Ad Data: $adData');
                             final expiresAt = (adData['expiresAt'] as Timestamp?)?.toDate();
                             final daysLeft = expiresAt != null ? expiresAt.difference(DateTime.now()).inDays : 0;
                             final services = (adData['selectedServices'] as List? ?? []).whereType<Map<String, dynamic>>().toList();
@@ -563,7 +569,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton(
-                                    onPressed: () => _bookThisOffer(services),
+                                    onPressed: () => _bookThisOffer(services, (adData['percentOff'] as num?)?.toDouble() ?? 0.0, salonData),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.primaryPink,
                                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -620,8 +626,13 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                 bottom: 20,
                 left: 20,
                 right: 20,
-                child: Obx(() => GestureDetector(
-                  onTap: _bookingController.selectedServices.isEmpty
+                child: Obx(() {
+                  final selected = _bookingController.selectedServices;
+                  final total = _bookingController.totalPrice; 
+                  final discount = _bookingController.discountRate.value; // Explicitly trigger update on change
+                  
+                  return GestureDetector(
+                  onTap: selected.isEmpty
                       ? null
                       : () {
                     Get.to(() => BookingScreen(
@@ -633,11 +644,11 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                     duration: const Duration(milliseconds: 300),
                     height: 56,
                     decoration: BoxDecoration(
-                      gradient: _bookingController.selectedServices.isEmpty
+                      gradient: selected.isEmpty
                           ? LinearGradient(colors: [Colors.grey, Colors.grey])
                           : AppGradients.primary,
                       borderRadius: BorderRadius.circular(AppRadius.button),
-                      boxShadow: _bookingController.selectedServices.isEmpty
+                      boxShadow: selected.isEmpty
                           ? null
                           : [
                         BoxShadow(
@@ -649,9 +660,9 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        _bookingController.selectedServices.isEmpty
+                        selected.isEmpty
                             ? 'select_services'.tr
-                            : '${'book_now'.tr} (Rs. ${_bookingController.totalPrice.toInt()})',
+                            : '${'book_now'.tr} (Rs. ${total.toInt()})',
                         style: AppTextStyles.bodyLarge?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -660,7 +671,8 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                       ),
                     ),
                   ),
-                )),
+                );
+                }),
               ),
             ],
           );
