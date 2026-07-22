@@ -85,6 +85,30 @@ class SalonVerificationScreen extends StatelessWidget {
   }
 
   Widget _buildVerificationCard(BuildContext context, AdminController controller, String docId, Map<String, dynamic> data) {
+    // ✅ FIX: Get values with proper fallbacks
+    final salonName = data['salonName'] ?? data['name'] ?? 'Unknown Salon';
+    final ownerName = data['ownerName'] ?? data['fullName'] ?? data['name'] ?? 'Unknown Owner';
+    final phoneNumber = data['phoneNumber'] ?? data['phone'] ?? 'N/A';
+    final address = data['address'] ?? data['location'] ?? 'N/A';
+
+    // Get services safely
+    List services = [];
+    if (data['services'] != null && data['services'] is List) {
+      services = data['services'] as List;
+    }
+
+    // Get workers safely
+    List workers = [];
+    if (data['workers'] != null && data['workers'] is List) {
+      workers = data['workers'] as List;
+    }
+
+    // Get salon photos safely
+    List salonPhotos = [];
+    if (data['salonPhotos'] != null && data['salonPhotos'] is List) {
+      salonPhotos = data['salonPhotos'] as List;
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
@@ -96,7 +120,7 @@ class SalonVerificationScreen extends StatelessWidget {
         ],
       ),
       child: ExpansionTile(
-        initiallyExpanded: false,
+        initiallyExpanded: true, // ✅ Set to true to show details immediately
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -106,15 +130,15 @@ class SalonVerificationScreen extends StatelessWidget {
           child: const Icon(Icons.store, color: AdminColors.primary, size: 24),
         ),
         title: Text(
-          data['salonName'] ?? 'Unknown Salon',
+          salonName,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Owner: ${data['fullName'] ?? data['ownerName'] ?? 'Unknown'}'),
-            if (data['phoneNumber'] != null)
-              Text('📞 ${data['phoneNumber']}', style: const TextStyle(fontSize: 12)),
+            Text('Owner: $ownerName'),
+            if (phoneNumber != 'N/A')
+              Text('📞 $phoneNumber', style: const TextStyle(fontSize: 12)),
           ],
         ),
         childrenPadding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -135,18 +159,18 @@ class SalonVerificationScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
-          _infoRow('Name', data['fullName'] ?? data['ownerName'] ?? 'N/A'),
-          if (data['phoneNumber'] != null) _infoRow('Phone', data['phoneNumber']),
-          _infoRow('Address', data['address'] ?? 'N/A'),
+          _infoRow('Name', ownerName),
+          if (phoneNumber != 'N/A') _infoRow('Phone', phoneNumber),
+          _infoRow('Address', address),
 
-          if (data['phoneNumber'] != null) ...[
+          if (phoneNumber != 'N/A' && phoneNumber.isNotEmpty) ...[
             const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton.icon(
-                onPressed: () => _callOwner(data['phoneNumber']),
+                onPressed: () => _callOwner(phoneNumber),
                 icon: const Icon(Icons.call, size: 16),
-                label: Text('Call ${data['phoneNumber']}'),
+                label: Text('Call $phoneNumber'),
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.green, side: const BorderSide(color: Colors.green)),
               ),
             ),
@@ -155,18 +179,21 @@ class SalonVerificationScreen extends StatelessWidget {
           const SizedBox(height: 20),
 
           // ── SERVICES ──
-          if (data['services'] != null && (data['services'] as List).isNotEmpty) ...[
-            _sectionTitle('💇 Services'),
+          if (services.isNotEmpty) ...[
+            _sectionTitle('💇 Services (${services.length})'),
             const SizedBox(height: 8),
-            ...(data['services'] as List).map((service) {
+            ...services.map((service) {
               if (service is Map) {
+                final serviceName = service['name'] ?? 'Service';
+                final price = service['price'] ?? 0;
+                final duration = service['duration'] ?? 0;
                 return Padding(
                   padding: const EdgeInsets.only(bottom: 4),
                   child: Row(
                     children: [
                       const Icon(Icons.cut, size: 14, color: Colors.grey),
                       const SizedBox(width: 8),
-                      Text('${service['name'] ?? 'Service'} - Rs. ${service['price'] ?? 0} (${service['duration'] ?? 0} min)',
+                      Text('$serviceName - Rs. $price ($duration min)',
                           style: const TextStyle(fontSize: 13)),
                     ],
                   ),
@@ -178,11 +205,16 @@ class SalonVerificationScreen extends StatelessWidget {
           ],
 
           // ── CO-WORKERS ──
-          if (data['workers'] != null && (data['workers'] as List).isNotEmpty) ...[
-            _sectionTitle('👥 Co-Workers (${(data['workers'] as List).length})'),
+          if (workers.isNotEmpty) ...[
+            _sectionTitle('👥 Co-Workers (${workers.length})'),
             const SizedBox(height: 8),
-            ...(data['workers'] as List).map((worker) {
+            ...workers.map((worker) {
               if (worker is Map) {
+                final workerName = worker['name'] ?? 'Unknown';
+                final fatherName = worker['fatherName'] ?? 'N/A';
+                final cnic = worker['cnic'] ?? '';
+                final profileImage = worker['profileImage'];
+
                 return Container(
                   margin: const EdgeInsets.only(bottom: 8),
                   padding: const EdgeInsets.all(10),
@@ -190,17 +222,17 @@ class SalonVerificationScreen extends StatelessWidget {
                   child: Row(
                     children: [
                       ClipOval(
-                        child: _getImageWidget(worker['profileImage'], width: 40, height: 40),
+                        child: _getImageWidget(profileImage, width: 40, height: 40),
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(worker['name'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.w600)),
-                            Text('Father: ${worker['fatherName'] ?? 'N/A'}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                            if (worker['cnic'] != null && worker['cnic'].toString().isNotEmpty)
-                              Text('CNIC: ${worker['cnic']}', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                            Text(workerName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                            Text('Father: $fatherName', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                            if (cnic.isNotEmpty)
+                              Text('CNIC: $cnic', style: const TextStyle(fontSize: 11, color: Colors.grey)),
                           ],
                         ),
                       ),
@@ -232,12 +264,12 @@ class SalonVerificationScreen extends StatelessWidget {
           const SizedBox(height: 16),
 
           // ── SALON PHOTOS ──
-          if (data['salonPhotos'] != null && (data['salonPhotos'] as List).isNotEmpty) ...[
-            _sectionTitle('📸 Salon Photos (${(data['salonPhotos'] as List).length})'),
+          if (salonPhotos.isNotEmpty) ...[
+            _sectionTitle('📸 Salon Photos (${salonPhotos.length})'),
             const SizedBox(height: 8),
             Wrap(
               spacing: 8, runSpacing: 8,
-              children: (data['salonPhotos'] as List).map((photo) {
+              children: salonPhotos.map((photo) {
                 return GestureDetector(
                   onTap: () => _viewFullImage(photo.toString(), context),
                   child: ClipRRect(
@@ -343,13 +375,23 @@ class SalonVerificationScreen extends StatelessWidget {
   }
 
   Future<void> _callOwner(String phone) async {
-    final url = Uri.parse('tel:$phone');
-    if (await canLaunchUrl(url)) { await launchUrl(url); } else { Get.snackbar('Error', 'Could not launch phone call'); }
+    // Clean phone number
+    final cleanPhone = phone.replaceAll(RegExp(r'[^0-9+]'), '');
+    final url = Uri.parse('tel:$cleanPhone');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      Get.snackbar('Error', 'Could not launch phone call');
+    }
   }
 
   Future<void> _openInMaps(double lat, double lng) async {
     final url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng');
-    if (await canLaunchUrl(url)) { await launchUrl(url); } else { Get.snackbar('Error', 'Could not open maps'); }
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      Get.snackbar('Error', 'Could not open maps');
+    }
   }
 
   void _showRejectDialog(BuildContext context, AdminController controller, String docId) {
@@ -361,11 +403,25 @@ class SalonVerificationScreen extends StatelessWidget {
         content: Column(mainAxisSize: MainAxisSize.min, children: [
           const Text('Please provide a reason for rejection:'),
           const SizedBox(height: 12),
-          TextField(controller: reasonCtrl, maxLines: 3, decoration: InputDecoration(hintText: 'Reason for rejection...', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)))),
+          TextField(
+            controller: reasonCtrl,
+            maxLines: 3,
+            decoration: InputDecoration(
+                hintText: 'Reason for rejection...',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))
+            ),
+          ),
         ]),
         actions: [
           TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
-          ElevatedButton(onPressed: () { controller.verifySalon(docId, false); Navigator.pop(context); }, style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text('Reject', style: TextStyle(color: Colors.white))),
+          ElevatedButton(
+            onPressed: () {
+              controller.verifySalon(docId, false);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Reject', style: TextStyle(color: Colors.white)),
+          ),
         ],
       ),
     );

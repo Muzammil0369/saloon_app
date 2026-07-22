@@ -10,6 +10,7 @@ import 'package:saloon_app/core/controllers/user_controller.dart';
 import 'package:saloon_app/features/customer/screens/notifications_screen.dart';
 import 'package:saloon_app/features/customer/screens/salon_detail_screen.dart';
 import 'package:saloon_app/shared/widgets/salon_card.dart';
+import 'package:saloon_app/shared/widgets/ad_banner_card.dart';
 
 import '../../../core/controllers/language_controller.dart';
 
@@ -26,6 +27,13 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   final userController = Get.find<UserController>();
   int _selectedCategory = 0;
   Position? _currentPosition;
+  List<Map<String, dynamic>> _nearbyAds = [];
+  bool _isLoadingAds = true;
+
+  // Ads farther than this are not shown at all, even if they're the
+  // "closest available" — irrelevant-but-technically-nearest is still irrelevant.
+  static const double _maxAdDistanceKm = 25.0;
+  static const int _maxAdsShown = 8;
 
   String get greeting {
     final hour = DateTime.now().hour;
@@ -58,6 +66,63 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     } catch (e) {
       debugPrint('Error getting location: $e');
     }
+    await _loadNearbyAds();
+  }
+
+  Future<void> _loadNearbyAds() async {
+    setState(() => _isLoadingAds = true);
+    try {
+      // Single-field query only — no composite index needed
+      final snapshot = await FirebaseFirestore.instance
+          .collection('ads')
+          .where('expiresAt', isGreaterThan: Timestamp.now())
+          .get();
+
+      final List<Map<String, dynamic>> ads = [];
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final GeoPoint? loc = data['location'];
+        double distanceKm = double.infinity;
+
+        if (_currentPosition != null && loc != null) {
+          distanceKm = Geolocator.distanceBetween(
+            _currentPosition!.latitude, _currentPosition!.longitude,
+            loc.latitude, loc.longitude,
+          ) /
+              1000;
+        }
+
+        // Skip ads with no usable distance, or too far to be relevant
+        if (distanceKm > _maxAdDistanceKm) continue;
+
+        ads.add({
+          ...data,
+          'ownerId': doc.id,
+          'distanceKm': distanceKm,
+        });
+      }
+
+      // Paid ads first (future monetization hook — all false today, so this
+      // is a no-op until that feature is switched on), then nearest, then
+      // highest-rated as the final tie-break.
+      ads.sort((a, b) {
+        final paidCompare = (b['isPaid'] == true ? 1 : 0).compareTo(a['isPaid'] == true ? 1 : 0);
+        if (paidCompare != 0) return paidCompare;
+        final distCompare = (a['distanceKm'] as double).compareTo(b['distanceKm'] as double);
+        if (distCompare != 0) return distCompare;
+        return ((b['rating'] ?? 0.0) as num).compareTo((a['rating'] ?? 0.0) as num);
+      });
+
+      if (mounted) {
+        setState(() {
+          _nearbyAds = ads.take(_maxAdsShown).toList();
+          _isLoadingAds = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('Error loading ads: $e');
+      if (mounted) setState(() => _isLoadingAds = false);
+    }
   }
 
   Future<void> _onRefresh() async {
@@ -87,12 +152,16 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             ? (data['salonName_ur'] ?? data['salonName'] ?? 'Unnamed Salon')
             : (data['salonName'] ?? 'Unnamed Salon'),
         'rating': data['rating']?.toDouble() ?? 4.5,
+        'reviewCount': data['reviewCount'] ?? 0,
         'status': data['isOpenNow'] == true ? 'open'.tr : 'closed'.tr,
         'price': '500',
         'distance': distanceText,
         'address': data['address'] ?? 'No address provided',
-        'imageUrl': data['salonPhotos'] != null && (data['salonPhotos'] as List).isNotEmpty
-            ? (data['salonPhotos'] as List).first : null,
+        'imageUrl': data['logo'] ??
+            data['profileImage'] ??
+            (data['salonPhotos'] != null && (data['salonPhotos'] as List).isNotEmpty
+                ? (data['salonPhotos'] as List).first
+                : null),
         'salonPhotos': data['salonPhotos'] ?? [],
         'category': data['category'] ?? 'Haircut',
         'lat': salonLoc?.latitude ?? 0,
@@ -169,46 +238,42 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   ),
                 ),
 
-                // Promo Banner
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                  child: Container(
-                    width: double.infinity,
-                    height: 160,
-                    decoration: BoxDecoration(
-                      gradient: AppGradients.primary,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(color: AppColors.primaryPink.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))
-                      ],
-                    ),
-                    child: Stack(
-                      children: [
-                        Positioned(
-                          right: -20, bottom: -20,
-                          child: Icon(Icons.auto_awesome_rounded, size: 150, color: Colors.white.withOpacity(0.1)),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text('percent_off'.tr, style: AppTextStyles.label.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
-                              const SizedBox(height: 4),
-                              Text('first_grooming'.tr, style: AppTextStyles.headingLarge?.copyWith(color: Colors.white)),
-                              const Spacer(),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
-                                child: Text('claim_now'.tr, style: AppTextStyles.label.copyWith(color: AppColors.primaryPink, fontWeight: FontWeight.bold)),
+                // Promo Banner — nearest active salon ads, sorted by distance
+                if (_isLoadingAds)
+                  const Padding(
+                    padding: EdgeInsets.fromLTRB(20, 16, 20, 0),
+                    child: Center(child: CircularProgressIndicator(color: AppColors.primaryPink)),
+                  )
+                else if (_nearbyAds.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 16),
+                    child: SizedBox(
+                      height: 215,
+                      child: ListView.separated(
+                        scrollDirection: Axis.horizontal,
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        itemCount: _nearbyAds.length,
+                        separatorBuilder: (_, __) => const SizedBox(width: 14),
+                        itemBuilder: (context, index) {
+                          final ad = _nearbyAds[index];
+                          return AdBannerCard(
+                            ad: ad,
+                            width: MediaQuery.of(context).size.width - 60,
+                            onTap: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => SalonDetailScreen(
+                                  ownerId: ad['ownerId'],
+                                  initialTabIndex: 1, // jump straight to Offers tab
+                                ),
                               ),
-                            ],
-                          ),
-                        ),
-                      ],
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
-                ),
+                // No ads within range — show nothing rather than an irrelevant one
 
                 const SizedBox(height: 32),
 

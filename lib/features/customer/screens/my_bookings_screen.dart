@@ -8,6 +8,7 @@ import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/services/auth_service.dart';
 import 'package:saloon_app/features/customer/screens/qr_screen.dart';
+import 'package:saloon_app/features/customer/screens/rate_salon_screen.dart';
 
 class MyBookingsScreen extends StatefulWidget {
   const MyBookingsScreen({super.key});
@@ -338,6 +339,49 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                   ),
               ],
             ),
+
+            // Rate Salon button (only for completed/paid/verified bookings)
+            if (status == 'completed' || status == 'paid' || status == 'verified') ...[
+              const SizedBox(height: 10),
+              if (booking['reviewed'] == true)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                      const SizedBox(width: 6),
+                      Text('review_submitted'.tr, style: const TextStyle(color: Colors.amber, fontSize: 12, fontWeight: FontWeight.w600)),
+                    ],
+                  ),
+                )
+              else
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () async {
+                      final result = await Get.to(() => RateSalonScreen(
+                        bookingId: bookingId,
+                        ownerId: booking['ownerId'] ?? '',
+                        salonName: salonName,
+                      ));
+                      if (result == true && mounted) setState(() {});
+                    },
+                    icon: const Icon(Icons.star_border_rounded, size: 18, color: AppColors.primaryPink),
+                    label: Text('rate_salon'.tr, style: const TextStyle(color: AppColors.primaryPink, fontWeight: FontWeight.w600)),
+                    style: OutlinedButton.styleFrom(
+                      side: const BorderSide(color: AppColors.primaryPink),
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                  ),
+                ),
+            ],
           ],
         ),
       ),

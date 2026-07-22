@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -20,15 +19,19 @@ import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_helper.dart';
 import 'booking_screen.dart';
+import '../../../shared/widgets/favourite_button.dart';
+import '../../../shared/widgets/ad_banner_card.dart';
 
 class SalonDetailScreen extends StatefulWidget {
   final Map<String, dynamic>? salon;
   final String? ownerId;
+  final int initialTabIndex; // 0 = Services (default), 1 = Offers
 
   const SalonDetailScreen({
     super.key,
     this.salon,
     this.ownerId,
+    this.initialTabIndex = 0,
   });
 
   @override
@@ -38,6 +41,7 @@ class SalonDetailScreen extends StatefulWidget {
 class _SalonDetailScreenState extends State<SalonDetailScreen> {
   final BookingController _bookingController = Get.put(BookingController());
   final DatabaseService _dbService = DatabaseService.instance;
+  late int _selectedTab = widget.initialTabIndex;
 
   String get _ownerId => widget.ownerId ?? widget.salon?['ownerId'] ?? '';
 
@@ -53,6 +57,34 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
         print('  - ${s['name']} | Rs. ${s['price']} | ${s['duration']} min');
       }
     });
+  }
+
+  // Selects (in the booking controller) whichever loaded services match the
+  // ad's included service names, then jumps to the Services tab so the
+  // bottom "Book Now" button becomes enabled with those services pre-picked.
+  void _bookThisOffer(List<Map<String, dynamic>> offerServices) {
+    final offerNames = offerServices.map((s) => (s['name'] ?? '').toString().trim().toLowerCase()).toSet();
+
+    if (_bookingController.services.isEmpty) {
+      Get.snackbar('error'.tr, 'services_still_loading'.tr);
+      return;
+    }
+
+    bool matchedAny = false;
+    for (var i = 0; i < _bookingController.services.length; i++) {
+      final name = (_bookingController.services[i]['name'] ?? '').toString().trim().toLowerCase();
+      final shouldSelect = offerNames.contains(name);
+      if (shouldSelect) matchedAny = true;
+      _bookingController.services[i]['isSelected'] = shouldSelect;
+    }
+    _bookingController.services.refresh();
+
+    if (!matchedAny) {
+      Get.snackbar('error'.tr, 'offer_services_unavailable'.tr);
+      return;
+    }
+
+    setState(() => _selectedTab = 0);
   }
 
   // Helper to build image from URL or Base64
@@ -135,6 +167,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
               ? (salonData['salonName_ur'] ?? salonData['salonName'] ?? widget.salon?['name'] ?? 'Unnamed Salon')
               : (salonData['salonName'] ?? widget.salon?['name'] ?? 'Unnamed Salon');
           final double salonRating = (salonData['rating'] ?? widget.salon?['rating'] ?? 0.0).toDouble();
+          final int salonReviewCount = (salonData['reviewCount'] ?? widget.salon?['reviewCount'] ?? 0);
           final String salonAddress = salonData['address'] ?? widget.salon?['address'] ?? 'No address provided';
           final bool isOpen = salonData['isOpenNow'] ?? widget.salon?['status'] == 'Open';
           final String? thumbnail = salonData['thumbnail'] ?? widget.salon?['imageUrl'];
@@ -192,6 +225,15 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                               child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
                             ),
                             onPressed: () => Get.back(),
+                          ),
+                        ),
+                        Positioned(
+                          top: MediaQuery.of(context).padding.top + 10,
+                          right: 10,
+                          child: FavouriteButton(
+                            ownerId: _ownerId,
+                            backgroundColor: const Color(0x4D000000), // black @ ~30% opacity
+                            iconSize: 20,
                           ),
                         ),
                         Positioned(
@@ -264,7 +306,8 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _infoItem(Icons.star_rounded, Colors.amber, salonRating.toStringAsFixed(1), 'rating'.tr),
+                              _infoItem(Icons.star_rounded, Colors.amber, salonRating.toStringAsFixed(1),
+                                  salonReviewCount > 0 ? '${'rating'.tr} ($salonReviewCount)' : 'rating'.tr),
                               _infoItem(Icons.location_on_rounded, AppColors.primaryPink, distance, 'distance'.tr),
                               _infoItem(Icons.access_time_filled_rounded, Colors.blue, '9AM - 9PM', 'timing'.tr),
                             ],
@@ -286,126 +329,257 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                       ),
                     ),
 
-                    // ── Services Section ──
+                    // ── Services / Offers Tab Bar ──
                     Padding(
-                      padding: const EdgeInsets.all(20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'our_services'.tr,
-                            style: AppTextStyles.headingSmall.copyWith(color: theme.textColor),
-                          ),
-                          const SizedBox(height: 16),
-                          Obx(() {
-                            if (_bookingController.isLoading.value) {
-                              return const Center(
-                                child: Padding(
-                                  padding: EdgeInsets.all(20),
-                                  child: CircularProgressIndicator(color: AppColors.primaryPink),
-                                ),
-                              );
-                            }
-
-                            if (_bookingController.services.isEmpty) {
-                              return Center(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: theme.cardColor,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: theme.borderColor),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedTab = 0),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: _selectedTab == 0 ? AppColors.primaryPink : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
                                   child: Text(
-                                    'no_services_available'.tr,
-                                    style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                                    'services'.tr,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _selectedTab == 0 ? Colors.white : theme.mutedTextColor,
+                                      fontWeight: FontWeight.w600,
+                                    ),
                                   ),
                                 ),
-                              );
-                            }
-
-                            return ListView.separated(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: _bookingController.services.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 12),
-                              itemBuilder: (context, index) {
-                                final service = _bookingController.services[index];
-                                final isSelected = service['isSelected'] ?? false;
-                                return GestureDetector(
-                                  onTap: () => _bookingController.toggleService(index),
-                                  child: AnimatedContainer(
-                                    duration: const Duration(milliseconds: 200),
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      gradient: isSelected
-                                          ? LinearGradient(
-                                        colors: [AppColors.lightPink, AppColors.lightPink.withOpacity(0.5)],
-                                      )
-                                          : null,
-                                      color: isSelected ? null : theme.cardColor,
-                                      borderRadius: BorderRadius.circular(AppRadius.lg),
-                                      border: Border.all(
-                                        color: isSelected ? AppColors.primaryPink : theme.borderColor,
-                                        width: isSelected ? 2 : 1,
-                                      ),
-                                      boxShadow: isSelected
-                                          ? [
-                                        BoxShadow(
-                                          color: AppColors.primaryPink.withOpacity(0.1),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ]
-                                          : null,
+                              ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedTab = 1),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: _selectedTab == 1 ? AppColors.primaryPink : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    'offers'.tr,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _selectedTab == 1 ? Colors.white : theme.mutedTextColor,
+                                      fontWeight: FontWeight.w600,
                                     ),
-                                    child: Row(
-                                      children: [
-                                        AnimatedContainer(
-                                          duration: const Duration(milliseconds: 200),
-                                          child: Icon(
-                                            isSelected ? Icons.check_circle : Icons.circle_outlined,
-                                            color: isSelected ? AppColors.primaryPink : theme.mutedTextColor,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 12),
-                                        Expanded(
-                                          child: Column(
-                                            crossAxisAlignment: CrossAxisAlignment.start,
-                                            children: [
-                                              Text(
-                                                service['name'] ?? service['serviceName'] ?? 'Unnamed Service',
-                                                style: AppTextStyles.bodyLarge?.copyWith(
-                                                  fontWeight: FontWeight.w600,
-                                                  color: theme.textColor,
-                                                ),
-                                              ),
-                                              const SizedBox(height: 4),
-                                              Row(
-                                                children: [
-                                                  Icon(Icons.timer_outlined, size: 14, color: theme.mutedTextColor),
-                                                  const SizedBox(width: 4),
-                                                  Text(
-                                                    '${service['duration'] ?? 30} min',
-                                                    style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
-                                                  ),
-                                                ],
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                        Text(
-                                          'Rs. ${service['price'] ?? 0}',
-                                          style: AppTextStyles.bodyLarge?.copyWith(
-                                            color: AppColors.primaryPink,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+
+                    // ── Services Section ──
+                    if (_selectedTab == 0)
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'our_services'.tr,
+                              style: AppTextStyles.headingSmall.copyWith(color: theme.textColor),
+                            ),
+                            const SizedBox(height: 16),
+                            Obx(() {
+                              if (_bookingController.isLoading.value) {
+                                return const Center(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(20),
+                                    child: CircularProgressIndicator(color: AppColors.primaryPink),
+                                  ),
+                                );
+                              }
+
+                              if (_bookingController.services.isEmpty) {
+                                return Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(20),
+                                    child: Text(
+                                      'no_services_available'.tr,
+                                      style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
                                     ),
                                   ),
                                 );
-                              },
-                            );
-                          }),
-                        ],
+                              }
+
+                              return ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: _bookingController.services.length,
+                                separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                itemBuilder: (context, index) {
+                                  final service = _bookingController.services[index];
+                                  final isSelected = service['isSelected'] ?? false;
+                                  return GestureDetector(
+                                    onTap: () => _bookingController.toggleService(index),
+                                    child: AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      padding: const EdgeInsets.all(16),
+                                      decoration: BoxDecoration(
+                                        gradient: isSelected
+                                            ? LinearGradient(
+                                          colors: [AppColors.lightPink, AppColors.lightPink.withOpacity(0.5)],
+                                        )
+                                            : null,
+                                        color: isSelected ? null : theme.cardColor,
+                                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                                        border: Border.all(
+                                          color: isSelected ? AppColors.primaryPink : theme.borderColor,
+                                          width: isSelected ? 2 : 1,
+                                        ),
+                                        boxShadow: isSelected
+                                            ? [
+                                          BoxShadow(
+                                            color: AppColors.primaryPink.withOpacity(0.1),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 2),
+                                          ),
+                                        ]
+                                            : null,
+                                      ),
+                                      child: Row(
+                                        children: [
+                                          AnimatedContainer(
+                                            duration: const Duration(milliseconds: 200),
+                                            child: Icon(
+                                              isSelected ? Icons.check_circle : Icons.circle_outlined,
+                                              color: isSelected ? AppColors.primaryPink : theme.mutedTextColor,
+                                            ),
+                                          ),
+                                          const SizedBox(width: 12),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                Text(
+                                                  service['name'] ?? service['serviceName'] ?? 'Unnamed Service',
+                                                  style: AppTextStyles.bodyLarge?.copyWith(
+                                                    fontWeight: FontWeight.w600,
+                                                    color: theme.textColor,
+                                                  ),
+                                                ),
+                                                const SizedBox(height: 4),
+                                                Row(
+                                                  children: [
+                                                    Icon(Icons.timer_outlined, size: 14, color: theme.mutedTextColor),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      '${service['duration'] ?? 30} min',
+                                                      style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                          Text(
+                                            'Rs. ${service['price'] ?? 0}',
+                                            style: AppTextStyles.bodyLarge?.copyWith(
+                                              color: AppColors.primaryPink,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              );
+                            }),
+                          ],
+                        ),
                       ),
-                    ),
+
+                    // ── Offers Section ──
+                    if (_selectedTab == 1)
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: StreamBuilder<DocumentSnapshot>(
+                          stream: FirebaseFirestore.instance.collection('ads').doc(_ownerId).snapshots(),
+                          builder: (context, adSnapshot) {
+                            final hasAd = adSnapshot.hasData && adSnapshot.data!.exists;
+                            if (!hasAd) {
+                              return Center(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(20),
+                                  child: Column(
+                                    children: [
+                                      Icon(Icons.local_offer_outlined, size: 48, color: theme.mutedTextColor),
+                                      const SizedBox(height: 12),
+                                      Text('no_active_offers'.tr, style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }
+
+                            final adData = adSnapshot.data!.data() as Map<String, dynamic>;
+                            final expiresAt = (adData['expiresAt'] as Timestamp?)?.toDate();
+                            final daysLeft = expiresAt != null ? expiresAt.difference(DateTime.now()).inDays : 0;
+                            final services = (adData['selectedServices'] as List? ?? []).whereType<Map<String, dynamic>>().toList();
+
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                AdBannerCard(ad: adData, height: 215),
+                                const SizedBox(height: 12),
+                                if (daysLeft > 0)
+                                  Text('${'offer_valid_for_days'.tr}: $daysLeft', style: TextStyle(color: theme.mutedTextColor, fontSize: 12)),
+                                const SizedBox(height: 16),
+                                if (services.isNotEmpty) ...[
+                                  Text('included_services'.tr, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
+                                  const SizedBox(height: 10),
+                                  ...services.map((s) => Padding(
+                                    padding: const EdgeInsets.only(bottom: 8),
+                                    child: Row(
+                                      children: [
+                                        const Icon(Icons.check_circle_outline, size: 16, color: AppColors.primaryPink),
+                                        const SizedBox(width: 8),
+                                        Expanded(child: Text(s['name'] ?? '', style: TextStyle(color: theme.textColor))),
+                                        Text('${'rs'.tr} ${s['price']}', style: TextStyle(color: theme.mutedTextColor)),
+                                      ],
+                                    ),
+                                  )),
+                                ],
+                                const SizedBox(height: 20),
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () => _bookThisOffer(services),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: AppColors.primaryPink,
+                                      padding: const EdgeInsets.symmetric(vertical: 14),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    child: Text(
+                                      'book_this_offer'.tr,
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        ),
+                      ),
 
                     // ── Gallery Section ──
                     if (salonPhotos.isNotEmpty) ...[

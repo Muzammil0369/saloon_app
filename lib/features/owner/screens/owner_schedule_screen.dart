@@ -1,4 +1,5 @@
 // lib/features/owner/screens/owner_schedule_screen.dart
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -133,6 +134,36 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
     );
   }
 
+  Widget _customerAvatar(dynamic imageUrl, ThemeHelper theme) {
+    final String url = (imageUrl ?? '').toString();
+    final ImageProvider? provider = _getCustomerImageProvider(url);
+    return Container(
+      width: 28,
+      height: 28,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: AppColors.lightPink,
+        image: provider != null ? DecorationImage(image: provider, fit: BoxFit.cover) : null,
+      ),
+      child: provider == null
+          ? Icon(Icons.person, size: 16, color: AppColors.primaryPink)
+          : null,
+    );
+  }
+
+  ImageProvider? _getCustomerImageProvider(String url) {
+    if (url.startsWith('http')) return NetworkImage(url);
+    if (url.startsWith('data:image')) {
+      try {
+        final bytes = base64Decode(url.split(',').last);
+        return MemoryImage(bytes);
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
   Widget _buildBookingCard(Map<String, dynamic> data, String bookingId, ThemeHelper theme) {
     final time = data['timeSlot'] ?? '';
     final name = data['customerName'] ?? 'Customer';
@@ -193,6 +224,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
         child: Column(
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 // Time column
                 Container(
@@ -203,6 +235,31 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                   ),
                   child: Column(
                     children: [
+                      if ((data['staffName'] ?? '').toString().isNotEmpty) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryPink.withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              const Icon(Icons.person_outline, size: 13, color: AppColors.primaryPink),
+                              const SizedBox(width: 4),
+                              Text(
+                                data['staffName'],
+                                style: const TextStyle(
+                                  color: AppColors.primaryPink,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                       Text(
                         time.split(' ').first,
                         style: AppTextStyles.headingSmall?.copyWith(color: AppColors.primaryPink),
@@ -211,6 +268,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                         time.split(' ').last,
                         style: AppTextStyles.label?.copyWith(color: AppColors.primaryPink),
                       ),
+
                     ],
                   ),
                 ),
@@ -225,12 +283,22 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Expanded(
-                            child: Text(
-                              name,
-                              style: AppTextStyles.bodyLarge?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                color: theme.textColor,
-                              ),
+                            child: Row(
+                              children: [
+                                _customerAvatar(data['customerImage'], theme),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    name,
+                                    style: AppTextStyles.bodyLarge?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                      color: theme.textColor,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
                           Container(
@@ -250,7 +318,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       Text(
                         services,
                         style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor),

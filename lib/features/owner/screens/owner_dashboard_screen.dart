@@ -73,7 +73,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
   }
 
   ImageProvider? _getProfileImage(Map<String, dynamic> data) {
-    final ownerImage = data['ownerProfileImage'];
+    final ownerImage = data['logo'] ?? data['ownerProfileImage'];
     if (ownerImage != null && ownerImage.toString().isNotEmpty) {
       if (ownerImage.toString().startsWith('http')) return NetworkImage(ownerImage);
       if (ownerImage.toString().startsWith('data:image')) {
@@ -139,35 +139,36 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
 
                   // ✅ FIXED: Salon Name & Address with Dynamic Translation
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Salon Name - Dynamically translated
-                        Obx(() => Text(
-                          languageController.languageCode == 'ur'
-                              ? (data?['salonName_ur'] ?? data?['salonName'] ?? 'my_salon'.tr)
-                              : (data?['salonName'] ?? 'my_salon'.tr),
-                          style: AppTextStyles.headingLarge?.copyWith(
-                            color: theme.textColor,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        )),
-                        // Address - Dynamically translated
-                        Obx(() => Text(
-                          languageController.languageCode == 'ur'
-                              ? (data?['address_ur'] ?? data?['address'] ?? 'location'.tr)
-                              : (data?['address'] ?? 'location'.tr),
-                          style: AppTextStyles.taglineSmall?.copyWith(
-                            color: theme.mutedTextColor,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        )),
-                      ],
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Salon Name - Dynamically translated
+                          Obx(() => Text(
+                            languageController.languageCode == 'ur'
+                                ? (data?['salonName_ur'] ?? data?['salonName'] ?? 'my_salon'.tr)
+                                : (data?['salonName'] ?? 'my_salon'.tr),
+                            style: AppTextStyles.headingLarge?.copyWith(
+                              fontSize: 18,
+                              color: theme.textColor,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          )),
+                          // Address - Dynamically translated
+                          Obx(() => Text(
+                            languageController.languageCode == 'ur'
+                                ? (data?['address_ur'] ?? data?['address'] ?? 'location'.tr)
+                                : (data?['address'] ?? 'location'.tr),
+                            style: AppTextStyles.taglineSmall?.copyWith(
+                              color: theme.mutedTextColor,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          )),
+                        ],
+                      ),
                     ),
-                  ),
 
                   // Status Badge
                   Container(

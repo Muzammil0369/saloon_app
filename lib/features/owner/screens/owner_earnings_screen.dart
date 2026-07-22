@@ -179,13 +179,13 @@ class _OwnerEarningsScreenState extends State<OwnerEarningsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('total_revenue'.tr, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13)),
+                              Text('total_revenue'.tr, style: AppTextStyles.label.copyWith(color: Colors.white.withOpacity(0.8))),
                               const SizedBox(height: 4),
                               Text('Rs. ${totalRevenue.toStringAsFixed(0)}',
-                                  style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold)),
+                                style: AppTextStyles.headingLarge.copyWith(color: theme.textColor, fontSize: 22)),
                               const SizedBox(height: 8),
                               Text('${'commission'.tr}: Rs. ${totalCommission.toStringAsFixed(0)}',
-                                  style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12)),
+                                  style: AppTextStyles.label.copyWith(color: Colors.white.withOpacity(0.8))),
                             ],
                           ),
                         ),

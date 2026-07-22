@@ -299,12 +299,12 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
     );
   }
 
-  ImageProvider _getProfileImage(String? imageUrl) {
+  ImageProvider? _getProfileImage(String? imageUrl) {
     if (imageUrl == null || imageUrl.isEmpty) {
-      return const AssetImage('assets/default_avatar.png');
+      return null;
     }
 
-    // ✅ Handle Cloudinary URL
+    // ✅ Handle Cloudinary/ImgBB URL
     if (imageUrl.startsWith('http')) {
       return NetworkImage(imageUrl);
     }
@@ -316,6 +316,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         return MemoryImage(bytes);
       } catch (e) {
         print('Failed to decode base64 image: $e');
+        return null;
       }
     }
 
@@ -325,10 +326,11 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         return FileImage(File(imageUrl));
       } catch (e) {
         print('Failed to load local image: $e');
+        return null;
       }
     }
 
-    return const AssetImage('assets/default_avatar.png');
+    return null;
   }
 
   @override
@@ -375,22 +377,23 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                               builder: (context, snapshot) {
                                 final data = snapshot.data?.data() as Map<String, dynamic>?;
                                 final profileImage = data?['profileImage'] as String?;
+                                final resolvedImage = _getProfileImage(profileImage);
 
                                 return Container(
                                   width: 60, height: 60,
                                   decoration: BoxDecoration(
-                                    gradient: profileImage == null ? AppGradients.primary : null,
+                                    gradient: resolvedImage == null ? AppGradients.primary : null,
                                     shape: BoxShape.circle,
-                                    image: profileImage != null && profileImage.isNotEmpty
+                                    image: resolvedImage != null
                                         ? DecorationImage(
-                                      image: _getProfileImage(profileImage),
+                                      image: resolvedImage,
                                       fit: BoxFit.cover,
                                     )
                                         : null,
                                   ),
                                   child: _isUploading
                                       ? const Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                                      : (profileImage == null || profileImage.isEmpty
+                                      : (resolvedImage == null
                                       ? const Icon(Icons.person_rounded, color: Colors.white, size: 30)
                                       : null),
                                 );

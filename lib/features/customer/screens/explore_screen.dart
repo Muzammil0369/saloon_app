@@ -151,6 +151,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
         'distance': '${distKm.toStringAsFixed(1)} km',
         'distanceValue': distKm,
         'rating': data['rating']?.toDouble() ?? 4.5,
+        'reviewCount': data['reviewCount'] ?? 0,
         'status': data['isOpenNow'] == true ? 'open'.tr : 'closed'.tr,
         'price': data['price'] ?? 'Rs.500',
         'priceValue': priceValue,
@@ -158,8 +159,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
         'lat': location.latitude,
         'lng': location.longitude,
         'address': data['address'] ?? '',
-        'imageUrl': data['salonPhotos'] != null && (data['salonPhotos'] as List).isNotEmpty
-            ? (data['salonPhotos'] as List).first : null,
+        'imageUrl': data['logo'] ??
+            data['profileImage'] ??
+            (data['salonPhotos'] != null && (data['salonPhotos'] as List).isNotEmpty
+                ? (data['salonPhotos'] as List).first
+                : null),
         'showOnMap': data['showOnMap'] ?? false,
       };
     }).toList();
@@ -307,7 +311,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        centerTitle: false,
+        centerTitle: true,
         title: Text('find_salons'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
       ),
       body: SafeArea(

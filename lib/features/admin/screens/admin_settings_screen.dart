@@ -2,6 +2,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get/get.dart';
+
+import '../controllers/admin_controller.dart';
 
 class AdminSettingsScreen extends StatefulWidget {
   const AdminSettingsScreen({super.key});
@@ -33,6 +36,27 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
     } catch (_) {}
 
     return {'id': userId, 'name': userName, 'email': userEmail};
+  }
+
+  void _refreshDashboardStats() {
+    try {
+      final controller = Get.find<AdminController>();
+      controller.refreshStats();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Dashboard stats refreshed successfully!'),
+          backgroundColor: Colors.green,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error refreshing stats: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   Future<void> _resetEverything() async {
@@ -251,6 +275,35 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                 decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.grey.shade200)),
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                   const Text('Database Overview', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 16),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.grey.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Dashboard Management', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                        const SizedBox(height: 12),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: _refreshDashboardStats,
+                            icon: const Icon(Icons.refresh, color: Colors.white),
+                            label: const Text('Refresh Dashboard Stats', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
                   const SizedBox(height: 16),
                   Row(children: [
                     _countCard('Users', '${counts['customers'] ?? 0}', Colors.blue, Icons.people),

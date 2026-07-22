@@ -10,7 +10,12 @@ class AdminDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final adminController = Get.put(AdminController());
+    final adminController = Get.find<AdminController>();
+
+    // Refresh stats when screen is built
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      adminController.refreshStats();
+    });
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
@@ -35,11 +40,13 @@ class AdminDashboardScreen extends StatelessWidget {
                 title: "Owners",
                 value: adminController.totalOwners.value.toString(),
                 icon: Icons.store,
+                trend: "+${adminController.totalOwners.value > 0 ? '10' : '0'}%", // Simple trend
               ),
               AdminStatCard(
                 title: "Admins",
                 value: adminController.totalAdmins.value.toString(),
                 icon: Icons.admin_panel_settings,
+                trend: "+0%",
               ),
               AdminStatCard(
                 title: "Total Revenue",

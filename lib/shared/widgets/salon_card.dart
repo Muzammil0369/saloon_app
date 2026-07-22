@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
+import 'package:saloon_app/shared/widgets/favourite_button.dart';
 
 class SalonCard extends StatelessWidget {
   final Map<String, dynamic> salon;
@@ -60,110 +61,144 @@ class SalonCard extends StatelessWidget {
 
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: theme.cardColor,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [theme.softShadow],
-        ),
-        child: Row(
-          children: [
-            // Salon Image/Logo
-            Container(
-              height: 80,
-              width: 80,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                color: AppColors.lightPink,
-                image: DecorationImage(
-                  image: _getImage(),
-                  fit: BoxFit.cover,
-                ),
-              ),
-              // Show store icon if no image
-              child: (salon['logo'] == null &&
-                  salon['thumbnail'] == null &&
-                  salon['imageUrl'] == null &&
-                  salon['ownerProfileImage'] == null)
-                  ? const Icon(Icons.store, color: AppColors.primaryPink, size: 30)
-                  : null,
+      child: Stack(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: theme.cardColor,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [theme.softShadow],
             ),
-            const SizedBox(width: 16),
+            child: Row(
+              children: [
+                // Salon Image/Logo
+                Container(
+                  height: 80,
+                  width: 80,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    color: AppColors.lightPink,
+                    image: DecorationImage(
+                      image: _getImage(),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  // Show store icon if no image
+                  child: (salon['logo'] == null &&
+                      salon['thumbnail'] == null &&
+                      salon['imageUrl'] == null &&
+                      salon['ownerProfileImage'] == null)
+                      ? const Icon(Icons.store, color: AppColors.primaryPink, size: 30)
+                      : null,
+                ),
+                const SizedBox(width: 16),
 
-            // Info
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                // Info
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          salon['name'] ?? 'salon'.tr,
-                          style: AppTextStyles.bodyLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: theme.textColor,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              salon['name'] ?? 'salon'.tr,
+                              style: AppTextStyles.bodyLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.textColor,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+
+                        ],
                       ),
+                      const SizedBox(height: 8),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            '${'starting_from_rs'.tr} ${salon['price'] ?? '500'}',
+                            style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
+                          ),
+
+                          Row(
+                            children: [
+                              const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                              Text(
+                                '${salon['rating'] ?? 0.0}',
+                                style: AppTextStyles.label.copyWith(fontWeight: FontWeight.bold),
+                              ),
+                              if ((salon['reviewCount'] ?? 0) > 0)
+                                Text(
+                                  ' (${salon['reviewCount']})',
+                                  style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
+                                ),
+                            ],
+                          ),
+                          // const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                          // Text(
+                          //   '${salon['rating'] ?? 0.0}',
+                          //   style: AppTextStyles.label.copyWith(fontWeight: FontWeight.bold),
+                          // ),
+                          // if ((salon['reviewCount'] ?? 0) > 0)
+                          //   Text(
+                          //     ' (${salon['reviewCount']})',
+                          //     style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
+                          //   ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
                       Row(
                         children: [
-                          const Icon(Icons.star_rounded, color: Colors.amber, size: 16),
+                          Icon(Icons.location_on_rounded, size: 12, color: AppColors.primaryPink),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              salon['distance'] ?? 'N/A',
+                              style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          // Status Indicator
+                          Container(
+                            height: 8, width: 8,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: salon['status'] == 'open'.tr ? AppColors.success : Colors.red,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
                           Text(
-                            '${salon['rating'] ?? 0.0}',
-                            style: AppTextStyles.label.copyWith(fontWeight: FontWeight.bold),
+                            salon['status'] ?? 'closed'.tr,
+                            style: AppTextStyles.label.copyWith(
+                              color: salon['status'] == 'open'.tr ? AppColors.success : Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${'starting_from_rs'.tr} ${salon['price'] ?? '500'}',
-                    style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    children: [
-                      Icon(Icons.location_on_rounded, size: 12, color: AppColors.primaryPink),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Text(
-                          salon['distance'] ?? 'N/A',
-                          style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      // Status Indicator
-                      Container(
-                        height: 8, width: 8,
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: salon['status'] == 'open'.tr ? AppColors.success : Colors.red,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        salon['status'] ?? 'closed'.tr,
-                        style: AppTextStyles.label.copyWith(
-                          color: salon['status'] == 'open'.tr ? AppColors.success : Colors.red,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: FavouriteButton(
+              ownerId: salon['ownerId']?.toString() ?? '',
+              iconSize: 16,
+            ),
+          ),
+        ],
       ),
     );
   }

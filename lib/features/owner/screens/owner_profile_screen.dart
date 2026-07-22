@@ -11,9 +11,12 @@ import 'package:saloon_app/core/constants/app_radius.dart';
 import 'package:saloon_app/core/services/auth_service.dart';
 import 'package:saloon_app/core/theme/theme_controller.dart';
 import 'package:saloon_app/core/controllers/language_controller.dart';
+import 'package:saloon_app/features/owner/screens/owner_ad_screen.dart';
 import 'owner_gallery_management_screen.dart';
+import 'owner_help_support_screen.dart';
 import 'owner_services_management_screen.dart';
 import 'owner_staff_screen.dart';
+import 'owner_reviews_screen.dart';
 
 class OwnerProfileScreen extends StatefulWidget {
   const OwnerProfileScreen({super.key});
@@ -398,27 +401,50 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                       theme,
                           () => _editBusinessInfo(data),
                     ),
-                    _profileTile(
+                    _menuTile(
                       Icons.content_cut_rounded,
                       'service_menu'.tr,
                       'manage_services_prices'.tr,
-                      theme,
-                          () => Get.to(() => const OwnerServicesManagementScreen()),
-                    ),
-                    _profileTile(
+                      Colors.pinkAccent,
+                      theme,() {
+                      Get.to(() => const OwnerServicesManagementScreen());
+                    }),
+                    _menuTile(
                       Icons.image_outlined,
                       'salon_gallery'.tr,
                       'upload_salon_photos'.tr,
-                      theme,
-                          () => Get.to(() => const OwnerGalleryManagementScreen()),
-                    ),
-                    _profileTile(
+                      Colors.blue,
+                      theme, () {
+                        Get.to(() => const OwnerGalleryManagementScreen());
+                        }),
+                    _menuTile(
                       Icons.people_rounded,
                       'my_team'.tr,
                       'ustad_shagird_details'.tr,
-                      theme,
-                          () => Get.to(() => const OwnerStaffScreen()),
+                      Colors.red,
+                      theme, () {
+                      Get.to(() => const OwnerStaffScreen());
+                    }),
+                    _menuTile(
+                        Icons.campaign_rounded,
+                        'ads_offers'.tr,
+                        'create_promote_offer'.tr,
+                        Colors.purple,
+                        theme, () {
+                          Get.to(()=> const OwnerAdScreen());
+                    }
                     ),
+                    _menuTile(
+                      Icons.star_rounded,
+                      'reviews_ratings'.tr,
+                      'see_customer_feedback'.tr,
+                      Colors.yellow,
+                      theme, () {
+                      Get.to(() => OwnerReviewsScreen(ownerId: ownerId));
+                    }),
+                    _menuTile(Icons.help_rounded, 'help'.tr, 'help_subtitle'.tr, Colors.orange, theme, () {
+                      Get.to(() => const OwnerHelpSupportScreen());
+                    }),
                     const SizedBox(height: 24),
                     _sectionHeader('settings'.tr, theme),
                     Obx(
@@ -646,6 +672,29 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
           Icons.chevron_right_rounded,
           color: theme.mutedTextColor,
         ),
+      ),
+    );
+  }
+
+  Widget _menuTile(IconData icon, String title, String subtitle, Color color, ThemeHelper theme, VoidCallback onTap) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 24, vertical: 6),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [theme.softShadow],
+      ),
+      child: ListTile(
+        onTap: onTap,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          width: 40, height: 40,
+          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+          child: Icon(icon, size: 20, color: color),
+        ),
+        title: Text(title, style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+        subtitle: Text(subtitle, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
+        trailing: Icon(Icons.chevron_right_rounded, color: theme.mutedTextColor),
       ),
     );
   }

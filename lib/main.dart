@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
+import 'package:saloon_app/shared/screens/splash_screen.dart';
 import 'package:saloon_app/shared/screens/wallet_screen.dart';
 import 'core/services/translation_service.dart';
 import 'core/theme/app_theme.dart';
@@ -9,6 +10,7 @@ import 'core/services/auth_service.dart';
 import 'core/services/database_service.dart';
 import 'core/services/payment_service.dart';
 import 'core/controllers/user_controller.dart';
+import 'core/controllers/favourites_controller.dart';
 import 'core/controllers/wallet_controller.dart';
 import 'core/controllers/payment_controller.dart';
 import 'core/controllers/booking_controller.dart';
@@ -63,6 +65,7 @@ void main() async {
 
   // Controllers
   Get.put(UserController());
+  Get.put(FavouritesController());
   Get.put(WalletController());
   Get.put(PaymentController());
   Get.put(BookingController());
@@ -87,9 +90,10 @@ class MyApp extends StatelessWidget {
       translations: AppTranslations(),
       locale: languageController.currentLocale.value,
       fallbackLocale: const Locale('en', 'US'),
-      initialRoute: '/auth-gate',
+      initialRoute: '/splash-screen',
       // ✅ Use named routes for better navigation
       getPages: [
+        GetPage(name: '/splash-screen', page: () => const SplashScreen()),
         GetPage(name: '/auth-gate', page: () => const AuthGate()),
         GetPage(name: '/onboarding', page: () => const OnboardingScreen()),
         GetPage(name: '/role-select', page: () => const RoleSelectScreen()),

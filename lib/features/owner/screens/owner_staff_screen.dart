@@ -65,6 +65,8 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
                   phone: data['phoneNumber'] ?? 'N/A',
                   imageUrl: data['logo'] ?? data['ownerProfileImage'],
                   isOwner: true,
+                  rating: (data['ownerStaffRating'] ?? 0.0).toDouble(),
+                  reviewCount: data['ownerStaffReviewCount'] ?? 0,
                   theme: theme,
                 );
               }
@@ -77,6 +79,8 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
                 cnic: worker['cnic'],
                 imageUrl: worker['profileImage'],
                 isOwner: false,
+                rating: (worker['rating'] ?? 0.0).toDouble(),
+                reviewCount: worker['reviewCount'] ?? 0,
                 theme: theme,
               );
             },
@@ -94,6 +98,8 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
     String? cnic,
     String? imageUrl,
     required bool isOwner,
+    double rating = 0.0,
+    int reviewCount = 0,
     required ThemeHelper theme,
   }) {
     return Container(
@@ -113,14 +119,14 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               border: Border.all(color: isOwner ? AppColors.primaryPink : theme.borderColor, width: 2),
-              image: imageUrl != null && imageUrl.toString().isNotEmpty
+              image: _getImageProvider(imageUrl?.toString() ?? '') != null
                   ? DecorationImage(
-                image: _getImageProvider(imageUrl),
+                image: _getImageProvider(imageUrl!.toString())!,
                 fit: BoxFit.cover,
               )
                   : null,
             ),
-            child: imageUrl == null || imageUrl.toString().isEmpty
+            child: _getImageProvider(imageUrl?.toString() ?? '') == null
                 ? Icon(
               isOwner ? Icons.star : Icons.person,
               size: 30,
@@ -153,6 +159,23 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(role, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(Icons.star_rounded, size: 14, color: reviewCount > 0 ? Colors.amber : theme.mutedTextColor.withOpacity(0.4)),
+                    const SizedBox(width: 3),
+                    Text(
+                      reviewCount > 0 ? rating.toStringAsFixed(1) : 'no_ratings_yet'.tr,
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: reviewCount > 0 ? theme.textColor : theme.mutedTextColor,
+                      ),
+                    ),
+                    if (reviewCount > 0)
+                      Text(' ($reviewCount)', style: TextStyle(fontSize: 12, color: theme.mutedTextColor)),
+                  ],
+                ),
                 if (phone != null) ...[
                   const SizedBox(height: 4),
                   Row(children: [
@@ -177,14 +200,16 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
     );
   }
 
-  ImageProvider _getImageProvider(String url) {
+  ImageProvider? _getImageProvider(String url) {
     if (url.startsWith('http')) return NetworkImage(url);
     if (url.startsWith('data:image')) {
       try {
         final bytes = base64Decode(url.split(',').last);
         return MemoryImage(bytes);
-      } catch (_) {}
+      } catch (_) {
+        return null;
+      }
     }
-    return const AssetImage('assets/default_avatar.png');
+    return null;
   }
 }

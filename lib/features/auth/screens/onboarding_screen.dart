@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
@@ -22,7 +23,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     with TickerProviderStateMixin {
   final PageController _controller = PageController();
   int _currentPage = 0;
-
   late AnimationController _slideController;
 
   final List<Map<String, dynamic>> _pages = [
@@ -50,17 +50,17 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   void initState() {
     super.initState();
     _slideController = AnimationController(
-      duration: const Duration(milliseconds: 400),
+      duration: const Duration(milliseconds: 500),
       vsync: this,
     );
+    _slideController.forward();
     _checkFirstSeen();
   }
 
   Future<void> _checkFirstSeen() async {
     final prefs = await SharedPreferences.getInstance();
     final bool seen = (prefs.getBool('seen_onboarding') ?? false);
-    
-    // Check if user is already logged in
+
     final authService = Get.find<AuthService>();
     if (authService.isLoggedIn) {
       await _navigateBasedOnRole();
@@ -79,12 +79,10 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   Future<void> _navigateBasedOnRole() async {
     final authService = Get.find<AuthService>();
     final dbService = Get.find<DatabaseService>();
-    
+
     final userDoc = await dbService.getUserProfile(authService.uid!);
-    
+
     if (!userDoc.exists) {
-      // Should ideally not happen if they are logged in, but just in case
-      // maybe route to RoleSelect or a setup screen
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const RoleSelectScreen()),
@@ -110,7 +108,6 @@ class _OnboardingScreenState extends State<OnboardingScreen>
           MaterialPageRoute(builder: (context) => const OwnerMainWrapper()),
         );
       } else {
-        // Pending or other
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const OwnerPendingScreen()),
@@ -147,7 +144,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     } else {
       _controller.nextPage(
         duration: const Duration(milliseconds: 500),
-        curve: Curves.easeInOut,
+        curve: Curves.easeOutBack,
       );
     }
   }
@@ -156,6 +153,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   Widget build(BuildContext context) {
     final theme = ThemeHelper(context);
     final size = MediaQuery.of(context).size;
+    final double progress = (_currentPage + 1) / _pages.length;
 
     return Scaffold(
       backgroundColor: theme.backgroundColor,
@@ -166,41 +164,76 @@ class _OnboardingScreenState extends State<OnboardingScreen>
             children: [
               const SizedBox(height: 12),
 
-              // ── Top Row: Logo + Skip ──
+              // ── Top Row: Elegant Header ──
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Logo
-                  Container(
-                    height: 40,
-                    width: 40,
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [AppColors.primaryPink, AppColors.darkPink],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+                  // 1. Far Left: Logo Container
+                  Expanded(
+                    flex: 2,
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: ClipOval(
+                        child: Container(
+                          height: 44,
+                          width: 44,
+                          color: Colors.white, // Optional: background color
+                          child: Image.asset(
+                            'assets/app_icon.png',
+                            fit: BoxFit.cover, // This crops the image to fill the circle
+                          ),
+                        ),
                       ),
-                      borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Icon(Icons.content_cut_rounded,
-                        color: Colors.white, size: 20),
                   ),
-                  // Skip
-                  GestureDetector(
-                    onTap: _onFinish,
-                    child: Text(
-                      'Skip',
-                      style: TextStyle(
-                        color: theme.mutedTextColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+
+                  // 2. Center: App Name (Perfectly Centered)
+                  Expanded(
+                    flex: 6,
+                    child: Center(
+                      child: Text(
+                        'SALONIFY',
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.visible,
+                        style: AppTextStyles.displayMedium.copyWith(
+                          color: theme.textColor,   // ← was missing, so it fell back to a dark-on-dark default
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.5,
+                          height: 1.1,
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  // 3. Far Right: Tiny Skip Button
+                  Expanded(
+                    flex: 2,
+                    child: Align(
+                      alignment: Alignment.centerRight,
+                      child: GestureDetector(
+                        onTap: _onFinish,
+                        behavior: HitTestBehavior.opaque, // Expands the tap area for easy clicking
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+                          child: Text(
+                            'Skip',
+                            style: TextStyle(
+                              color: theme.mutedTextColor,
+                              fontWeight: FontWeight.w800,
+                              fontSize: 11.5, // Ultra-sleek, small aesthetic
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
                 ],
               ),
 
-              // ── Page View ──
+              // ── Main Carousel Content ──
               Expanded(
                 child: PageView.builder(
                   controller: _controller,
@@ -215,84 +248,49 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     return AnimatedBuilder(
                       animation: _slideController,
                       builder: (context, child) {
-                        final slideValue = _currentPage == index
-                            ? _slideController.value
-                            : 0.0;
+                        final val = _currentPage == index ? _slideController.value : 0.0;
                         return Opacity(
-                          opacity: _currentPage == index ? 1.0 : 0.0,
-                          child: Transform.translate(
-                            offset: Offset(
-                                0, 30 * (1 - (_currentPage == index ? slideValue : 0))),
+                          opacity: _currentPage == index ? val : 0.0,
+                          child: Transform.scale(
+                            scale: 0.9 + (0.1 * val),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                // ── Image ──
+                                // Sleek Floating Image Frame
                                 Container(
-                                  height: size.height * 0.32,
-                                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                                  height: size.height * 0.35,
                                   decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(24),
+                                    borderRadius: BorderRadius.circular(32),
+                                    image: DecorationImage(
+                                      image: AssetImage(page["image"]),
+                                      fit: BoxFit.cover,
+                                    ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primaryPink
-                                            .withOpacity(0.15),
-                                        blurRadius: 30,
-                                        offset: const Offset(0, 15),
+                                        color: AppColors.primaryPink.withOpacity(0.1),
+                                        blurRadius: 40,
+                                        offset: const Offset(0, 20),
                                       ),
                                     ],
                                   ),
-                                  child: ClipRRect(
-                                    borderRadius: BorderRadius.circular(24),
-                                    child: Image.asset(
-                                      page["image"],
-                                      fit: BoxFit.cover,
-                                      width: double.infinity,
-                                      errorBuilder: (_, __, ___) =>
-                                          Container(
-                                            decoration: BoxDecoration(
-                                              gradient: LinearGradient(
-                                                colors: [
-                                                  AppColors.lightPink,
-                                                  AppColors.lightPink
-                                                      .withOpacity(0.5),
-                                                ],
-                                                begin: Alignment.topLeft,
-                                                end: Alignment.bottomRight,
-                                              ),
-                                            ),
-                                            child: Icon(
-                                              page["icon"],
-                                              size: 80,
-                                              color: AppColors.primaryPink,
-                                            ),
-                                          ),
-                                    ),
-                                  ),
                                 ),
-
-                                const SizedBox(height: 48),
-
-                                // ── Title ──
+                                const SizedBox(height: 44),
                                 Text(
                                   page["title"],
-                                  style: AppTextStyles.displayMedium.copyWith(
-                                    color: theme.textColor,
-                                    fontSize: 28,
-                                    fontWeight: FontWeight.w800,
-                                    letterSpacing: -0.5,
+                                  style: GoogleFonts.syne(
+                                    fontSize: 20, fontWeight: FontWeight.w800,
+                                    color: theme.textColor, height: 1.2,
                                   ),
-                                  textAlign: TextAlign.center,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-
-                                const SizedBox(height: 16),
-
-                                // ── Description ──
+                                const SizedBox(height: 12),
                                 Text(
                                   page["description"],
                                   style: AppTextStyles.bodyLarge.copyWith(
                                     color: theme.mutedTextColor,
+                                    fontSize: 14,
                                     height: 1.6,
-                                    fontSize: 15,
                                   ),
                                   textAlign: TextAlign.center,
                                 ),
@@ -306,70 +304,49 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                 ),
               ),
 
-              // ── Bottom Section ──
-              Column(
-                children: [
-                  // ── Dots ──
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(
-                      _pages.length,
-                          (index) => AnimatedContainer(
-                        duration: const Duration(milliseconds: 300),
-                        margin: const EdgeInsets.symmetric(horizontal: 4),
-                        width: _currentPage == index ? 32 : 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: _currentPage == index
-                              ? AppColors.primaryPink
-                              : AppColors.border,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
+              // ── Modern Floating Navigation Button with Circle Progress ──
+              Container(
+                padding: const EdgeInsets.only(bottom: 24),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    // Circular Progress Track
+                    SizedBox(
+                      width: 80,
+                      height: 80,
+                      child: CircularProgressIndicator(
+                        value: progress,
+                        strokeWidth: 3,
+                        backgroundColor: AppColors.border.withOpacity(0.3),
+                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPink),
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 32),
-
-                  // ── Button ──
-                  GestureDetector(
-                    onTap: _nextPage,
-                    child: Container(
-                      width: double.infinity,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColors.primaryPink, AppColors.darkPink],
-                          begin: Alignment.centerLeft,
-                          end: Alignment.centerRight,
+                    // Central Action Button
+                    GestureDetector(
+                      onTap: _nextPage,
+                      child: Container(
+                        width: 64,
+                        height: 64,
+                        decoration: const BoxDecoration(
+                          color: AppColors.primaryPink,
+                          shape: BoxShape.circle,
                         ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primaryPink.withOpacity(0.35),
-                            blurRadius: 20,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          _currentPage == _pages.length - 1
-                              ? 'Get Started'
-                              : 'Continue',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
+                        child: Center(
+                          child: AnimatedSwitcher(
+                            duration: const Duration(milliseconds: 200),
+                            child: Icon(
+                              _currentPage == _pages.length - 1
+                                  ? Icons.check_rounded
+                                  : Icons.arrow_forward_rounded,
+                              color: Colors.white,
+                              key: ValueKey<int>(_currentPage),
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-
-                  const SizedBox(height: 24),
-                ],
+                  ],
+                ),
               ),
             ],
           ),

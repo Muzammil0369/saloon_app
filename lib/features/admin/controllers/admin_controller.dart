@@ -31,13 +31,13 @@ class AdminController extends GetxController {
 
   // Real-time listeners for auto-updates
   void _listenToStats() {
-    // Listen to users collection
+    // Listen to users collection for customers and admins
     _firestore.collection('users').snapshots().listen((snap) {
       _getTotalCustomers();
       _getTotalAdmins();
     });
 
-    // Listen to owners collection
+    // Listen to owners collection (this has all the data)
     _firestore.collection('owners').snapshots().listen((snap) {
       _getTotalOwners();
       _getPendingVerifications();
@@ -65,46 +65,78 @@ class AdminController extends GetxController {
   }
 
   Future<void> _getTotalCustomers() async {
-    final snapshot = await _firestore.collection('users').where('role', isEqualTo: 'customer').get();
-    totalCustomers.value = snapshot.docs.length;
+    try {
+      final snapshot = await _firestore.collection('users').where('role', isEqualTo: 'customer').get();
+      totalCustomers.value = snapshot.docs.length;
+    } catch (e) {
+      print('Error getting customers: $e');
+      totalCustomers.value = 0;
+    }
   }
 
   Future<void> _getTotalOwners() async {
-    final snapshot = await _firestore.collection('owners').get();
-    totalOwners.value = snapshot.docs.length;
+    try {
+      // ✅ FIX: Read from owners collection directly (since verification works)
+      final snapshot = await _firestore.collection('owners').get();
+      totalOwners.value = snapshot.docs.length;
+    } catch (e) {
+      print('Error getting owners: $e');
+      totalOwners.value = 0;
+    }
   }
 
   Future<void> _getTotalAdmins() async {
-    final snapshot = await _firestore.collection('users').where('role', isEqualTo: 'admin').get();
-    totalAdmins.value = snapshot.docs.length;
+    try {
+      final snapshot = await _firestore.collection('users').where('role', isEqualTo: 'admin').get();
+      totalAdmins.value = snapshot.docs.length;
+    } catch (e) {
+      print('Error getting admins: $e');
+      totalAdmins.value = 0;
+    }
   }
 
   Future<void> _getPendingVerifications() async {
-    final snapshot = await _firestore.collection('owners').where('status', isEqualTo: 'pending').get();
-    pendingVerifications.value = snapshot.docs.length;
+    try {
+      // ✅ Same query that works in verification screen
+      final snapshot = await _firestore.collection('owners').where('status', isEqualTo: 'pending').get();
+      pendingVerifications.value = snapshot.docs.length;
+    } catch (e) {
+      print('Error getting pending verifications: $e');
+      pendingVerifications.value = 0;
+    }
   }
 
   Future<void> _getTotalBookings() async {
-    final snapshot = await _firestore.collection('bookings').get();
-    totalBookings.value = snapshot.docs.length;
+    try {
+      final snapshot = await _firestore.collection('bookings').get();
+      totalBookings.value = snapshot.docs.length;
+    } catch (e) {
+      print('Error getting bookings: $e');
+      totalBookings.value = 0;
+    }
   }
 
   Future<void> _getTotalRevenue() async {
-    final snapshot = await _firestore.collection('transactions').get();
-    double revenue = 0;
-    double commission = 0;
-    for (var doc in snapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      final type = data['type'] as String? ?? '';
-      final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
-      if (type == 'commission') {
-        commission += amount;
-      } else {
-        revenue += amount;
+    try {
+      final snapshot = await _firestore.collection('transactions').get();
+      double revenue = 0;
+      double commission = 0;
+      for (var doc in snapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        final type = data['type'] as String? ?? '';
+        final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
+        if (type == 'commission') {
+          commission += amount;
+        } else {
+          revenue += amount;
+        }
       }
+      totalRevenue.value = revenue;
+      totalCommission.value = commission;
+    } catch (e) {
+      print('Error getting revenue: $e');
+      totalRevenue.value = 0;
     }
-    totalRevenue.value = revenue;
-    totalCommission.value = commission;
   }
 
   // Dynamic chart data from transactions
@@ -167,7 +199,7 @@ class AdminController extends GetxController {
         'updatedAt': FieldValue.serverTimestamp(),
       });
 
-      // ✅ 2. Update users collection
+      // ✅ 2. Update users collection (keep in sync)
       await _firestore.collection('users').doc(docId).update({
         'status': approved ? 'active' : 'rejected',
         'role': approved ? 'owner' : 'customer',
@@ -258,5 +290,10 @@ class AdminController extends GetxController {
     } catch (e) {
       Get.snackbar('Error', 'Failed to process withdrawal: $e', snackPosition: SnackPosition.BOTTOM, backgroundColor: Colors.red, colorText: Colors.white);
     }
+  }
+
+  // ✅ NEW: Refresh all stats manually
+  void refreshStats() {
+    _fetchAllStats();
   }
 }
