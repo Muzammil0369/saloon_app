@@ -737,7 +737,9 @@ class AppTranslations extends Translations {
       'submit_verification': 'Submit for Verification',
       'review_details': 'Review Your Details',
       'verify_before_submit': 'Please verify everything is correct before submitting',
-      'book_this_offer': 'Book this Offer'
+      'book_this_offer': 'Book this Offer',
+      'recent_salons': 'Recently Visited',
+      'scroll': 'Scroll left or right',
     },
     'ur': {
       'favourite_salons_subtitle': 'آپ کو پسند آنے والے سیلون',
@@ -1477,6 +1479,8 @@ class AppTranslations extends Translations {
       'review_details': 'اپنی تفصیلات کا جائزہ لیں',
       'verify_before_submit': 'جمع کروانے سے پہلے سب کچھ درست ہونے کی تصدیق کر لیں',
       'book_this_offer': 'اس پیشکش کو بک کرو',
+      'recent_salons': 'حال ہی میں دیکھے',
+      'scroll': 'بائیں یا دائیں سکرول کریں',
     },
   };
 }

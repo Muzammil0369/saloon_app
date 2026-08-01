@@ -10,6 +10,7 @@ import 'package:saloon_app/features/customer/screens/qr_screen.dart';
 import 'package:saloon_app/shared/screens/wallet_screen.dart';
 
 import '../../core/controllers/language_controller.dart';
+import '../../core/controllers/salon_controller.dart';
 
 class CustomerMainWrapper extends StatefulWidget {
   final int initialIndex;
@@ -35,6 +36,7 @@ class _CustomerMainWrapperState extends State<CustomerMainWrapper> {
   void initState() {
     super.initState();
     _selectedIndex = widget.initialIndex;
+    Get.put(SalonController());
   }
 
   void _changeTab(int index) {
@@ -56,8 +58,8 @@ class _CustomerMainWrapperState extends State<CustomerMainWrapper> {
     ];
 
     return Directionality(
-      textDirection: Get.find<LanguageController>().languageCode == 'ur' 
-          ? TextDirection.rtl 
+      textDirection: Get.find<LanguageController>().languageCode == 'ur'
+          ? TextDirection.rtl
           : TextDirection.ltr,
       child: Scaffold(
         body: IndexedStack(
@@ -143,5 +145,5 @@ class _CustomerMainWrapperState extends State<CustomerMainWrapper> {
         ),
       ),
     );
-    }
+  }
 }

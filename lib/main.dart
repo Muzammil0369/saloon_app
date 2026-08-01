@@ -37,7 +37,7 @@ import 'features/owner/screens/owner_gallery_management_screen.dart';
 import 'features/owner/screens/owner_services_management_screen.dart';
 import 'features/owner/screens/owner_staff_screen.dart';
 import 'firebase_options.dart';
-// ... other imports
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -50,20 +50,16 @@ void main() async {
     debugPrint('Firebase Initialization Error: $e');
   }
 
-  // Theme
   Get.put(ThemeController());
 
-  // Localization
   Get.put(LanguageController());
 
-  // Core Services
   final authService = Get.put(AuthService());
   await authService.initializeAuth();
   Get.put(DatabaseService());
   Get.put(TranslationService());
   Get.put(PaymentService());
 
-  // Controllers
   Get.put(UserController());
   Get.put(FavouritesController());
   Get.put(WalletController());
@@ -83,7 +79,7 @@ class MyApp extends StatelessWidget {
 
     return Obx(() => GetMaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Glambook',
+      title: 'Salonify',
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       themeMode: themeController.themeMode.value,

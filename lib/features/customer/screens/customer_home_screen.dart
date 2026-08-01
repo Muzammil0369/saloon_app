@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -13,6 +16,7 @@ import 'package:saloon_app/shared/widgets/salon_card.dart';
 import 'package:saloon_app/shared/widgets/ad_banner_card.dart';
 
 import '../../../core/controllers/language_controller.dart';
+import '../../../core/controllers/salon_controller.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
   final Function(int) onTabChange;
@@ -25,7 +29,7 @@ class CustomerHomeScreen extends StatefulWidget {
 
 class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   final userController = Get.find<UserController>();
-  int _selectedCategory = 0;
+  final salonController = Get.find<SalonController>();
   Position? _currentPosition;
   List<Map<String, dynamic>> _nearbyAds = [];
   bool _isLoadingAds = true;
@@ -42,14 +46,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     return 'good_evening'.tr;
   }
 
-  final List<Map<String, dynamic>> categories = [
-    {'name': 'haircut'.tr,    'icon': Icons.content_cut_rounded},
-    {'name': 'beard'.tr,      'icon': Icons.face_retouching_natural},
-    {'name': 'facial'.tr,     'icon': Icons.spa_rounded},
-    {'name': 'nails'.tr,      'icon': Icons.auto_awesome_rounded},
-    {'name': 'bridal'.tr,     'icon': Icons.favorite_rounded},
-    {'name': 'hair_color'.tr, 'icon': Icons.colorize_rounded},
-  ];
+
 
   @override
   void initState() {
@@ -135,6 +132,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
       final data = doc.data() as Map<String, dynamic>;
       final GeoPoint? salonLoc = data['location'];
       String distanceText = 'N/A';
+      double distanceValue = double.infinity;
 
       if (userPos != null && salonLoc != null) {
         final double distInMeters = Geolocator.distanceBetween(
@@ -142,6 +140,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           salonLoc.latitude, salonLoc.longitude,
         );
         final double distKm = distInMeters / 1000;
+        distanceValue = distKm;
         String unit = Get.find<LanguageController>().languageCode == 'ur' ? 'km'.tr : 'km';
         distanceText = '${distKm.toStringAsFixed(1)} $unit';
       }
@@ -151,17 +150,22 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         'name': Get.find<LanguageController>().languageCode == 'ur'
             ? (data['salonName_ur'] ?? data['salonName'] ?? 'Unnamed Salon')
             : (data['salonName'] ?? 'Unnamed Salon'),
+        'salonName': data['salonName'] ?? 'Unnamed Salon', // redundant but safe
         'rating': data['rating']?.toDouble() ?? 4.5,
         'reviewCount': data['reviewCount'] ?? 0,
         'status': data['isOpenNow'] == true ? 'open'.tr : 'closed'.tr,
         'price': '500',
         'distance': distanceText,
+        'distanceValue': distanceValue,
         'address': data['address'] ?? 'No address provided',
         'imageUrl': data['logo'] ??
+            data['thumbnail'] ??
             data['profileImage'] ??
             (data['salonPhotos'] != null && (data['salonPhotos'] as List).isNotEmpty
                 ? (data['salonPhotos'] as List).first
                 : null),
+        'logo': data['logo'],
+        'thumbnail': data['thumbnail'],
         'salonPhotos': data['salonPhotos'] ?? [],
         'category': data['category'] ?? 'Haircut',
         'lat': salonLoc?.latitude ?? 0,
@@ -169,6 +173,45 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         'showOnMap': data['showOnMap'] ?? true,
       };
     }).toList();
+  }
+
+  Widget _buildSalonImage(String? url, ThemeHelper theme, {double size = 64}) {
+    if (url == null || url.isEmpty) return _recentPlaceholder(theme, size: size);
+
+    if (url.startsWith('data:image')) {
+      try {
+        final bytes = base64Decode(url.split(',').last);
+        return Image.memory(
+          bytes,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, __, ___) => _recentPlaceholder(theme, size: size),
+        );
+      } catch (_) {
+        return _recentPlaceholder(theme, size: size);
+      }
+    }
+
+    return CachedNetworkImage(
+      imageUrl: url,
+      width: size,
+      height: size,
+      fit: BoxFit.cover,
+      placeholder: (context, url) => Container(
+        width: size,
+        height: size,
+        color: theme.lightPinkColor,
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primaryPink),
+          ),
+        ),
+      ),
+      errorWidget: (context, url, error) => _recentPlaceholder(theme, size: size),
+    );
   }
 
   @override
@@ -203,7 +246,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(greeting, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-                                Obx(() => Text('${userController.userName.value}!', style: AppTextStyles.displayMedium?.copyWith(color: theme.textColor, fontWeight: FontWeight.w800))),
+                                Obx(() => Text('${userController.userName.value}!', style: AppTextStyles.displayMedium?.copyWith(fontSize: 22,color: theme.textColor, fontWeight: FontWeight.w800))),
                               ],
                             ),
                           ),
@@ -277,46 +320,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
                 const SizedBox(height: 32),
 
-                // Categories
-                _sectionHeader('categories'.tr, () => widget.onTabChange(1), theme),
-                const SizedBox(height: 16),
-                SizedBox(
-                  height: 100,
-                  child: ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    scrollDirection: Axis.horizontal,
-                    itemCount: categories.length,
-                    itemBuilder: (context, index) {
-                      final c = categories[index];
-                      final isSelected = _selectedCategory == index;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedCategory = index);
-                          widget.onTabChange(1);
-                        },
-                        child: Container(
-                          margin: const EdgeInsets.only(right: 16),
-                          child: Column(
-                            children: [
-                              AnimatedContainer(
-                                duration: const Duration(milliseconds: 200),
-                                padding: const EdgeInsets.all(16),
-                                decoration: BoxDecoration(
-                                  color: isSelected ? AppColors.primaryPink : theme.cardColor,
-                                  borderRadius: BorderRadius.circular(18),
-                                  boxShadow: [theme.softShadow],
-                                ),
-                                child: Icon(c['icon'], color: isSelected ? Colors.white : AppColors.primaryPink, size: 24),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(c['name'], style: AppTextStyles.label.copyWith(color: isSelected ? AppColors.primaryPink : theme.textColor, fontWeight: isSelected ? FontWeight.bold : FontWeight.normal)),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-                ),
+                // Recent Salons
+                _buildRecentSalons(theme),
 
                 const SizedBox(height: 32),
 
@@ -378,8 +383,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     final salons = _processSalonSnapshot(snapshot.data!, _currentPosition);
 
                     salons.sort((a, b) {
-                      final distA = a['distance'] == 'N/A' ? double.infinity : double.parse((a['distance'] as String).replaceAll(' km', ''));
-                      final distB = b['distance'] == 'N/A' ? double.infinity : double.parse((b['distance'] as String).replaceAll(' km', ''));
+                      final distA = (a['distanceValue'] ?? double.infinity) as double;
+                      final distB = (b['distanceValue'] ?? double.infinity) as double;
                       return distA.compareTo(distB);
                     });
 
@@ -394,10 +399,13 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                         final salon = displaySalons[index];
                         return SalonCard(
                           salon: salon,
-                          onTap: () => Get.to(() => SalonDetailScreen(
-                            ownerId: salon['ownerId'],
-                            salon: salon,
-                          )),
+                          onTap: () {
+                            salonController.addToRecent(salon);
+                            Get.to(() => SalonDetailScreen(
+                              ownerId: salon['ownerId'],
+                              salon: salon,
+                            ));
+                          },
                         );
                       },
                     );
@@ -446,6 +454,85 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         ),
         child: Icon(icon, color: AppColors.primaryPink, size: 22),
       ),
+    );
+  }
+
+  Widget _buildRecentSalons(ThemeHelper theme) {
+    return Obx(() {
+      if (salonController.recentSalons.isEmpty) return const SizedBox();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text('recent_salons'.tr, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
+                Text('scroll'.tr,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.linkText.copyWith(fontSize: 10)),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 100,
+            child: ListView.builder(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              itemCount: salonController.recentSalons.length,
+              itemBuilder: (context, index) {
+                final salon = salonController.recentSalons[index];
+                return GestureDetector(
+                  onTap: () {
+                    // Update recent list to move this to top
+                    salonController.addToRecent(Map<String, dynamic>.from(salon));
+                    Get.to(() => SalonDetailScreen(
+                      ownerId: salon['ownerId'],
+                      salon: salon,
+                    ));
+                  },
+                  child: Container(
+                    width: 80,
+                    margin: const EdgeInsets.only(right: 16),
+                    child: Column(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(16),
+                          child: _buildSalonImage(salon['imageUrl'], theme),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          salon['name'] ?? salon['salonName'] ?? '',
+                          style: AppTextStyles.label.copyWith(color: theme.textColor),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _recentPlaceholder(ThemeHelper theme, {double size = 64}) {
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(
+        color: theme.lightPinkColor,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Icon(Icons.store_rounded, color: AppColors.primaryPink, size: size * 0.45),
     );
   }
 }

@@ -1,8 +1,21 @@
 // lib/core/services/payment_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../models/wallet_model.dart';
 import '../models/transaction_model.dart';
+
+// Supabase Edge Function endpoint — this is the ONLY place wallet-to-wallet
+// payments should happen now. The client no longer writes wallet balances
+// directly; this function verifies everything server-side first.
+const String _walletPaymentFunctionUrl =
+    'https://rzypfwjhngpwlxfbxtcg.supabase.co/functions/v1/wallet-payment';
+const String _walletWithdrawalFunctionUrl =
+    'https://rzypfwjhngpwlxfbxtcg.supabase.co/functions/v1/wallet-withdrawal';
+const String _supabasePublishableKey =
+    'sb_publishable_iO6I9436lSKFoeq_9bDXgQ_p8hXXD2L';
 
 class PaymentService extends GetxService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -70,36 +83,18 @@ class PaymentService extends GetxService {
 
   // ==================== TOP-UP (Optional - Customer loads wallet) ====================
 
+  // DISABLED: there is no real payment gateway wired in yet. This used to
+  // hardcode "paymentSuccessful = true" and credit the wallet with fake
+  // money — anyone could top up any amount for free. Rather than pretend
+  // that's secure, this is switched off until a real gateway (EasyPaisa/
+  // JazzCash merchant API) is integrated behind its own Edge Function.
   Future<bool> topUpWallet({
     required String customerId,
     required double amount,
     required String paymentMethod,
   }) async {
-    try {
-      await getOrCreateWallet(customerId, 'customer');
-
-      final transaction = TransactionModel.topup(
-        userId: customerId,
-        amount: amount,
-        paymentMethod: paymentMethod,
-      );
-      final txnId = await createTransaction(transaction);
-
-      final paymentSuccessful = true;
-
-      if (paymentSuccessful) {
-        await _updateBalance(customerId, amount, isCredit: true);
-        await transactionsCollection.doc(txnId).update({
-          'status': TransactionStatus.completed.name,
-        });
-        return true;
-      }
-
-      return false;
-    } catch (e) {
-      print('Top-up failed: $e');
-      return false;
-    }
+    print('Top-up is temporarily disabled — no payment gateway is integrated yet.');
+    return false;
   }
 
   // ==================== PAY AT SALON METHODS ====================
@@ -140,11 +135,17 @@ class PaymentService extends GetxService {
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
-        // Track commission owed by owner
-        transaction.update(walletsCollection.doc(ownerId), {
-          'commissionOwed': FieldValue.increment(commissionAmount),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+        // Track commission owed by owner — only touch the wallets collection
+        // if there's actually commission to track. Commission is 0 today
+        // (no-commission launch decision), and wallets writes are now locked
+        // to Admin-SDK-only, so skipping this when there's nothing to record
+        // keeps cash payments working without needing an Edge Function yet.
+        if (commissionAmount > 0) {
+          transaction.update(walletsCollection.doc(ownerId), {
+            'commissionOwed': FieldValue.increment(commissionAmount),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        }
 
         return true;
       });
@@ -211,11 +212,14 @@ class PaymentService extends GetxService {
           'updatedAt': FieldValue.serverTimestamp(),
         });
 
-        // Track commission owed by owner
-        transaction.update(walletsCollection.doc(ownerId), {
-          'commissionOwed': FieldValue.increment(commissionAmount),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+        // Track commission owed by owner — only touch the wallets collection
+        // if there's actually commission to track (see cash payment for why).
+        if (commissionAmount > 0) {
+          transaction.update(walletsCollection.doc(ownerId), {
+            'commissionOwed': FieldValue.increment(commissionAmount),
+            'updatedAt': FieldValue.serverTimestamp(),
+          });
+        }
 
         return true;
       });
@@ -246,7 +250,11 @@ class PaymentService extends GetxService {
     }
   }
 
-  // Process wallet payment at salon (already had batch, added idempotency)
+  // Process wallet payment at salon.
+  // SECURITY: this no longer writes wallet balances directly from the client.
+  // It calls the Supabase Edge Function, which verifies the request server-side
+  // (real logged-in user, booking ownership, no double-payment) before touching
+  // any balance. Same signature/behavior as before, so nothing else needs to change.
   Future<bool> processWalletPayment({
     required String customerId,
     required String ownerId,
@@ -255,71 +263,37 @@ class PaymentService extends GetxService {
     double commissionRate = defaultCommissionRate,
   }) async {
     try {
-      final commissionAmount = totalAmount * (commissionRate / 100);
-      final ownerGets = totalAmount - commissionAmount;
-
-      // ✅ Check if already paid
-      final bookingDoc = await bookingsCollection.doc(bookingId).get();
-      if (bookingDoc.exists) {
-        final bookingData = bookingDoc.data() as Map<String, dynamic>;
-        if (bookingData['paymentStatus'] == 'paid') {
-          print('Booking $bookingId already paid - preventing duplicate');
-          return false;
-        }
-      }
-
-      await getOrCreateWallet(customerId, 'customer');
-      await getOrCreateWallet(ownerId, 'owner');
-
-      // Check customer balance
-      final customerWallet = await getOrCreateWallet(customerId, 'customer');
-      if (!customerWallet.canPay(totalAmount)) {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        print('Wallet payment failed: not logged in');
         return false;
       }
 
-      // Atomic batch
-      final batch = _firestore.batch();
+      // Firebase ID token — proves to the Edge Function who is really calling
+      final idToken = await currentUser.getIdToken();
 
-      batch.update(walletsCollection.doc(customerId), {
-        'balance': FieldValue.increment(-totalAmount),
-        'totalSpent': FieldValue.increment(totalAmount),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      final response = await http.post(
+        Uri.parse(_walletPaymentFunctionUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+          'apikey': _supabasePublishableKey,
+        },
+        body: jsonEncode({
+          'bookingId': bookingId,
+          'ownerId': ownerId,
+          'totalAmount': totalAmount,
+        }),
+      );
 
-      batch.update(walletsCollection.doc(ownerId), {
-        'balance': FieldValue.increment(ownerGets),
-        'totalEarned': FieldValue.increment(ownerGets),
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      final decoded = jsonDecode(response.body);
 
-      batch.update(bookingsCollection.doc(bookingId), {
-        'paymentMethod': 'wallet',
-        'paymentStatus': 'paid',
-        'totalAmount': totalAmount,
-        'commissionRate': commissionRate,
-        'commissionAmount': commissionAmount,
-        'status': 'paid',
-        'updatedAt': FieldValue.serverTimestamp(),
-      });
+      if (response.statusCode == 200 && decoded['success'] == true) {
+        return true;
+      }
 
-      await batch.commit();
-
-      await createTransaction(TransactionModel.walletPayment(
-        customerId: customerId,
-        ownerId: ownerId,
-        amount: totalAmount,
-        bookingId: bookingId,
-        commissionRate: commissionRate,
-      ));
-
-      await createTransaction(TransactionModel.commission(
-        amount: commissionAmount,
-        ownerId: ownerId,
-        bookingId: bookingId,
-        rate: commissionRate,
-      ));
-
-      return true;
+      print('Wallet payment rejected: ${decoded['error']}');
+      return false;
     } catch (e) {
       print('Wallet payment failed: $e');
       return false;
@@ -328,7 +302,12 @@ class PaymentService extends GetxService {
 
   // ==================== WITHDRAWAL ====================
 
-  // ✅ FIX 3: Proper commission deduction on withdrawal
+  // Process withdrawal request. SECURITY: no longer deducts the wallet
+  // balance directly from the client — calls the Edge Function, which
+  // verifies the caller owns the wallet and has sufficient balance before
+  // deducting anything. Actual payout (bank transfer) is still manual until
+  // a real payment gateway is integrated — this only secures the balance
+  // change and the withdrawal request record.
   Future<bool> processWithdrawal({
     required String ownerId,
     required double amount,
@@ -336,56 +315,36 @@ class PaymentService extends GetxService {
     required String accountDetails,
   }) async {
     try {
-      final success = await _firestore.runTransaction((transaction) async {
-        final walletRef = walletsCollection.doc(ownerId);
-        final walletSnapshot = await transaction.get(walletRef);
-
-        if (!walletSnapshot.exists) return false;
-
-        final wallet = WalletModel.fromFirestore(walletSnapshot);
-        final commissionOwed = wallet.commissionOwed;
-        final availableBalance = wallet.balance;
-
-        // Total deduction = withdrawal amount + commission owed (up to withdrawal amount)
-        final commissionToDeduct = commissionOwed < amount ? commissionOwed : amount;
-        final totalDeduction = amount;
-
-        if (totalDeduction > availableBalance) {
-          print('Insufficient balance. Available: $availableBalance, Requested: $totalDeduction');
-          return false;
-        }
-
-        // Deduct withdrawal amount
-        transaction.update(walletRef, {
-          'balance': FieldValue.increment(-totalDeduction),
-          'totalWithdrawn': FieldValue.increment(amount),
-          'commissionOwed': FieldValue.increment(-commissionToDeduct),
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-
-        return true;
-      });
-
-      if (!success) {
-        print('Withdrawal failed: insufficient balance or error');
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        print('Withdrawal failed: not logged in');
         return false;
       }
 
-      // Create withdrawal transaction
-      final transaction = TransactionModel(
-        userId: ownerId,
-        userType: 'owner',
-        type: TransactionType.withdrawal,
-        status: TransactionStatus.pending,
-        amount: amount,
-        description: 'Withdrawal via $paymentMethod',
-        paymentMethod: paymentMethod,
-        metadata: {'accountDetails': accountDetails},
-        createdAt: DateTime.now(),
+      final idToken = await currentUser.getIdToken();
+
+      final response = await http.post(
+        Uri.parse(_walletWithdrawalFunctionUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+          'apikey': _supabasePublishableKey,
+        },
+        body: jsonEncode({
+          'amount': amount,
+          'paymentMethod': paymentMethod,
+          'accountDetails': accountDetails,
+        }),
       );
 
-      await createTransaction(transaction);
-      return true;
+      final decoded = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && decoded['success'] == true) {
+        return true;
+      }
+
+      print('Withdrawal rejected: ${decoded['error']}');
+      return false;
     } catch (e) {
       print('Withdrawal failed: $e');
       return false;

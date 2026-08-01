@@ -130,7 +130,7 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
                   child: const Icon(Icons.auto_awesome, color: AdminColors.primary, size: 24),
                 ),
                 const SizedBox(width: 12),
-                const Text("GLAMBOOK", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AdminColors.primary, letterSpacing: 1.0)),
+                const Text("Salonify", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AdminColors.primary, letterSpacing: 1.0)),
               ],
             ),
           ),

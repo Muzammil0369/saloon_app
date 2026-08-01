@@ -162,8 +162,14 @@ class SalonController extends GetxController {
           'lat': location?.latitude ?? 0.0,
           'lng': location?.longitude ?? 0.0,
           'address': data['address'] ?? '',
-          'imageUrl': data['salonPhotos'] != null && (data['salonPhotos'] as List).isNotEmpty 
-              ? (data['salonPhotos'] as List).first : null,
+          'imageUrl': data['logo'] ??
+              data['thumbnail'] ??
+              data['profileImage'] ??
+              (data['salonPhotos'] != null && (data['salonPhotos'] as List).isNotEmpty
+                  ? (data['salonPhotos'] as List).first
+                  : null),
+          'logo': data['logo'],
+          'thumbnail': data['thumbnail'],
           'distance': 'N/A',
           'distanceValue': 999.0,
         };

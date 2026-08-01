@@ -11,7 +11,7 @@ class OwnerHelpSupportScreen extends StatelessWidget {
   static const String _supportEmail = 'mzappstudio@outlook.com';
   static const String _supportPhone = '+92 323 8605733';
   static const String _whatsappNumber = '92 323 8605733'; // no + or leading 0
-  static const String _tutorialUrl = 'https://youtube.com/@glambook'; // replace with real playlist
+  static const String _tutorialUrl = 'https://youtube.com/@salonify'; // replace with real playlist
 
   Future<void> _launch(Uri uri) async {
     if (await canLaunchUrl(uri)) {

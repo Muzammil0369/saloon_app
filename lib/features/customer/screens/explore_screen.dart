@@ -20,11 +20,20 @@ class ExploreScreen extends StatefulWidget {
 
 class _ExploreScreenState extends State<ExploreScreen> {
   String _selectedFilter = 'All';
+  String _searchQuery = '';
   final List<String> _filters = ['All', 'Haircut', 'Beard', 'Facial', 'Bridal', 'Nails'];
   LatLng? _userLatLng;
   Set<Marker> _markers = {};
   final Completer<GoogleMapController> _mapController = Completer();
   GoogleMapController? _mapControllerInstance;
+  final TextEditingController _searchController = TextEditingController();
+
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   // Sort options - Using hardcoded values for switch cases
   String _selectedSort = 'Nearest to Far';
@@ -165,6 +174,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 ? (data['salonPhotos'] as List).first
                 : null),
         'showOnMap': data['showOnMap'] ?? false,
+        'services': (data['services'] as List<dynamic>?)
+            ?.map((s) => (s['name'] ?? '').toString().toLowerCase())
+            .toList() ?? [],
       };
     }).toList();
   }
@@ -329,10 +341,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
             final allSalons = _parseSalons(snapshot.data!);
             final markers = _computeMarkers(allSalons);
 
-            // Filter with translated values
+            // Filter by search query and category chips (via services array)
             final filteredSalons = allSalons.where((s) {
-              if (_selectedFilter == 'All') return true;
-              return s['category'] == _selectedFilter;
+              final matchesSearch = _searchQuery.isEmpty ||
+                  (s['name'] as String).toLowerCase().contains(_searchQuery.toLowerCase());
+              final matchesFilter = _selectedFilter == 'All' ||
+                  (s['services'] as List<String>).contains(_selectedFilter.toLowerCase());
+              return matchesSearch && matchesFilter;
             }).toList();
             final sortedSalons = _sortSalons(filteredSalons);
 
@@ -374,32 +389,51 @@ class _ExploreScreenState extends State<ExploreScreen> {
 
     return Column(
       mainAxisSize: MainAxisSize.min,
+
       children: [
         // Search Bar
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
           child: Container(
-            height: 46,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
+            height: 48,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             decoration: BoxDecoration(
               color: theme.cardColor,
-              borderRadius: BorderRadius.circular(14),
+              borderRadius: BorderRadius.circular(12),
               border: Border.all(color: theme.borderColor),
             ),
             child: Row(
               children: [
-                Icon(Icons.search_rounded, color: theme.mutedTextColor, size: 18),
-                const SizedBox(width: 8),
+                Icon(Icons.search_rounded, color: theme.mutedTextColor, size: 20),
+                const SizedBox(width: 10),
                 Expanded(
                   child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) => setState(() => _searchQuery = value),
                     decoration: InputDecoration(
                       border: InputBorder.none,
-                      hintText: 'search'.tr + '...',
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
+                      hintText: 'search_hint'.tr,
+                      hintStyle: AppTextStyles.bodyMedium?.copyWith(
+                        color: theme.mutedTextColor,
+                      ),
+                      isDense: true,
+                      contentPadding: EdgeInsets.zero,
                     ),
                     style: AppTextStyles.bodyMedium?.copyWith(color: theme.textColor),
                   ),
                 ),
-                Icon(Icons.tune_rounded, color: AppColors.primaryPink, size: 20),
+                if (_searchQuery.isNotEmpty)
+                  GestureDetector(
+                    onTap: () {
+                      _searchController.clear();
+                      setState(() => _searchQuery = '');
+                    },
+                    child: Icon(Icons.close, color: theme.mutedTextColor, size: 18),
+                  )
+                else
+                  Icon(Icons.tune_rounded, color: AppColors.primaryPink, size: 20),
               ],
             ),
           ),

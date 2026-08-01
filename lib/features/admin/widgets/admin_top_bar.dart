@@ -3,14 +3,14 @@ import 'package:saloon_app/features/admin/theme/admin_colors.dart';
 
 class AdminTopBar extends StatelessWidget {
   final String adminName;
-  final String adminRole; // ← ADD THIS
+  final String adminRole;
   final VoidCallback onLogout;
   final VoidCallback? onMenuPressed;
 
   const AdminTopBar({
     super.key,
     this.adminName = "Admin",
-    this.adminRole = "Administrator", // ← Default
+    this.adminRole = "Administrator",
     required this.onLogout,
     this.onMenuPressed,
   });

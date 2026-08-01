@@ -118,7 +118,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  "Please sign in to manage Glambook",
+                  "Please sign in to manage Salonify",
                   textAlign: TextAlign.center,
                   style: TextStyle(color: Colors.grey[600]),
                 ),
