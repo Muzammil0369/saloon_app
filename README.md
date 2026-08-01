@@ -1,6 +1,6 @@
-# saloon_app
+# Salonify
 
-A new Flutter project.
+Where Beauty meets Convenience
 
 ## Getting Started
 
