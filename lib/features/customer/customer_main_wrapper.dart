@@ -28,7 +28,7 @@ class _CustomerMainWrapperState extends State<CustomerMainWrapper> {
     {'icon': Icons.home_rounded, 'activeIcon': Icons.home, 'label': 'home'.tr, 'color': AppColors.primaryPink},
     {'icon': Icons.search_rounded, 'activeIcon': Icons.explore, 'label': 'explore'.tr, 'color': const Color(0xFF4ECDC4)},
     {'icon': Icons.calendar_today_rounded, 'activeIcon': Icons.calendar_month, 'label': 'my_bookings'.tr, 'color': const Color(0xFFA78BFA)},
-    {'icon': Icons.account_balance_wallet_rounded, 'activeIcon': Icons.wallet, 'label': 'wallet'.tr, 'color': const Color(0xFFF59E0B)},
+    // {'icon': Icons.account_balance_wallet_rounded, 'activeIcon': Icons.wallet, 'label': 'wallet'.tr, 'color': const Color(0xFFF59E0B)},
     {'icon': Icons.person_rounded, 'activeIcon': Icons.person, 'label': 'profile'.tr, 'color': const Color(0xFF6EE7B7)},
   ];
 
@@ -53,7 +53,7 @@ class _CustomerMainWrapperState extends State<CustomerMainWrapper> {
       CustomerHomeScreen(onTabChange: _changeTab),
       const ExploreScreen(),
       const MyBookingsScreen(),
-      const WalletScreen(),
+      // const WalletScreen(),
       const CustomerProfileScreen(),
     ];
 

@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
@@ -11,6 +13,11 @@ import 'package:saloon_app/shared/widgets/app_button.dart';
 import 'package:saloon_app/features/customer/screens/success_screen.dart';
 import 'package:saloon_app/core/controllers/user_controller.dart';
 import '../../../core/services/auth_service.dart';
+
+const String _notifyNewBookingUrl =
+    'https://rzypfwjhngpwlxfbxtcg.supabase.co/functions/v1/notify-new-booking';
+const String _supabasePublishableKey =
+    'sb_publishable_iO6I9436lSKFoeq_9bDXgQ_p8hXXD2L';
 
 class BookingScreen extends StatefulWidget {
   final Map<String, dynamic> salon;
@@ -436,7 +443,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 children: [
                   _priceRow('subtotal'.tr, _bookingController.services.where((s) => s['isSelected'] == true).fold(0.0, (sum, s) => sum + (s['price'] as int)), false),
                   if (_bookingController.discountRate.value > 0)
-                    _priceRow('${'discount'.tr} (${_bookingController.discountRate.value.toInt()}%)', 
+                    _priceRow('${'discount'.tr} (${_bookingController.discountRate.value.toInt()}%)',
                         _bookingController.services.where((s) => s['isSelected'] == true).fold(0.0, (sum, s) => sum + (s['price'] as int)) * (_bookingController.discountRate.value / 100), true),
                   const Divider(),
                   _priceRow('total'.tr, _bookingController.totalPrice, false, isTotal: true),
@@ -500,7 +507,11 @@ class _BookingScreenState extends State<BookingScreen> {
       await bookingRef.set(bookingData);
       setState(() => _isLoading = false);
       _bookingController.discountRate.value = 0.0; // Reset discount
-      
+
+      // Notify the owner (in-app + push) — fire-and-forget, never blocks
+      // the booking success flow even if the notification fails.
+      _notifyOwnerOfNewBooking(bookingRef.id);
+
       Get.to(() => SuccessScreen(
         bookingId: bookingRef.id,
         dateTime: '${_selectedDay!.toString().split(' ')[0]} · $_selectedTime',
@@ -513,6 +524,25 @@ class _BookingScreenState extends State<BookingScreen> {
         backgroundColor: Colors.redAccent,
         colorText: Colors.white,
       );
+    }
+  }
+
+  Future<void> _notifyOwnerOfNewBooking(String bookingId) async {
+    try {
+      final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (idToken == null) return;
+
+      await http.post(
+        Uri.parse(_notifyNewBookingUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+          'apikey': _supabasePublishableKey,
+        },
+        body: jsonEncode({'bookingId': bookingId}),
+      );
+    } catch (e) {
+      debugPrint('Owner notification failed (booking itself still succeeded): $e');
     }
   }
 }

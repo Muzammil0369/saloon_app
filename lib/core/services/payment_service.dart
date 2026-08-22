@@ -3,19 +3,28 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/wallet_model.dart';
 import '../models/transaction_model.dart';
 
-// Supabase Edge Function endpoint — this is the ONLY place wallet-to-wallet
-// payments should happen now. The client no longer writes wallet balances
-// directly; this function verifies everything server-side first.
+// Supabase Edge Function endpoints — the ONLY place money-moving writes
+// happen now. The client no longer writes wallet balances or payment
+// confirmations directly; every one of these goes through a trusted
+// server function first.
 const String _walletPaymentFunctionUrl =
     'https://rzypfwjhngpwlxfbxtcg.supabase.co/functions/v1/wallet-payment';
 const String _walletWithdrawalFunctionUrl =
     'https://rzypfwjhngpwlxfbxtcg.supabase.co/functions/v1/wallet-withdrawal';
+const String _confirmSalonPaymentFunctionUrl =
+    'https://rzypfwjhngpwlxfbxtcg.supabase.co/functions/v1/confirm-salon-payment';
 const String _supabasePublishableKey =
     'sb_publishable_iO6I9436lSKFoeq_9bDXgQ_p8hXXD2L';
+
+// Every Edge Function call gets a hard timeout — without this, if a
+// function isn't deployed yet or the network hangs, the app would show
+// a loading spinner forever instead of a clear error.
+const Duration _functionTimeout = Duration(seconds: 15);
 
 class PaymentService extends GetxService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -55,20 +64,7 @@ class PaymentService extends GetxService {
     return 0.0;
   }
 
-  Future<void> _updateBalance(String userId, double amount, {bool isCredit = true}) async {
-    final balanceChange = isCredit ? amount : -amount;
-    await walletsCollection.doc(userId).update({
-      'balance': FieldValue.increment(balanceChange),
-      'updatedAt': FieldValue.serverTimestamp(),
-    });
-  }
-
   // ==================== TRANSACTION OPERATIONS ====================
-
-  Future<String> createTransaction(TransactionModel transaction) async {
-    final docRef = await transactionsCollection.add(transaction.toMap());
-    return docRef.id;
-  }
 
   Stream<List<TransactionModel>> streamUserTransactions(String userId) {
     return transactionsCollection
@@ -81,7 +77,7 @@ class PaymentService extends GetxService {
         .toList());
   }
 
-  // ==================== TOP-UP (Optional - Customer loads wallet) ====================
+  // ==================== TOP-UP (Disabled) ====================
 
   // DISABLED: there is no real payment gateway wired in yet. This used to
   // hardcode "paymentSuccessful = true" and credit the wallet with fake
@@ -98,8 +94,11 @@ class PaymentService extends GetxService {
   }
 
   // ==================== PAY AT SALON METHODS ====================
+  // Cash and digital (EasyPaisa/JazzCash) payments are OWNER-confirmed —
+  // the owner has already physically verified cash in hand or money in
+  // their account before tapping this. Both go through the same Edge
+  // Function since the trust model and the resulting write are identical.
 
-  // Process cash payment at salon (with idempotency check + transaction)
   Future<bool> processCashPayment({
     required String customerId,
     required String ownerId,
@@ -107,75 +106,14 @@ class PaymentService extends GetxService {
     required double totalAmount,
     double commissionRate = defaultCommissionRate,
   }) async {
-    try {
-      final commissionAmount = totalAmount * (commissionRate / 100);
-
-      // ✅ FIX 1 & 2: Use transaction + idempotency check
-      final success = await _firestore.runTransaction((transaction) async {
-        final bookingRef = bookingsCollection.doc(bookingId);
-        final bookingSnapshot = await transaction.get(bookingRef);
-
-        if (!bookingSnapshot.exists) return false;
-
-        // ✅ Prevent double payment
-        final bookingData = bookingSnapshot.data() as Map<String, dynamic>;
-        if (bookingData['paymentStatus'] == 'paid') {
-          print('Booking $bookingId already paid - preventing duplicate');
-          return false;
-        }
-
-        // Update booking atomically
-        transaction.update(bookingRef, {
-          'paymentMethod': 'cash',
-          'paymentStatus': 'paid',
-          'totalAmount': totalAmount,
-          'commissionRate': commissionRate,
-          'commissionAmount': commissionAmount,
-          'status': 'paid',
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-
-        // Track commission owed by owner — only touch the wallets collection
-        // if there's actually commission to track. Commission is 0 today
-        // (no-commission launch decision), and wallets writes are now locked
-        // to Admin-SDK-only, so skipping this when there's nothing to record
-        // keeps cash payments working without needing an Edge Function yet.
-        if (commissionAmount > 0) {
-          transaction.update(walletsCollection.doc(ownerId), {
-            'commissionOwed': FieldValue.increment(commissionAmount),
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
-        }
-
-        return true;
-      });
-
-      if (!success) return false;
-
-      // Create transaction records (after successful atomic update)
-      await createTransaction(TransactionModel.cashPayment(
-        customerId: customerId,
-        ownerId: ownerId,
-        amount: totalAmount,
-        bookingId: bookingId,
-        commissionRate: commissionRate,
-      ));
-
-      await createTransaction(TransactionModel.commission(
-        amount: commissionAmount,
-        ownerId: ownerId,
-        bookingId: bookingId,
-        rate: commissionRate,
-      ));
-
-      return true;
-    } catch (e) {
-      print('Cash payment failed: $e');
-      return false;
-    }
+    return _confirmSalonPayment(
+      bookingId: bookingId,
+      customerId: customerId,
+      totalAmount: totalAmount,
+      paymentMethod: 'cash',
+    );
   }
 
-  // Process digital payment at salon (with idempotency check + transaction)
   Future<bool> processDigitalPayment({
     required String customerId,
     required String ownerId,
@@ -184,68 +122,57 @@ class PaymentService extends GetxService {
     required String paymentMethod,
     double commissionRate = defaultCommissionRate,
   }) async {
+    return _confirmSalonPayment(
+      bookingId: bookingId,
+      customerId: customerId,
+      totalAmount: totalAmount,
+      paymentMethod: paymentMethod,
+    );
+  }
+
+  Future<bool> _confirmSalonPayment({
+    required String bookingId,
+    required String customerId,
+    required double totalAmount,
+    required String paymentMethod,
+  }) async {
     try {
-      final commissionAmount = totalAmount * (commissionRate / 100);
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) {
+        print('Payment confirmation failed: not logged in');
+        return false;
+      }
 
-      // ✅ FIX 1 & 2: Use transaction + idempotency check
-      final success = await _firestore.runTransaction((transaction) async {
-        final bookingRef = bookingsCollection.doc(bookingId);
-        final bookingSnapshot = await transaction.get(bookingRef);
+      final idToken = await currentUser.getIdToken();
 
-        if (!bookingSnapshot.exists) return false;
-
-        // ✅ Prevent double payment
-        final bookingData = bookingSnapshot.data() as Map<String, dynamic>;
-        if (bookingData['paymentStatus'] == 'paid') {
-          print('Booking $bookingId already paid - preventing duplicate');
-          return false;
-        }
-
-        // Update booking atomically
-        transaction.update(bookingRef, {
-          'paymentMethod': paymentMethod,
-          'paymentStatus': 'paid',
+      final response = await http.post(
+        Uri.parse(_confirmSalonPaymentFunctionUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+          'apikey': _supabasePublishableKey,
+        },
+        body: jsonEncode({
+          'bookingId': bookingId,
+          'customerId': customerId,
           'totalAmount': totalAmount,
-          'commissionRate': commissionRate,
-          'commissionAmount': commissionAmount,
-          'status': 'paid',
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
+          'paymentMethod': paymentMethod,
+        }),
+      ).timeout(_functionTimeout);
 
-        // Track commission owed by owner — only touch the wallets collection
-        // if there's actually commission to track (see cash payment for why).
-        if (commissionAmount > 0) {
-          transaction.update(walletsCollection.doc(ownerId), {
-            'commissionOwed': FieldValue.increment(commissionAmount),
-            'updatedAt': FieldValue.serverTimestamp(),
-          });
-        }
+      final decoded = jsonDecode(response.body);
 
+      if (response.statusCode == 200 && decoded['success'] == true) {
         return true;
-      });
+      }
 
-      if (!success) return false;
-
-      // Create transaction records
-      await createTransaction(TransactionModel.digitalPayment(
-        customerId: customerId,
-        ownerId: ownerId,
-        amount: totalAmount,
-        bookingId: bookingId,
-        paymentMethod: paymentMethod,
-        commissionRate: commissionRate,
-      ));
-
-      await createTransaction(TransactionModel.commission(
-        amount: commissionAmount,
-        ownerId: ownerId,
-        bookingId: bookingId,
-        rate: commissionRate,
-      ));
-
-      return true;
+      print('Payment confirmation rejected: ${decoded['error']}');
+      return false;
+    } on TimeoutException {
+      print('Payment confirmation timed out — check that confirm-salon-payment is deployed on Supabase.');
+      return false;
     } catch (e) {
-      print('Digital payment failed: $e');
+      print('Payment confirmation failed: $e');
       return false;
     }
   }
@@ -254,7 +181,7 @@ class PaymentService extends GetxService {
   // SECURITY: this no longer writes wallet balances directly from the client.
   // It calls the Supabase Edge Function, which verifies the request server-side
   // (real logged-in user, booking ownership, no double-payment) before touching
-  // any balance. Same signature/behavior as before, so nothing else needs to change.
+  // any balance.
   Future<bool> processWalletPayment({
     required String customerId,
     required String ownerId,
@@ -269,7 +196,6 @@ class PaymentService extends GetxService {
         return false;
       }
 
-      // Firebase ID token — proves to the Edge Function who is really calling
       final idToken = await currentUser.getIdToken();
 
       final response = await http.post(
@@ -284,7 +210,7 @@ class PaymentService extends GetxService {
           'ownerId': ownerId,
           'totalAmount': totalAmount,
         }),
-      );
+      ).timeout(_functionTimeout);
 
       final decoded = jsonDecode(response.body);
 
@@ -294,6 +220,9 @@ class PaymentService extends GetxService {
 
       print('Wallet payment rejected: ${decoded['error']}');
       return false;
+    } on TimeoutException {
+      print('Wallet payment timed out — check that wallet-payment is deployed on Supabase.');
+      return false;
     } catch (e) {
       print('Wallet payment failed: $e');
       return false;
@@ -302,12 +231,6 @@ class PaymentService extends GetxService {
 
   // ==================== WITHDRAWAL ====================
 
-  // Process withdrawal request. SECURITY: no longer deducts the wallet
-  // balance directly from the client — calls the Edge Function, which
-  // verifies the caller owns the wallet and has sufficient balance before
-  // deducting anything. Actual payout (bank transfer) is still manual until
-  // a real payment gateway is integrated — this only secures the balance
-  // change and the withdrawal request record.
   Future<bool> processWithdrawal({
     required String ownerId,
     required double amount,
@@ -335,7 +258,7 @@ class PaymentService extends GetxService {
           'paymentMethod': paymentMethod,
           'accountDetails': accountDetails,
         }),
-      );
+      ).timeout(_functionTimeout);
 
       final decoded = jsonDecode(response.body);
 
@@ -344,6 +267,9 @@ class PaymentService extends GetxService {
       }
 
       print('Withdrawal rejected: ${decoded['error']}');
+      return false;
+    } on TimeoutException {
+      print('Withdrawal timed out — check that wallet-withdrawal is deployed on Supabase.');
       return false;
     } catch (e) {
       print('Withdrawal failed: $e');

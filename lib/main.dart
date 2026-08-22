@@ -9,6 +9,7 @@ import 'core/theme/theme_controller.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/database_service.dart';
 import 'core/services/payment_service.dart';
+import 'core/services/notification_service.dart';
 import 'core/controllers/user_controller.dart';
 import 'core/controllers/favourites_controller.dart';
 import 'core/controllers/wallet_controller.dart';
@@ -60,6 +61,8 @@ void main() async {
   Get.put(TranslationService());
   Get.put(PaymentService());
 
+  await NotificationService().initialize();
+
   Get.put(UserController());
   Get.put(FavouritesController());
   Get.put(WalletController());
@@ -110,7 +113,6 @@ class MyApp extends StatelessWidget {
         GetPage(name: '/admin-withdrawals', page: () => const WithdrawalManagementScreen()),
         GetPage(name: '/admin-transactions', page: () => const TransactionMonitoringScreen()),
         GetPage(name: '/admin-users', page: () => const UserManagementScreen()),
-        GetPage(name: '/wallet', page: () => const WalletScreen()),
       ],
       defaultTransition: Transition.cupertino,
     ));

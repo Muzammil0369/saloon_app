@@ -1,6 +1,8 @@
 // lib/features/owner/screens/owner_schedule_screen.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
@@ -11,6 +13,11 @@ import 'package:saloon_app/core/services/auth_service.dart';
 import 'package:saloon_app/core/controllers/payment_controller.dart';
 import 'package:saloon_app/features/owner/screens/qr_scanner_screen.dart';
 import 'package:intl/intl.dart';
+
+const String _notifyBookingStatusUrl =
+    'https://rzypfwjhngpwlxfbxtcg.supabase.co/functions/v1/notify-booking-status';
+const String _supabasePublishableKeyForNotify =
+    'sb_publishable_iO6I9436lSKFoeq_9bDXgQ_p8hXXD2L';
 
 class OwnerScheduleScreen extends StatefulWidget {
   const OwnerScheduleScreen({super.key});
@@ -415,8 +422,30 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
         snackPosition: SnackPosition.BOTTOM,
         duration: const Duration(seconds: 1),
       );
+
+      // Notify the customer — fire-and-forget, never blocks the status update.
+      _notifyCustomerOfStatusChange(bookingId, newStatus);
     } catch (e) {
       Get.snackbar('error'.tr, 'failed_update_status'.tr);
+    }
+  }
+
+  Future<void> _notifyCustomerOfStatusChange(String bookingId, String newStatus) async {
+    try {
+      final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+      if (idToken == null) return;
+
+      await http.post(
+        Uri.parse(_notifyBookingStatusUrl),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $idToken',
+          'apikey': _supabasePublishableKeyForNotify,
+        },
+        body: jsonEncode({'bookingId': bookingId, 'newStatus': newStatus}),
+      );
+    } catch (e) {
+      debugPrint('Customer notification failed (status update itself still succeeded): $e');
     }
   }
 

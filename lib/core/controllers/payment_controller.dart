@@ -1,4 +1,3 @@
-// lib/core/controllers/payment_controller.dart
 import 'package:get/get.dart';
 import '../services/payment_service.dart';
 import '../services/auth_service.dart';
@@ -18,7 +17,6 @@ class PaymentController extends GetxController {
     {'name': 'Cash', 'icon': 'money', 'id': 'cash', 'description': 'Pay cash at salon'},
     {'name': 'EasyPaisa', 'icon': 'easypaisa', 'id': 'easypaisa', 'description': 'Send via EasyPaisa'},
     {'name': 'JazzCash', 'icon': 'jazzcash', 'id': 'jazzcash', 'description': 'Send via JazzCash'},
-    {'name': 'Wallet', 'icon': 'wallet', 'id': 'wallet', 'description': 'Pay from app wallet'},
   ];
 
   // Process payment at salon (called by owner after service)

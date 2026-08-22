@@ -1,9 +1,16 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import '../../firebase_options.dart';
 
+@pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Background messages run in a separate isolate — Firebase needs its own
+  // init here, it doesn't share state with the main app isolate.
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   debugPrint("Handling a background message: ${message.messageId}");
 }
 
@@ -77,15 +84,30 @@ class NotificationService {
         );
       }
     });
+
+    // 7. Save (and re-save on token refresh) the device's push token to
+    // Firestore automatically, for whoever is logged in right now — covers
+    // both "already logged in, app just opened" and "logged in mid-session".
+    FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        saveDeviceToken(user.uid, 'users');
+      }
+    });
+    _fcm.onTokenRefresh.listen((newToken) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        saveDeviceToken(uid, 'users');
+      }
+    });
   }
 
   Future<void> saveDeviceToken(String uid, String collection) async {
     try {
       String? token = await _fcm.getToken();
       if (token != null) {
-        await _db.collection(collection).doc(uid).update({
+        await _db.collection(collection).doc(uid).set({
           'fcmToken': token,
-        });
+        }, SetOptions(merge: true));
         debugPrint('FCM Token saved successfully: $token');
       }
     } catch (e) {

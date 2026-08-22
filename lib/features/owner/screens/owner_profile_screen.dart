@@ -17,6 +17,7 @@ import 'owner_help_support_screen.dart';
 import 'owner_services_management_screen.dart';
 import 'owner_staff_screen.dart';
 import 'owner_reviews_screen.dart';
+import 'owner_payment_qr_screen.dart';
 
 class OwnerProfileScreen extends StatefulWidget {
   const OwnerProfileScreen({super.key});
@@ -402,27 +403,27 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                           () => _editBusinessInfo(data),
                     ),
                     _menuTile(
-                      Icons.content_cut_rounded,
-                      'service_menu'.tr,
-                      'manage_services_prices'.tr,
-                      Colors.pinkAccent,
-                      theme,() {
+                        Icons.content_cut_rounded,
+                        'service_menu'.tr,
+                        'manage_services_prices'.tr,
+                        Colors.pinkAccent,
+                        theme,() {
                       Get.to(() => const OwnerServicesManagementScreen());
                     }),
                     _menuTile(
-                      Icons.image_outlined,
-                      'salon_gallery'.tr,
-                      'upload_salon_photos'.tr,
-                      Colors.blue,
-                      theme, () {
-                        Get.to(() => const OwnerGalleryManagementScreen());
-                        }),
+                        Icons.image_outlined,
+                        'salon_gallery'.tr,
+                        'upload_salon_photos'.tr,
+                        Colors.blue,
+                        theme, () {
+                      Get.to(() => const OwnerGalleryManagementScreen());
+                    }),
                     _menuTile(
-                      Icons.people_rounded,
-                      'my_team'.tr,
-                      'ustad_shagird_details'.tr,
-                      Colors.red,
-                      theme, () {
+                        Icons.people_rounded,
+                        'my_team'.tr,
+                        'ustad_shagird_details'.tr,
+                        Colors.red,
+                        theme, () {
                       Get.to(() => const OwnerStaffScreen());
                     }),
                     _menuTile(
@@ -431,15 +432,24 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         'create_promote_offer'.tr,
                         Colors.purple,
                         theme, () {
-                          Get.to(()=> const OwnerAdScreen());
+                      Get.to(()=> const OwnerAdScreen());
                     }
                     ),
                     _menuTile(
-                      Icons.star_rounded,
-                      'reviews_ratings'.tr,
-                      'see_customer_feedback'.tr,
-                      Colors.yellow,
-                      theme, () {
+                        Icons.qr_code_2_rounded,
+                        'payment_qr'.tr,
+                        'payment_qr_subtitle'.tr,
+                        Colors.teal,
+                        theme, () {
+                      Get.to(()=> const OwnerPaymentQrScreen());
+                    }
+                    ),
+                    _menuTile(
+                        Icons.star_rounded,
+                        'reviews_ratings'.tr,
+                        'see_customer_feedback'.tr,
+                        Colors.yellow,
+                        theme, () {
                       Get.to(() => OwnerReviewsScreen(ownerId: ownerId));
                     }),
                     _menuTile(Icons.help_rounded, 'help'.tr, 'help_subtitle'.tr, Colors.orange, theme, () {

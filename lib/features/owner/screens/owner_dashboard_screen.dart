@@ -1,5 +1,7 @@
 // lib/features/owner/screens/owner_dashboard_screen.dart
 import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -11,6 +13,32 @@ import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/services/auth_service.dart';
 
 import '../../../core/controllers/language_controller.dart';
+import '../../../shared/widgets/notification_bell.dart';
+import 'owner_notifications_screen.dart';
+
+const String _notifyBookingStatusUrlDashboard =
+    'https://rzypfwjhngpwlxfbxtcg.supabase.co/functions/v1/notify-booking-status';
+const String _supabasePublishableKeyDashboard =
+    'sb_publishable_iO6I9436lSKFoeq_9bDXgQ_p8hXXD2L';
+
+Future<void> _notifyCustomerFromDashboard(String bookingId, String newStatus) async {
+  try {
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    if (idToken == null) return;
+
+    await http.post(
+      Uri.parse(_notifyBookingStatusUrlDashboard),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $idToken',
+        'apikey': _supabasePublishableKeyDashboard,
+      },
+      body: jsonEncode({'bookingId': bookingId, 'newStatus': newStatus}),
+    );
+  } catch (e) {
+    debugPrint('Customer notification failed (status update itself still succeeded): $e');
+  }
+}
 
 class OwnerDashboardScreen extends StatefulWidget {
   final Function(int) onTabChange;
@@ -139,36 +167,36 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
 
                   // ✅ FIXED: Salon Name & Address with Dynamic Translation
                   Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // Salon Name - Dynamically translated
-                          Obx(() => Text(
-                            languageController.languageCode == 'ur'
-                                ? (data?['salonName_ur'] ?? data?['salonName'] ?? 'my_salon'.tr)
-                                : (data?['salonName'] ?? 'my_salon'.tr),
-                            style: AppTextStyles.headingLarge?.copyWith(
-                              fontSize: 18,
-                              color: theme.textColor,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                          // Address - Dynamically translated
-                          Obx(() => Text(
-                            languageController.languageCode == 'ur'
-                                ? (data?['address_ur'] ?? data?['address'] ?? 'location'.tr)
-                                : (data?['address'] ?? 'location'.tr),
-                            style: AppTextStyles.taglineSmall?.copyWith(
-                              color: theme.mutedTextColor,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                        ],
-                      ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Salon Name - Dynamically translated
+                        Obx(() => Text(
+                          languageController.languageCode == 'ur'
+                              ? (data?['salonName_ur'] ?? data?['salonName'] ?? 'my_salon'.tr)
+                              : (data?['salonName'] ?? 'my_salon'.tr),
+                          style: AppTextStyles.headingLarge?.copyWith(
+                            fontSize: 18,
+                            color: theme.textColor,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                        // Address - Dynamically translated
+                        Obx(() => Text(
+                          languageController.languageCode == 'ur'
+                              ? (data?['address_ur'] ?? data?['address'] ?? 'location'.tr)
+                              : (data?['address'] ?? 'location'.tr),
+                          style: AppTextStyles.taglineSmall?.copyWith(
+                            color: theme.mutedTextColor,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                      ],
                     ),
+                  ),
 
                   // Status Badge
                   Container(
@@ -190,6 +218,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                         ),
                       ],
                     ),
+                  ),
+                  const SizedBox(width: 10),
+                  NotificationBell(
+                    userId: _ownerId,
+                    theme: theme,
+                    onTap: () => Get.to(() => const OwnerNotificationsScreen()),
                   ),
                 ],
               );
@@ -414,6 +448,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
               'updatedAt': FieldValue.serverTimestamp(),
             });
             Get.snackbar('accepted'.tr, 'booking_confirmed'.tr, backgroundColor: AppColors.success, colorText: Colors.white);
+            _notifyCustomerFromDashboard(docId, 'confirmed');
           },
           child: Container(
             width: 34, height: 34,
@@ -429,6 +464,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
               'updatedAt': FieldValue.serverTimestamp(),
             });
             Get.snackbar('rejected'.tr, 'booking_rejected'.tr, backgroundColor: Colors.redAccent, colorText: Colors.white);
+            _notifyCustomerFromDashboard(docId, 'cancelled');
           },
           child: Container(
             width: 34, height: 34,

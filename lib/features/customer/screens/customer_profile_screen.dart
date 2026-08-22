@@ -6,6 +6,7 @@ import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloudinary_public/cloudinary_public.dart';
+import 'package:saloon_app/features/customer/screens/payment_screen.dart';
 import 'package:saloon_app/features/customer/screens/saved_addresses_screen.dart';
 import 'package:saloon_app/core/controllers/user_controller.dart';
 import '../../../core/controllers/language_controller.dart';
@@ -540,9 +541,9 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                 _menuTile(Icons.favorite_rounded, 'favourite_salons'.tr, 'favourite_salons_subtitle'.tr, Colors.pinkAccent, theme, () {
                   Get.to(() => const FavouriteSalonsScreen());
                 }),
-                _menuTile(Icons.account_balance_wallet_rounded, 'wallet'.tr, 'wallet_subtitle'.tr, AppColors.success, theme, () {
-                  Get.toNamed('/wallet');
-                }),
+                // _menuTile(Icons.account_balance_wallet_rounded, 'wallet'.tr, 'wallet_subtitle'.tr, AppColors.success, theme, () {
+                //   Get.to(() => const PaymentScreen(bookingData: {}));
+                // }),
                 _menuTile(Icons.location_on_rounded, 'saved_addresses'.tr, 'saved_addresses_subtitle'.tr, Colors.blue, theme, () {
                   Get.to(() => const SavedAddressesScreen());
                 }),

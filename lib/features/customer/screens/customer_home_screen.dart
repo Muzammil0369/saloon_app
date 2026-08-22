@@ -14,6 +14,8 @@ import 'package:saloon_app/features/customer/screens/notifications_screen.dart';
 import 'package:saloon_app/features/customer/screens/salon_detail_screen.dart';
 import 'package:saloon_app/shared/widgets/salon_card.dart';
 import 'package:saloon_app/shared/widgets/ad_banner_card.dart';
+import 'package:saloon_app/shared/widgets/notification_bell.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/controllers/language_controller.dart';
 import '../../../core/controllers/salon_controller.dart';
@@ -250,7 +252,11 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                               ],
                             ),
                           ),
-                          _iconBtn(Icons.notifications_none_rounded, theme, () => Get.to(() => const NotificationsScreen())),
+                          NotificationBell(
+                            userId: FirebaseAuth.instance.currentUser?.uid ?? '',
+                            theme: theme,
+                            onTap: () => Get.to(() => const NotificationsScreen()),
+                          ),
                           const SizedBox(width: 10),
                           _iconBtn(Icons.person_outline_rounded, theme, () => widget.onTabChange(4)),
                         ],
