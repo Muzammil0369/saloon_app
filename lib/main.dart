@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:get/get.dart';
 import 'package:saloon_app/shared/screens/splash_screen.dart';
-import 'package:saloon_app/shared/screens/wallet_screen.dart';
 import 'core/services/translation_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
