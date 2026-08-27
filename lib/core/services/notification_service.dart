@@ -26,6 +26,9 @@ class NotificationService {
       'High Importance Notifications',
       description: 'This channel is used for important notifications.',
       importance: Importance.high,
+      playSound: true,
+      enableVibration: true,
+      enableLights: true,
     );
 
     await _localNotifications
@@ -78,7 +81,9 @@ class NotificationService {
               channelDescription: 'This channel is used for important notifications.',
               importance: Importance.high,
               priority: Priority.high,
-              icon: '@mipmap/ic_launcher',
+              icon: '@mipmap/ic_flutter utter cleanlauncher',
+              playSound: true,
+              enableVibration: true,
             ),
           ),
         );

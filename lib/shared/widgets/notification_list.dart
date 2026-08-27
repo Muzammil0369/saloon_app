@@ -72,6 +72,7 @@ class NotificationsList extends StatelessWidget {
         final docs = snapshot.data?.docs ?? [];
         final unreadCount = docs.where((d) => (d.data() as Map<String, dynamic>)['read'] != true).length;
 
+
         return Column(
           children: [
             Container(
@@ -80,7 +81,15 @@ class NotificationsList extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('notifications'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor, fontSize: 18)),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6.0),
+                    child: IconButton(
+                      icon: Icon(Icons.arrow_back_rounded, color: theme.textColor),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  Expanded(
+                      child: Text('notifications'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor, fontSize: 18))),
                   if (unreadCount > 0)
                     GestureDetector(
                       onTap: () => _markAllRead(docs),

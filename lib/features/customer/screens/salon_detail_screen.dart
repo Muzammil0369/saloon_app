@@ -62,21 +62,20 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
   // Selects (in the booking controller) whichever loaded services match the
   // ad's included service names, then jumps to the Services tab so the
   // bottom "Book Now" button becomes enabled with those services pre-picked.
-  void _bookThisOffer(List<Map<String, dynamic>> offerServices, double discount, Map<String, dynamic> salonData) {
-    _bookingController.discountRate.value = discount; 
-    
-    // Clear previous selections and select only the offer services
-    _bookingController.clearSelection();
-    
+  void _bookThisOffer(List<Map<String, dynamic>> offerServices) {
     final offerNames = offerServices.map((s) => (s['name'] ?? '').toString().trim().toLowerCase()).toSet();
+
+    if (_bookingController.services.isEmpty) {
+      Get.snackbar('error'.tr, 'services_still_loading'.tr);
+      return;
+    }
 
     bool matchedAny = false;
     for (var i = 0; i < _bookingController.services.length; i++) {
       final name = (_bookingController.services[i]['name'] ?? '').toString().trim().toLowerCase();
-      if (offerNames.contains(name)) {
-        _bookingController.services[i]['isSelected'] = true;
-        matchedAny = true;
-      }
+      final shouldSelect = offerNames.contains(name);
+      if (shouldSelect) matchedAny = true;
+      _bookingController.services[i]['isSelected'] = shouldSelect;
     }
     _bookingController.services.refresh();
 
@@ -85,11 +84,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
       return;
     }
 
-    // Direct navigation to BookingScreen
-    Get.to(() => BookingScreen(
-      ownerId: _ownerId,
-      salon: salonData,
-    ));
+    setState(() => _selectedTab = 0);
   }
 
   // Helper to build image from URL or Base64
@@ -248,28 +243,21 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                    decoration: BoxDecoration(
-                                      color: isOpen ? Colors.green : Colors.red,
-                                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                                    ),
-                                    child: Text(
-                                      isOpen ? 'open'.tr.toUpperCase() : 'closed'.tr.toUpperCase(),
-                                      style: AppTextStyles.label.copyWith(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 10,
-                                      ),
-                                    ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: isOpen ? Colors.green : Colors.red,
+                                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                                ),
+                                child: Text(
+                                  isOpen ? 'open'.tr.toUpperCase() : 'closed'.tr.toUpperCase(),
+                                  style: AppTextStyles.label.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 10,
                                   ),
-                                  const SizedBox(width: 8),
-
-                                ],
+                                ),
                               ),
-
                               const SizedBox(height: 8),
                               Text(
                                 salonName,
@@ -281,80 +269,21 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                               const SizedBox(height: 4),
                               Row(
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.mutedText,
-                                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                                    ),
-                                    child: Row(
-                                      children: [
-                                        Icon(Icons.star, color: Colors.amber, size: 16),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          salonRating.toStringAsFixed(1),
-                                          style: AppTextStyles.bodyMedium?.copyWith(color: Colors.white),
-                                        ),
-                                        const SizedBox(width: 4),
-                                      ],
-                                    ),
+                                  Icon(Icons.star, color: Colors.amber, size: 16),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    salonRating.toStringAsFixed(1),
+                                    style: AppTextStyles.bodyMedium?.copyWith(color: Colors.white),
                                   ),
-
                                   const SizedBox(width: 16),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: AppColors.mutedText,
-                                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                                    ),
-                                    child: Flexible(
-                                      child: Text(
-                                        category,
-                                        style: AppTextStyles.bodyMedium?.copyWith(fontSize: 14, color: Colors.white),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
+                                  Text(
+                                    category,
+                                    style: AppTextStyles.label.copyWith(
+                                      color: Colors.white.withOpacity(0.8),
+                                      backgroundColor: Colors.white.withOpacity(0.2),
                                     ),
                                   ),
                                 ],
-                              ),
-                              const SizedBox(height: 4),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.mutedText,
-                                  borderRadius: BorderRadius.circular(AppRadius.sm),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    const Icon(Icons.phone, size: 14, color: Colors.white),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      phoneNumber,
-                                      style: AppTextStyles.bodyMedium?.copyWith(fontSize: 14, color: Colors.white),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                    const SizedBox(width: 6),
-                                    Container(
-                                      height: 30,
-                                      width: 1,
-                                      color: theme.backgroundColor,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    const Icon(Icons.location_on_outlined, size: 14, color: Colors.white),
-                                    const SizedBox(width: 4),
-                                    Flexible(
-                                      child: Text(
-                                        salonAddress,
-                                        style: AppTextStyles.bodyMedium?.copyWith(fontSize: 14, color: Colors.white),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
                               ),
                             ],
                           ),
@@ -383,23 +312,23 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                               _infoItem(Icons.access_time_filled_rounded, Colors.blue, '9AM - 9PM', 'timing'.tr),
                             ],
                           ),
-
-                          // Row(
-                          //   children: [
-                          //     const Icon(Icons.location_on_outlined, size: 18, color: AppColors.mutedText),
-                          //     const SizedBox(width: 8),
-                          //     Expanded(
-                          //       child: Text(
-                          //         salonAddress,
-                          //         style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
-                          //       ),
-                          //     ),
-                          //   ],
-                          // ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              const Icon(Icons.location_on_outlined, size: 18, color: AppColors.mutedText),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  salonAddress,
+                                  style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: 20),
+
                     // ── Services / Offers Tab Bar ──
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -410,52 +339,49 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(color: theme.borderColor),
                         ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(6),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () => setState(() => _selectedTab = 0),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: _selectedTab == 0 ? AppColors.primaryPink : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      'services'.tr,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: _selectedTab == 0 ? Colors.white : theme.mutedTextColor,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedTab = 0),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: _selectedTab == 0 ? AppColors.primaryPink : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    'services'.tr,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _selectedTab == 0 ? Colors.white : theme.mutedTextColor,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
                               ),
-                              Expanded(
-                                child: GestureDetector(
-                                  onTap: () => setState(() => _selectedTab = 1),
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(vertical: 10),
-                                    decoration: BoxDecoration(
-                                      color: _selectedTab == 1 ? AppColors.primaryPink : Colors.transparent,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Text(
-                                      'offers'.tr,
-                                      textAlign: TextAlign.center,
-                                      style: TextStyle(
-                                        color: _selectedTab == 1 ? Colors.white : theme.mutedTextColor,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () => setState(() => _selectedTab = 1),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(vertical: 10),
+                                  decoration: BoxDecoration(
+                                    color: _selectedTab == 1 ? AppColors.primaryPink : Colors.transparent,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: Text(
+                                    'offers'.tr,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      color: _selectedTab == 1 ? Colors.white : theme.mutedTextColor,
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -463,7 +389,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                     // ── Services Section ──
                     if (_selectedTab == 0)
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                        padding: const EdgeInsets.all(20),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -471,6 +397,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                               'our_services'.tr,
                               style: AppTextStyles.headingSmall.copyWith(color: theme.textColor),
                             ),
+                            const SizedBox(height: 16),
                             Obx(() {
                               if (_bookingController.isLoading.value) {
                                 return const Center(
@@ -605,7 +532,6 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                             }
 
                             final adData = adSnapshot.data!.data() as Map<String, dynamic>;
-                            print('DEBUG: Ad Data: $adData');
                             final expiresAt = (adData['expiresAt'] as Timestamp?)?.toDate();
                             final daysLeft = expiresAt != null ? expiresAt.difference(DateTime.now()).inDays : 0;
                             final services = (adData['selectedServices'] as List? ?? []).whereType<Map<String, dynamic>>().toList();
@@ -637,7 +563,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton(
-                                    onPressed: () => _bookThisOffer(services, (adData['percentOff'] as num?)?.toDouble() ?? 0.0, salonData),
+                                    onPressed: () => _bookThisOffer(services),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.primaryPink,
                                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -694,13 +620,8 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                 bottom: 20,
                 left: 20,
                 right: 20,
-                child: Obx(() {
-                  final selected = _bookingController.selectedServices;
-                  final total = _bookingController.totalPrice; 
-                  final discount = _bookingController.discountRate.value; // Explicitly trigger update on change
-                  
-                  return GestureDetector(
-                  onTap: selected.isEmpty
+                child: Obx(() => GestureDetector(
+                  onTap: _bookingController.selectedServices.isEmpty
                       ? null
                       : () {
                     Get.to(() => BookingScreen(
@@ -712,11 +633,11 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                     duration: const Duration(milliseconds: 300),
                     height: 56,
                     decoration: BoxDecoration(
-                      gradient: selected.isEmpty
+                      gradient: _bookingController.selectedServices.isEmpty
                           ? LinearGradient(colors: [Colors.grey, Colors.grey])
                           : AppGradients.primary,
                       borderRadius: BorderRadius.circular(AppRadius.button),
-                      boxShadow: selected.isEmpty
+                      boxShadow: _bookingController.selectedServices.isEmpty
                           ? null
                           : [
                         BoxShadow(
@@ -728,9 +649,9 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                     ),
                     child: Center(
                       child: Text(
-                        selected.isEmpty
+                        _bookingController.selectedServices.isEmpty
                             ? 'select_services'.tr
-                            : '${'book_now'.tr} (Rs. ${total.toInt()})',
+                            : '${'book_now'.tr} (Rs. ${_bookingController.totalPrice.toInt()})',
                         style: AppTextStyles.bodyLarge?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
@@ -739,8 +660,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                       ),
                     ),
                   ),
-                );
-                }),
+                )),
               ),
             ],
           );

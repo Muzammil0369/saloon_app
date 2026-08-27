@@ -258,7 +258,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             onTap: () => Get.to(() => const NotificationsScreen()),
                           ),
                           const SizedBox(width: 10),
-                          _iconBtn(Icons.person_outline_rounded, theme, () => widget.onTabChange(4)),
+                          _iconBtn(Icons.person_outline_rounded, theme, () => widget.onTabChange(3)),
                         ],
                       ),
                       const SizedBox(height: 20),
