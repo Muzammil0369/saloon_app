@@ -4,37 +4,46 @@ import 'package:saloon_app/features/admin/theme/admin_colors.dart';
 class AdminWidgets {
   static Widget statusChip(String status) {
     Color color;
+    String displayText = status;
+
     switch (status.toLowerCase()) {
       case 'approved':
       case 'completed':
       case 'success':
-        color = AdminColors.success;
+        color = Colors.green;
+        displayText = '✅ Completed';
         break;
       case 'pending':
       case 'processing':
-        color = AdminColors.warning;
+        color = Colors.orange;
+        displayText = '⏳ Pending';
         break;
       case 'rejected':
       case 'failed':
-      case 'danger':
-        color = AdminColors.danger;
+        color = Colors.red;
+        displayText = '❌ Failed';
+        break;
+      case 'cancelled':
+        color = Colors.red;
+        displayText = '❌ Cancelled';
         break;
       default:
-        color = AdminColors.info;
+        color = Colors.grey;
+        displayText = status;
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withOpacity(0.2)),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Text(
-        status,
+        displayText,
         style: TextStyle(
           color: color,
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: FontWeight.w600,
         ),
       ),

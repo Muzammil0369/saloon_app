@@ -41,7 +41,6 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
       final authService = Get.find<AuthService>();
       final dbService = Get.find<DatabaseService>();
 
-      // ✅ Use new signInWithEmail with named parameters
       final result = await authService.signInWithEmail(
         email: email,
         password: password,
@@ -71,6 +70,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
         final role = data['role'] as String?;
 
         if (role == 'admin') {
+          // ✅ Navigate to admin main wrapper
           Get.offAllNamed('/admin-main');
         } else {
           await authService.logout();

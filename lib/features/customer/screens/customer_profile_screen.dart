@@ -561,17 +561,22 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     boxShadow: [theme.softShadow],
                     border: Border.all(color: Colors.red.withOpacity(0.3)),
                   ),
-                  child: ListTile(
-                    onTap: _deleteAccount,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    leading: Container(
-                      width: 40, height: 40,
-                      decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-                      child: const Icon(Icons.delete_forever, size: 20, color: Colors.red),
+                  child: Material(
+                    color: Colors.transparent,
+                    borderRadius: BorderRadius.circular(16),
+                    clipBehavior: Clip.antiAlias,
+                    child: ListTile(
+                      onTap: _deleteAccount,
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                      leading: Container(
+                        width: 40, height: 40,
+                        decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                        child: const Icon(Icons.delete_forever, size: 20, color: Colors.red),
+                      ),
+                      title: Text('delete_account'.tr, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
+                      subtitle: Text('delete_account_desc'.tr, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
+                      trailing: Icon(Icons.chevron_right_rounded, color: theme.mutedTextColor),
                     ),
-                    title: Text('delete_account'.tr, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
-                    subtitle: Text('delete_account_desc'.tr, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-                    trailing: Icon(Icons.chevron_right_rounded, color: theme.mutedTextColor),
                   ),
                 ),
 
@@ -630,17 +635,22 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [theme.softShadow],
       ),
-      child: ListTile(
-        onTap: onTap,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-        leading: Container(
-          width: 40, height: 40,
-          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
-          child: Icon(icon, size: 20, color: color),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        clipBehavior: Clip.antiAlias,
+        child: ListTile(
+          onTap: onTap,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          leading: Container(
+            width: 40, height: 40,
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            child: Icon(icon, size: 20, color: color),
+          ),
+          title: Text(title, style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+          subtitle: Text(subtitle, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
+          trailing: Icon(Icons.chevron_right_rounded, color: theme.mutedTextColor),
         ),
-        title: Text(title, style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
-        subtitle: Text(subtitle, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-        trailing: Icon(Icons.chevron_right_rounded, color: theme.mutedTextColor),
       ),
     );
   }

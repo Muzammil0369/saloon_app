@@ -17,6 +17,7 @@ import 'core/controllers/booking_controller.dart';
 import 'core/controllers/language_controller.dart';
 import 'core/localization/app_translations.dart';
 import 'features/admin/admin_main_wrapper.dart';
+import 'features/admin/controllers/admin_controller.dart'; // ✅ ADD THIS
 import 'features/admin/screens/admin_dashboard_screen.dart';
 import 'features/admin/screens/admin_login_screen.dart';
 import 'features/admin/screens/salon_verification_screen.dart';
@@ -51,7 +52,6 @@ void main() async {
   }
 
   Get.put(ThemeController());
-
   Get.put(LanguageController());
 
   final authService = Get.put(AuthService());
@@ -67,6 +67,9 @@ void main() async {
   Get.put(WalletController());
   Get.put(PaymentController());
   Get.put(BookingController());
+
+  // ✅ CRITICAL FIX: Initialize AdminController
+  Get.put(AdminController(), permanent: true);
 
   runApp(const MyApp());
 }
@@ -89,7 +92,6 @@ class MyApp extends StatelessWidget {
       locale: languageController.currentLocale.value,
       fallbackLocale: const Locale('en', 'US'),
       initialRoute: '/splash-screen',
-      // ✅ Use named routes for better navigation
       getPages: [
         GetPage(name: '/splash-screen', page: () => const SplashScreen()),
         GetPage(name: '/auth-gate', page: () => const AuthGate()),

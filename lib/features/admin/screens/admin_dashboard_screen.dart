@@ -10,58 +10,68 @@ class AdminDashboardScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final adminController = Get.find<AdminController>();
+    // ✅ Just find it - it's initialized in main.dart
+    final AdminController adminController = Get.find<AdminController>();
 
-    // Refresh stats when screen is built
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      adminController.refreshStats();
-    });
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Obx(() => GridView.count(
-            crossAxisCount: MediaQuery.of(context).size.width > 1200 ? 4 : 2,
-            crossAxisSpacing: 16,
-            mainAxisSpacing: 16,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            childAspectRatio: 1.8,
+    return Obx(() {
+      if (adminController.isLoading.value) {
+        return const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              AdminStatCard(
-                title: "Customers",
-                value: adminController.totalCustomers.value.toString(),
-                icon: Icons.people,
-                trend: adminController.userTrend.value,
-              ),
-              AdminStatCard(
-                title: "Owners",
-                value: adminController.totalOwners.value.toString(),
-                icon: Icons.store,
-                trend: "+${adminController.totalOwners.value > 0 ? '10' : '0'}%", // Simple trend
-              ),
-              AdminStatCard(
-                title: "Admins",
-                value: adminController.totalAdmins.value.toString(),
-                icon: Icons.admin_panel_settings,
-                trend: "+0%",
-              ),
-              AdminStatCard(
-                title: "Total Revenue",
-                value: "PKR ${adminController.totalRevenue.value.toStringAsFixed(0)}",
-                icon: Icons.payments,
-                trend: adminController.revenueTrend.value,
-              ),
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Loading dashboard...'),
             ],
-          )),
+          ),
+        );
+      }
 
-          const SizedBox(height: 32),
-          _buildRevenueChart(adminController),
-        ],
-      ),
-    );
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            GridView.count(
+              crossAxisCount: MediaQuery.of(context).size.width > 1200 ? 4 : 2,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              childAspectRatio: 1.8,
+              children: [
+                AdminStatCard(
+                  title: "Customers",
+                  value: adminController.totalCustomers.value.toString(),
+                  icon: Icons.people,
+                  trend: adminController.userTrend.value,
+                ),
+                AdminStatCard(
+                  title: "Owners",
+                  value: adminController.totalOwners.value.toString(),
+                  icon: Icons.store,
+                  trend: "+${adminController.totalOwners.value > 0 ? '10' : '0'}%",
+                ),
+                AdminStatCard(
+                  title: "Admins",
+                  value: adminController.totalAdmins.value.toString(),
+                  icon: Icons.admin_panel_settings,
+                  trend: "+0%",
+                ),
+                AdminStatCard(
+                  title: "Total Revenue",
+                  value: "PKR ${adminController.totalRevenue.value.toStringAsFixed(0)}",
+                  icon: Icons.payments,
+                  trend: adminController.revenueTrend.value,
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+            _buildRevenueChart(adminController),
+          ],
+        ),
+      );
+    });
   }
 
   Widget _buildRevenueChart(AdminController controller) {

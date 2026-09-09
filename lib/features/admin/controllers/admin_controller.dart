@@ -55,13 +55,14 @@ class AdminController extends GetxController {
   }
 
   void _fetchAllStats() {
+    isLoading.value = true; // Start loading
     _getTotalCustomers();
     _getTotalOwners();
     _getTotalAdmins();
     _getPendingVerifications();
     _getTotalBookings();
     _getTotalRevenue();
-    isLoading.value = false;
+    isLoading.value = false; // Done loading
   }
 
   Future<void> _getTotalCustomers() async {
@@ -293,7 +294,14 @@ class AdminController extends GetxController {
   }
 
   // ✅ NEW: Refresh all stats manually
+// Add this method to AdminController class
   void refreshStats() {
     _fetchAllStats();
+    Get.snackbar(
+      'Refreshed',
+      'Dashboard stats updated',
+      snackPosition: SnackPosition.BOTTOM,
+      duration: const Duration(seconds: 1),
+    );
   }
 }

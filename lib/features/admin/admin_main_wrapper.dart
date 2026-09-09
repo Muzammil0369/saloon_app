@@ -84,10 +84,9 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
           Expanded(
             child: Column(
               children: [
-                // In AdminMainWrapper, update the AdminTopBar:
                 AdminTopBar(
                   adminName: _adminName,
-                  adminRole: "Administrator", // Or fetch from Firestore too
+                  adminRole: "Administrator",
                   onMenuPressed: isDesktop ? null : () => _scaffoldKey.currentState?.openDrawer(),
                   onLogout: () => Get.offAllNamed('/admin-login'),
                 ),
@@ -113,7 +112,6 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
       ),
       child: Column(
         children: [
-          // Logo
           Container(
             width: double.infinity,
             height: 80,
@@ -136,7 +134,6 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
           ),
           const SizedBox(height: 20),
 
-          // Navigation Items
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -145,7 +142,6 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
             ),
           ),
 
-          // Logout Button (Bottom)
           Container(
             padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(

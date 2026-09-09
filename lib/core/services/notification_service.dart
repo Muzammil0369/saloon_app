@@ -81,9 +81,14 @@ class NotificationService {
               channelDescription: 'This channel is used for important notifications.',
               importance: Importance.high,
               priority: Priority.high,
-              icon: '@mipmap/ic_flutter utter cleanlauncher',
+              icon: '@mipmap/ic_launcher',
               playSound: true,
               enableVibration: true,
+              // Show the full notification content on the lock screen instead
+              // of hiding it — without this, Android plays the sound but
+              // keeps the banner content hidden until the phone is unlocked.
+              visibility: NotificationVisibility.public,
+              fullScreenIntent: false,
             ),
           ),
         );
@@ -105,6 +110,7 @@ class NotificationService {
       }
     });
   }
+
 
   Future<void> saveDeviceToken(String uid, String collection) async {
     try {
