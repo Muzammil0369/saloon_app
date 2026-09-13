@@ -18,6 +18,7 @@ import 'owner_services_management_screen.dart';
 import 'owner_staff_screen.dart';
 import 'owner_reviews_screen.dart';
 import 'owner_payment_qr_screen.dart';
+import 'owner_business_hours_screen.dart';
 
 class OwnerProfileScreen extends StatefulWidget {
   const OwnerProfileScreen({super.key});
@@ -442,6 +443,15 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         Colors.teal,
                         theme, () {
                       Get.to(()=> const OwnerPaymentQrScreen());
+                    }
+                    ),
+                    _menuTile(
+                        Icons.schedule_rounded,
+                        'business_hours'.tr,
+                        'business_hours_subtitle'.tr,
+                        Colors.indigo,
+                        theme, () {
+                      Get.to(()=> const OwnerBusinessHoursScreen());
                     }
                     ),
                     _menuTile(

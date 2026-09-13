@@ -41,9 +41,14 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _isLoading = false;
   bool _isLoadingSlots = false;
 
-  // Every 30-minute slot from 10:00 AM to 8:00 PM (salon has no configurable
-  // business hours field yet, so this window is fixed for now)
-  final List<String> _allTimeSlots = _generateTimeSlots();
+  // Real business hours read from the salon's own settings — falls back to
+  // 10 AM–8 PM / every day only if the owner hasn't set hours yet (e.g. an
+  // older account created before this feature existed).
+  late final Map<String, dynamic>? _businessHours = widget.salon['businessHours'] as Map<String, dynamic>?;
+  late final List<String> _allTimeSlots = _generateTimeSlots();
+  late final Set<int> _workingDays = Set<int>.from(
+    (_businessHours?['workingDays'] as List?)?.map((e) => e as int) ?? [1, 2, 3, 4, 5, 6, 7],
+  );
 
   // For the selected day: timeSlot -> set of staffIds already booked at that time
   Map<String, Set<String>> _bookedStaffBySlot = {};
@@ -55,9 +60,17 @@ class _BookingScreenState extends State<BookingScreen> {
 
   String? _selectedStaffId;
 
-  static List<String> _generateTimeSlots() {
+  List<String> _generateTimeSlots() {
+    final openStr = _businessHours?['openTime'] as String? ?? '10:00';
+    final closeStr = _businessHours?['closeTime'] as String? ?? '20:00';
+
+    final openParts = openStr.split(':');
+    final closeParts = closeStr.split(':');
+    final startMinutes = int.parse(openParts[0]) * 60 + int.parse(openParts[1]);
+    final endMinutes = int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
+
     final List<String> slots = [];
-    for (int minutes = 10 * 60; minutes < 20 * 60; minutes += 30) {
+    for (int minutes = startMinutes; minutes < endMinutes; minutes += 30) {
       final hour24 = minutes ~/ 60;
       final minute = minutes % 60;
       final period = hour24 >= 12 ? 'PM' : 'AM';
@@ -84,6 +97,8 @@ class _BookingScreenState extends State<BookingScreen> {
     }
     return groups;
   }
+
+  bool _isWorkingDay(DateTime day) => _workingDays.contains(day.weekday);
 
   List<Map<String, dynamic>> _buildStaffPool() {
     final List<Map<String, dynamic>> pool = [];
@@ -203,6 +218,7 @@ class _BookingScreenState extends State<BookingScreen> {
               lastDay: DateTime.now().add(const Duration(days: 30)),
               focusedDay: _focusedDay,
               selectedDayPredicate: (day) => isSameDay(_selectedDay, day),
+              enabledDayPredicate: _isWorkingDay,
               onDaySelected: (selectedDay, focusedDay) {
                 setState(() {
                   _selectedDay = selectedDay;
@@ -227,6 +243,23 @@ class _BookingScreenState extends State<BookingScreen> {
 
             if (_isLoadingSlots)
               const Center(child: CircularProgressIndicator(color: AppColors.primaryPink))
+            else if (_selectedDay != null && !_isWorkingDay(_selectedDay!))
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: theme.borderColor),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.event_busy_rounded, color: theme.mutedTextColor),
+                    const SizedBox(width: 12),
+                    Expanded(child: Text('closed_on_this_day'.tr, style: TextStyle(color: theme.mutedTextColor))),
+                  ],
+                ),
+              )
             else
               ..._groupedSlots.entries.where((e) => e.value.isNotEmpty).map((entry) {
                 final sectionIcon = switch (entry.key) {

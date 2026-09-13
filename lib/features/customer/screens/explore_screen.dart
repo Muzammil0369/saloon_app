@@ -494,6 +494,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   }
                   _animateToUserLocation();
                 },
+                myLocationEnabled: true,
                 zoomControlsEnabled: true,
                 mapToolbarEnabled: true,
                 myLocationButtonEnabled: true,
