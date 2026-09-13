@@ -23,11 +23,7 @@ class BookingScreen extends StatefulWidget {
   final Map<String, dynamic> salon;
   final String ownerId;
 
-  const BookingScreen({
-    super.key,
-    required this.salon,
-    required this.ownerId,
-  });
+  const BookingScreen({super.key, required this.salon, required this.ownerId});
 
   @override
   State<BookingScreen> createState() => _BookingScreenState();
@@ -44,10 +40,12 @@ class _BookingScreenState extends State<BookingScreen> {
   // Real business hours read from the salon's own settings — falls back to
   // 10 AM–8 PM / every day only if the owner hasn't set hours yet (e.g. an
   // older account created before this feature existed).
-  late final Map<String, dynamic>? _businessHours = widget.salon['businessHours'] as Map<String, dynamic>?;
+  late final Map<String, dynamic>? _businessHours =
+      widget.salon['businessHours'] as Map<String, dynamic>?;
   late final List<String> _allTimeSlots = _generateTimeSlots();
   late final Set<int> _workingDays = Set<int>.from(
-    (_businessHours?['workingDays'] as List?)?.map((e) => e as int) ?? [1, 2, 3, 4, 5, 6, 7],
+    (_businessHours?['workingDays'] as List?)?.map((e) => e as int) ??
+        [1, 2, 3, 4, 5, 6, 7],
   );
 
   // For the selected day: timeSlot -> set of staffIds already booked at that time
@@ -67,12 +65,21 @@ class _BookingScreenState extends State<BookingScreen> {
     final openParts = openStr.split(':');
     final closeParts = closeStr.split(':');
     final startMinutes = int.parse(openParts[0]) * 60 + int.parse(openParts[1]);
-    final endMinutes = int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
+    var endMinutes = int.parse(closeParts[0]) * 60 + int.parse(closeParts[1]);
+
+    // FIX: midnight (00:00) stores as the smallest possible value, which
+    // looks "before" the opening time — but a salon open 8 AM to midnight
+    // is a normal 16-hour day, not zero hours. Whenever closing time is at
+    // or before opening time, treat it as rolling into the next day.
+    if (endMinutes <= startMinutes) {
+      endMinutes += 24 * 60;
+    }
 
     final List<String> slots = [];
     for (int minutes = startMinutes; minutes < endMinutes; minutes += 30) {
-      final hour24 = minutes ~/ 60;
-      final minute = minutes % 60;
+      final displayMinutes = minutes % (24 * 60);
+      final hour24 = displayMinutes ~/ 60;
+      final minute = displayMinutes % 60;
       final period = hour24 >= 12 ? 'PM' : 'AM';
       final hour12 = hour24 > 12 ? hour24 - 12 : (hour24 == 0 ? 12 : hour24);
       final minuteStr = minute.toString().padLeft(2, '0');
@@ -83,7 +90,11 @@ class _BookingScreenState extends State<BookingScreen> {
 
   // Groups the flat slot list into Morning / Afternoon / Evening sections for display
   Map<String, List<String>> get _groupedSlots {
-    final Map<String, List<String>> groups = {'morning': [], 'afternoon': [], 'evening': []};
+    final Map<String, List<String>> groups = {
+      'morning': [],
+      'afternoon': [],
+      'evening': [],
+    };
     for (var slot in _allTimeSlots) {
       final isPM = slot.contains('PM');
       final hour = int.parse(slot.split(':')[0]);
@@ -105,7 +116,8 @@ class _BookingScreenState extends State<BookingScreen> {
 
     pool.add({
       'id': 'owner',
-      'name': widget.salon['ownerName'] ?? widget.salon['fullName'] ?? 'owner'.tr,
+      'name':
+          widget.salon['ownerName'] ?? widget.salon['fullName'] ?? 'owner'.tr,
       'imageUrl': widget.salon['ownerProfileImage'],
       'isOwner': true,
       'phone': widget.salon['phoneNumber'],
@@ -128,7 +140,9 @@ class _BookingScreenState extends State<BookingScreen> {
 
     // Highest-rated staff first. Everyone defaults to 0 until real ratings exist,
     // in which case they keep their original (owner-first) order.
-    pool.sort((a, b) => (b['rating'] as double).compareTo(a['rating'] as double));
+    pool.sort(
+      (a, b) => (b['rating'] as double).compareTo(a['rating'] as double),
+    );
     return pool;
   }
 
@@ -148,7 +162,9 @@ class _BookingScreenState extends State<BookingScreen> {
   @override
   void initState() {
     super.initState();
-    print('DEBUG: BookingScreen initialized. Current discountRate: ${_bookingController.discountRate.value}');
+    print(
+      'DEBUG: BookingScreen initialized. Current discountRate: ${_bookingController.discountRate.value}',
+    );
     _selectedDay = DateTime.now();
     _loadBookedSlotsForDay(_selectedDay!);
   }
@@ -169,7 +185,17 @@ class _BookingScreenState extends State<BookingScreen> {
           .where('ownerId', isEqualTo: widget.ownerId)
           .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
           .where('date', isLessThan: Timestamp.fromDate(endOfDay))
-          .where('status', whereIn: ['pending', 'confirmed', 'in_progress', 'completed', 'paid', 'verified'])
+          .where(
+            'status',
+            whereIn: [
+              'pending',
+              'confirmed',
+              'in_progress',
+              'completed',
+              'paid',
+              'verified',
+            ],
+          )
           .get();
 
       final Map<String, Set<String>> bookedMap = {};
@@ -242,7 +268,9 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 16),
 
             if (_isLoadingSlots)
-              const Center(child: CircularProgressIndicator(color: AppColors.primaryPink))
+              const Center(
+                child: CircularProgressIndicator(color: AppColors.primaryPink),
+              )
             else if (_selectedDay != null && !_isWorkingDay(_selectedDay!))
               Container(
                 width: double.infinity,
@@ -256,12 +284,19 @@ class _BookingScreenState extends State<BookingScreen> {
                   children: [
                     Icon(Icons.event_busy_rounded, color: theme.mutedTextColor),
                     const SizedBox(width: 12),
-                    Expanded(child: Text('closed_on_this_day'.tr, style: TextStyle(color: theme.mutedTextColor))),
+                    Expanded(
+                      child: Text(
+                        'closed_on_this_day'.tr,
+                        style: TextStyle(color: theme.mutedTextColor),
+                      ),
+                    ),
                   ],
                 ),
               )
             else
-              ..._groupedSlots.entries.where((e) => e.value.isNotEmpty).map((entry) {
+              ..._groupedSlots.entries.where((e) => e.value.isNotEmpty).map((
+                entry,
+              ) {
                 final sectionIcon = switch (entry.key) {
                   'morning' => Icons.wb_twilight_rounded,
                   'afternoon' => Icons.wb_sunny_rounded,
@@ -274,11 +309,19 @@ class _BookingScreenState extends State<BookingScreen> {
                     children: [
                       Row(
                         children: [
-                          Icon(sectionIcon, size: 16, color: AppColors.primaryPink),
+                          Icon(
+                            sectionIcon,
+                            size: 16,
+                            color: AppColors.primaryPink,
+                          ),
                           const SizedBox(width: 6),
                           Text(
                             entry.key.tr,
-                            style: TextStyle(fontWeight: FontWeight.w700, color: theme.mutedTextColor, fontSize: 13),
+                            style: TextStyle(
+                              fontWeight: FontWeight.w700,
+                              color: theme.mutedTextColor,
+                              fontSize: 13,
+                            ),
                           ),
                         ],
                       ),
@@ -294,22 +337,33 @@ class _BookingScreenState extends State<BookingScreen> {
                             onTap: isFull
                                 ? null
                                 : () => setState(() {
-                              _selectedTime = time;
-                              _selectedStaffId = null;
-                            }),
+                                    _selectedTime = time;
+                                    _selectedStaffId = null;
+                                  }),
                             child: Container(
                               width: 96,
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
                                 color: isFull
                                     ? theme.borderColor.withOpacity(0.2)
-                                    : (isSelected ? AppColors.primaryPink : theme.cardColor),
+                                    : (isSelected
+                                          ? AppColors.primaryPink
+                                          : theme.cardColor),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
-                                  color: isSelected ? AppColors.primaryPink : theme.borderColor,
+                                  color: isSelected
+                                      ? AppColors.primaryPink
+                                      : theme.borderColor,
                                 ),
                                 boxShadow: isSelected
-                                    ? [BoxShadow(color: AppColors.primaryPink.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))]
+                                    ? [
+                                        BoxShadow(
+                                          color: AppColors.primaryPink
+                                              .withOpacity(0.3),
+                                          blurRadius: 8,
+                                          offset: const Offset(0, 3),
+                                        ),
+                                      ]
                                     : null,
                               ),
                               child: Column(
@@ -319,14 +373,24 @@ class _BookingScreenState extends State<BookingScreen> {
                                     time,
                                     textAlign: TextAlign.center,
                                     style: TextStyle(
-                                      color: isFull ? theme.mutedTextColor : (isSelected ? Colors.white : theme.textColor),
+                                      color: isFull
+                                          ? theme.mutedTextColor
+                                          : (isSelected
+                                                ? Colors.white
+                                                : theme.textColor),
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13,
                                     ),
                                   ),
                                   if (isFull) ...[
                                     const SizedBox(height: 2),
-                                    Text('slot_booked'.tr, style: TextStyle(fontSize: 9, color: theme.mutedTextColor)),
+                                    Text(
+                                      'slot_booked'.tr,
+                                      style: TextStyle(
+                                        fontSize: 9,
+                                        color: theme.mutedTextColor,
+                                      ),
+                                    ),
                                   ],
                                 ],
                               ),
@@ -345,13 +409,16 @@ class _BookingScreenState extends State<BookingScreen> {
               Text('select_staff'.tr, style: AppTextStyles.headingMedium),
               const SizedBox(height: 16),
               ..._staffPool.map((staff) {
-                final bookedIds = _bookedStaffBySlot[_selectedTime!] ?? <String>{};
+                final bookedIds =
+                    _bookedStaffBySlot[_selectedTime!] ?? <String>{};
                 final isBusy = bookedIds.contains(staff['id']);
                 final isSelected = _selectedStaffId == staff['id'];
                 final String? imageUrl = staff['imageUrl'];
 
                 return GestureDetector(
-                  onTap: isBusy ? null : () => setState(() => _selectedStaffId = staff['id']),
+                  onTap: isBusy
+                      ? null
+                      : () => setState(() => _selectedStaffId = staff['id']),
                   child: Opacity(
                     opacity: isBusy ? 0.5 : 1.0,
                     child: Container(
@@ -363,7 +430,14 @@ class _BookingScreenState extends State<BookingScreen> {
                         boxShadow: [theme.softShadow],
                         border: isSelected
                             ? Border.all(color: AppColors.primaryPink, width: 2)
-                            : (staff['isOwner'] == true ? Border.all(color: AppColors.primaryPink.withOpacity(0.4), width: 1) : null),
+                            : (staff['isOwner'] == true
+                                  ? Border.all(
+                                      color: AppColors.primaryPink.withOpacity(
+                                        0.4,
+                                      ),
+                                      width: 1,
+                                    )
+                                  : null),
                       ),
                       child: Row(
                         children: [
@@ -374,18 +448,33 @@ class _BookingScreenState extends State<BookingScreen> {
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
                               border: Border.all(
-                                color: staff['isOwner'] == true ? AppColors.primaryPink : theme.borderColor,
+                                color: staff['isOwner'] == true
+                                    ? AppColors.primaryPink
+                                    : theme.borderColor,
                                 width: 2,
                               ),
-                              image: (imageUrl != null && imageUrl.isNotEmpty && _getImageProvider(imageUrl) != null)
-                                  ? DecorationImage(image: _getImageProvider(imageUrl)!, fit: BoxFit.cover)
+                              image:
+                                  (imageUrl != null &&
+                                      imageUrl.isNotEmpty &&
+                                      _getImageProvider(imageUrl) != null)
+                                  ? DecorationImage(
+                                      image: _getImageProvider(imageUrl)!,
+                                      fit: BoxFit.cover,
+                                    )
                                   : null,
                             ),
-                            child: (imageUrl == null || imageUrl.isEmpty || _getImageProvider(imageUrl) == null)
+                            child:
+                                (imageUrl == null ||
+                                    imageUrl.isEmpty ||
+                                    _getImageProvider(imageUrl) == null)
                                 ? Icon(
-                              staff['isOwner'] == true ? Icons.star : Icons.person,
-                              color: staff['isOwner'] == true ? AppColors.primaryPink : theme.mutedTextColor,
-                            )
+                                    staff['isOwner'] == true
+                                        ? Icons.star
+                                        : Icons.person,
+                                    color: staff['isOwner'] == true
+                                        ? AppColors.primaryPink
+                                        : theme.mutedTextColor,
+                                  )
                                 : null,
                           ),
                           const SizedBox(width: 14),
@@ -400,37 +489,68 @@ class _BookingScreenState extends State<BookingScreen> {
                                     Flexible(
                                       child: Text(
                                         staff['name'],
-                                        style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor),
+                                        style: AppTextStyles.bodyLarge
+                                            ?.copyWith(
+                                              fontWeight: FontWeight.bold,
+                                              color: theme.textColor,
+                                            ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
                                     if (staff['isOwner'] == true) ...[
                                       const SizedBox(width: 6),
                                       Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primaryPink.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(6),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 6,
+                                          vertical: 1,
                                         ),
-                                        child: Text('ustad'.tr, style: const TextStyle(fontSize: 9, color: AppColors.primaryPink, fontWeight: FontWeight.w600)),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primaryPink
+                                              .withOpacity(0.1),
+                                          borderRadius: BorderRadius.circular(
+                                            6,
+                                          ),
+                                        ),
+                                        child: Text(
+                                          'ustad'.tr,
+                                          style: const TextStyle(
+                                            fontSize: 9,
+                                            color: AppColors.primaryPink,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                       ),
                                     ],
                                   ],
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  staff['isOwner'] == true ? 'ustad_owner'.tr : 'shagird_worker'.tr,
-                                  style: AppTextStyles.label.copyWith(color: theme.mutedTextColor, fontSize: 11),
+                                  staff['isOwner'] == true
+                                      ? 'ustad_owner'.tr
+                                      : 'shagird_worker'.tr,
+                                  style: AppTextStyles.label.copyWith(
+                                    color: theme.mutedTextColor,
+                                    fontSize: 11,
+                                  ),
                                 ),
                                 if ((staff['rating'] as double) > 0) ...[
                                   const SizedBox(height: 2),
                                   Row(
                                     children: [
-                                      const Icon(Icons.star_rounded, size: 12, color: Colors.amber),
+                                      const Icon(
+                                        Icons.star_rounded,
+                                        size: 12,
+                                        color: Colors.amber,
+                                      ),
                                       const SizedBox(width: 2),
                                       Text(
-                                        (staff['rating'] as double).toStringAsFixed(1),
-                                        style: TextStyle(fontSize: 11, color: theme.mutedTextColor, fontWeight: FontWeight.w600),
+                                        (staff['rating'] as double)
+                                            .toStringAsFixed(1),
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          color: theme.mutedTextColor,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ],
                                   ),
@@ -441,19 +561,33 @@ class _BookingScreenState extends State<BookingScreen> {
 
                           // Free / Busy / Selected status
                           if (isSelected)
-                            const Icon(Icons.check_circle, color: AppColors.primaryPink)
+                            const Icon(
+                              Icons.check_circle,
+                              color: AppColors.primaryPink,
+                            )
                           else
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 5,
+                              ),
                               decoration: BoxDecoration(
-                                color: (isBusy ? Colors.redAccent : Colors.green).withOpacity(0.1),
+                                color:
+                                    (isBusy ? Colors.redAccent : Colors.green)
+                                        .withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(10),
-                                border: Border.all(color: (isBusy ? Colors.redAccent : Colors.green).withOpacity(0.3)),
+                                border: Border.all(
+                                  color:
+                                      (isBusy ? Colors.redAccent : Colors.green)
+                                          .withOpacity(0.3),
+                                ),
                               ),
                               child: Text(
                                 isBusy ? 'busy'.tr : 'free'.tr,
                                 style: TextStyle(
-                                  color: isBusy ? Colors.redAccent : Colors.green,
+                                  color: isBusy
+                                      ? Colors.redAccent
+                                      : Colors.green,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -469,43 +603,91 @@ class _BookingScreenState extends State<BookingScreen> {
 
             const SizedBox(height: 30),
             // Price Summary Section
-            Obx(() => Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(16), border: Border.all(color: theme.borderColor)),
-              child: Column(
-                children: [
-                  _priceRow('subtotal'.tr, _bookingController.services.where((s) => s['isSelected'] == true).fold(0.0, (sum, s) => sum + (s['price'] as int)), false),
-                  if (_bookingController.discountRate.value > 0)
-                    _priceRow('${'discount'.tr} (${_bookingController.discountRate.value.toInt()}%)',
-                        _bookingController.services.where((s) => s['isSelected'] == true).fold(0.0, (sum, s) => sum + (s['price'] as int)) * (_bookingController.discountRate.value / 100), true),
-                  const Divider(),
-                  _priceRow('total'.tr, _bookingController.totalPrice, false, isTotal: true),
-                ],
+            Obx(
+              () => Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: theme.borderColor),
+                ),
+                child: Column(
+                  children: [
+                    _priceRow(
+                      'subtotal'.tr,
+                      _bookingController.services
+                          .where((s) => s['isSelected'] == true)
+                          .fold(0.0, (sum, s) => sum + (s['price'] as int)),
+                      false,
+                    ),
+                    if (_bookingController.discountRate.value > 0)
+                      _priceRow(
+                        '${'discount'.tr} (${_bookingController.discountRate.value.toInt()}%)',
+                        _bookingController.services
+                                .where((s) => s['isSelected'] == true)
+                                .fold(
+                                  0.0,
+                                  (sum, s) => sum + (s['price'] as int),
+                                ) *
+                            (_bookingController.discountRate.value / 100),
+                        true,
+                      ),
+                    const Divider(),
+                    _priceRow(
+                      'total'.tr,
+                      _bookingController.totalPrice,
+                      false,
+                      isTotal: true,
+                    ),
+                  ],
+                ),
               ),
-            )),
+            ),
             const SizedBox(height: 40),
-            Obx(() => AppButton(
-              label: '${'confirm_booking'.tr} (Rs. ${_bookingController.totalPrice.toInt()})',
-              onTap: (_selectedDay != null && _selectedTime != null && _selectedStaffId != null)
-                  ? _submitBooking
-                  : () => Get.snackbar('required'.tr, 'please_select'.tr),
-            )),
+            Obx(
+              () => AppButton(
+                label:
+                    '${'confirm_booking'.tr} (Rs. ${_bookingController.totalPrice.toInt()})',
+                onTap:
+                    (_selectedDay != null &&
+                        _selectedTime != null &&
+                        _selectedStaffId != null)
+                    ? _submitBooking
+                    : () => Get.snackbar('required'.tr, 'please_select'.tr),
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _priceRow(String label, double price, bool isDiscount, {bool isTotal = false}) {
+  Widget _priceRow(
+    String label,
+    double price,
+    bool isDiscount, {
+    bool isTotal = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label, style: TextStyle(fontWeight: isTotal ? FontWeight.bold : FontWeight.normal, color: isDiscount ? Colors.green : null)),
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              color: isDiscount ? Colors.green : null,
+            ),
+          ),
           Text(
             '${isDiscount ? '-' : ''}Rs. ${price.toInt()}',
-            style: TextStyle(fontWeight: isTotal ? FontWeight.bold : FontWeight.normal, color: isDiscount ? Colors.green : (isTotal ? AppColors.primaryPink : null)),
+            style: TextStyle(
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              color: isDiscount
+                  ? Colors.green
+                  : (isTotal ? AppColors.primaryPink : null),
+            ),
           ),
         ],
       ),
@@ -517,7 +699,9 @@ class _BookingScreenState extends State<BookingScreen> {
 
     final authService = Get.find<AuthService>();
     final bookingRef = FirebaseFirestore.instance.collection('bookings').doc();
-    final selectedStaff = _staffPool.firstWhere((s) => s['id'] == _selectedStaffId);
+    final selectedStaff = _staffPool.firstWhere(
+      (s) => s['id'] == _selectedStaffId,
+    );
 
     final bookingData = {
       'bookingId': bookingRef.id,
@@ -525,10 +709,13 @@ class _BookingScreenState extends State<BookingScreen> {
       'customerName': Get.find<UserController>().userName.value,
       'customerImage': Get.find<UserController>().userProfileImage.value,
       'ownerId': widget.ownerId,
-      'salonName': widget.salon['salonName'] ?? widget.salon['name'] ?? 'Unnamed Salon',
+      'salonName':
+          widget.salon['salonName'] ?? widget.salon['name'] ?? 'Unnamed Salon',
       'services': _bookingController.selectedServices,
       'totalPrice': _bookingController.totalPrice.toInt(),
-      'date': Timestamp.fromDate(DateTime(_selectedDay!.year, _selectedDay!.month, _selectedDay!.day)),
+      'date': Timestamp.fromDate(
+        DateTime(_selectedDay!.year, _selectedDay!.month, _selectedDay!.day),
+      ),
       'timeSlot': _selectedTime,
       'staffId': _selectedStaffId,
       'staffName': selectedStaff['name'],
@@ -545,10 +732,13 @@ class _BookingScreenState extends State<BookingScreen> {
       // the booking success flow even if the notification fails.
       _notifyOwnerOfNewBooking(bookingRef.id);
 
-      Get.to(() => SuccessScreen(
-        bookingId: bookingRef.id,
-        dateTime: '${_selectedDay!.toString().split(' ')[0]} · $_selectedTime',
-      ));
+      Get.to(
+        () => SuccessScreen(
+          bookingId: bookingRef.id,
+          dateTime:
+              '${_selectedDay!.toString().split(' ')[0]} · $_selectedTime',
+        ),
+      );
     } catch (e) {
       setState(() => _isLoading = false);
       Get.snackbar(
@@ -575,7 +765,9 @@ class _BookingScreenState extends State<BookingScreen> {
         body: jsonEncode({'bookingId': bookingId}),
       );
     } catch (e) {
-      debugPrint('Owner notification failed (booking itself still succeeded): $e');
+      debugPrint(
+        'Owner notification failed (booking itself still succeeded): $e',
+      );
     }
   }
 }

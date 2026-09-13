@@ -62,7 +62,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
   // Selects (in the booking controller) whichever loaded services match the
   // ad's included service names, then jumps to the Services tab so the
   // bottom "Book Now" button becomes enabled with those services pre-picked.
-  void _bookThisOffer(List<Map<String, dynamic>> offerServices) {
+  void _bookThisOffer(List<Map<String, dynamic>> offerServices, num percentOff) {
     final offerNames = offerServices.map((s) => (s['name'] ?? '').toString().trim().toLowerCase()).toSet();
 
     if (_bookingController.services.isEmpty) {
@@ -83,6 +83,10 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
       Get.snackbar('error'.tr, 'offer_services_unavailable'.tr);
       return;
     }
+
+    // This was the actual bug: the offer's % off was never applied anywhere,
+    // so checkout always summed full prices regardless of the offer.
+    _bookingController.discountRate.value = percentOff.toDouble();
 
     setState(() => _selectedTab = 0);
   }
@@ -132,6 +136,25 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
         child: const Icon(Icons.broken_image, color: Colors.grey),
       ),
     );
+  }
+
+  // Formats the salon's real businessHours into "9 AM - 9 PM" style text.
+  // Falls back to the same default booking_screen.dart uses (10 AM - 8 PM)
+  // for older salon accounts that haven't set hours yet.
+  String _formatBusinessHours(Map<String, dynamic>? businessHours) {
+    final openStr = businessHours?['openTime'] as String? ?? '10:00';
+    final closeStr = businessHours?['closeTime'] as String? ?? '20:00';
+
+    String to12Hour(String time24) {
+      final parts = time24.split(':');
+      final hour24 = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+      final period = hour24 >= 12 ? 'PM' : 'AM';
+      final hour12 = hour24 > 12 ? hour24 - 12 : (hour24 == 0 ? 12 : hour24);
+      return minute == 0 ? '$hour12$period' : '$hour12:${minute.toString().padLeft(2, '0')}$period';
+    }
+
+    return '${to12Hour(openStr)} - ${to12Hour(closeStr)}';
   }
 
   @override
@@ -309,7 +332,8 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                               _infoItem(Icons.star_rounded, Colors.amber, salonRating.toStringAsFixed(1),
                                   salonReviewCount > 0 ? '${'rating'.tr} ($salonReviewCount)' : 'rating'.tr),
                               _infoItem(Icons.location_on_rounded, AppColors.primaryPink, distance, 'distance'.tr),
-                              _infoItem(Icons.access_time_filled_rounded, Colors.blue, '9AM - 9PM', 'timing'.tr),
+                              _infoItem(Icons.access_time_filled_rounded, Colors.blue,
+                                  _formatBusinessHours(salonData['businessHours'] ?? widget.salon?['businessHours']), 'timing'.tr),
                             ],
                           ),
                           const SizedBox(height: 20),
@@ -563,7 +587,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                 SizedBox(
                                   width: double.infinity,
                                   child: ElevatedButton(
-                                    onPressed: () => _bookThisOffer(services),
+                                    onPressed: () => _bookThisOffer(services, adData['percentOff'] ?? 0),
                                     style: ElevatedButton.styleFrom(
                                       backgroundColor: AppColors.primaryPink,
                                       padding: const EdgeInsets.symmetric(vertical: 14),
