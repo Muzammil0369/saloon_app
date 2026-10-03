@@ -3,7 +3,6 @@ import 'package:get/get_utils/src/extensions/internacionalization.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
-import 'package:saloon_app/features/owner/registration/owner_documents_screen.dart';
 import 'package:saloon_app/shared/widgets/app_button.dart';
 import 'package:saloon_app/shared/widgets/progress_step_bar.dart';
 
@@ -33,7 +32,7 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('services'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('services'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: theme.textColor),
           onPressed: () => Navigator.pop(context),
@@ -48,12 +47,12 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
               const ProgressStepBar(totalSteps: 7, currentStep: 4),
               const SizedBox(height: 30),
 
-              Text('your_menu'.tr + ' ✂️',
-                style: AppTextStyles.displayLarge?.copyWith(fontSize: 25, color: theme.textColor),
+              Text('${'your_menu'.tr} ✂️',
+                style: AppTextStyles.displayLarge.copyWith(fontSize: 25, color: theme.textColor),
               ),
               const SizedBox(height: 8),
               Text('list_services'.tr,
-                  style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor)),
+                  style: AppTextStyles.tagline.copyWith(color: theme.mutedTextColor)),
               
               const SizedBox(height: 30),
 
@@ -79,7 +78,7 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
                     children: [
                       const Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryPink),
                       const SizedBox(width: 8),
-                      Text('add_new_service'.tr, style: AppTextStyles.buttonText?.copyWith(color: AppColors.primaryPink)),
+                      Text('add_new_service'.tr, style: AppTextStyles.buttonText.copyWith(color: AppColors.primaryPink)),
                     ],
                   ),
                 ),
@@ -119,7 +118,7 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(service['name']!, style: AppTextStyles.headingSmall?.copyWith(color: theme.textColor)),
+                Text(service['name']!, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
                 const SizedBox(height: 4),
                 Text('${'rs'.tr} ${service['price']} · ${service['duration']} ${'min'.tr}',
                   style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
@@ -158,7 +157,7 @@ class _OwnerServicesScreenState extends State<OwnerServicesScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('edit_service'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+              Text('edit_service'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
               const SizedBox(height: 20),
               TextField(controller: nameCtrl, decoration: InputDecoration(labelText: 'service_name'.tr)),
               const SizedBox(height: 12),

@@ -113,7 +113,7 @@ class _CustomerRegistrationScreenState extends State<CustomerRegistrationScreen>
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('sign_up'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('sign_up'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: theme.textColor),
           onPressed: () => Get.back(),
@@ -128,12 +128,12 @@ class _CustomerRegistrationScreenState extends State<CustomerRegistrationScreen>
               const ProgressStepBar(totalSteps: 2, currentStep: 1),
               const SizedBox(height: 30),
 
-              Text('create_account'.tr + ' ✨',
-                style: AppTextStyles.displayLarge?.copyWith(fontSize: 26, color: theme.textColor),
+              Text('${'create_account'.tr} ✨',
+                style: AppTextStyles.displayLarge.copyWith(fontSize: 26, color: theme.textColor),
               ),
               const SizedBox(height: 8),
               Text('sign_up_customer_desc'.tr,
-                  style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor)),
+                  style: AppTextStyles.tagline.copyWith(color: theme.mutedTextColor)),
 
               const SizedBox(height: 32),
 
@@ -286,7 +286,7 @@ class _CustomerRegistrationScreenState extends State<CustomerRegistrationScreen>
   }
 
   Widget _buildLabel(String text) {
-    return Text(text, style: AppTextStyles.headingSmall?.copyWith(color: ThemeHelper(context).textColor));
+    return Text(text, style: AppTextStyles.headingSmall.copyWith(color: ThemeHelper(context).textColor));
   }
 
   Widget _buildTextField({

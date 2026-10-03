@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:cloudinary_public/cloudinary_public.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
@@ -178,7 +177,7 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
     } catch (e) {
       setState(() => _isLoading = false);
       debugPrint('Registration error: $e');
-      Get.snackbar('error'.tr, 'failed'.tr + ': $e', backgroundColor: Colors.redAccent, colorText: Colors.white);
+      Get.snackbar('error'.tr, '${'failed'.tr}: $e', backgroundColor: Colors.redAccent, colorText: Colors.white);
     }
   }
 
@@ -193,7 +192,7 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('review'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('review'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: theme.textColor),
           onPressed: () => Navigator.pop(context),
@@ -232,11 +231,11 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
                           const Icon(Icons.fact_check, color: Colors.white, size: 40),
                           const SizedBox(height: 12),
                           Text('review_details'.tr,
-                            style: AppTextStyles.displayMedium?.copyWith(color: Colors.white, fontSize: 22),
+                            style: AppTextStyles.displayMedium.copyWith(color: Colors.white, fontSize: 22),
                           ),
                           const SizedBox(height: 4),
                           Text('verify_before_submit'.tr,
-                            style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 13),
+                            style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 13),
                             textAlign: TextAlign.center,
                           ),
                         ],
@@ -341,7 +340,7 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
                     Container(
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
-                        color: Colors.blue.withOpacity(0.05),
+                        color: Colors.blue.withValues(alpha: 0.05),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: Colors.blue.
                         withOpacity(0.2)),
@@ -376,7 +375,7 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
       children: [
         Icon(icon, color: AppColors.primaryPink, size: 20),
         const SizedBox(width: 8),
-        Text(title, style: AppTextStyles.headingSmall?.copyWith(fontSize: 16)),
+        Text(title, style: AppTextStyles.headingSmall.copyWith(fontSize: 16)),
       ],
     );
   }
@@ -401,7 +400,7 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         border: Border(
-          bottom: BorderSide(color: theme.borderColor.withOpacity(0.5)),
+          bottom: BorderSide(color: theme.borderColor.withValues(alpha: 0.5)),
         ),
       ),
       child: Row(

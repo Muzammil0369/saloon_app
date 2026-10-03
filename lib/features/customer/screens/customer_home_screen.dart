@@ -6,7 +6,6 @@ import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
-import 'package:saloon_app/core/theme/app_gradients.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/controllers/user_controller.dart';
@@ -143,13 +142,13 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         );
         final double distKm = distInMeters / 1000;
         distanceValue = distKm;
-        String unit = Get.find<LanguageController>().languageCode == 'ur' ? 'km'.tr : 'km';
+        String unit = Get.find<LanguageController>().languageCode.value == 'ur' ? 'km'.tr : 'km';
         distanceText = '${distKm.toStringAsFixed(1)} $unit';
       }
 
       return {
         'ownerId': doc.id,
-        'name': Get.find<LanguageController>().languageCode == 'ur'
+        'name': Get.find<LanguageController>().languageCode.value == 'ur'
             ? (data['salonName_ur'] ?? data['salonName'] ?? 'Unnamed Salon')
             : (data['salonName'] ?? 'Unnamed Salon'),
         'salonName': data['salonName'] ?? 'Unnamed Salon', // redundant but safe
@@ -248,7 +247,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(greeting, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
-                                Obx(() => Text('${userController.userName.value}!', style: AppTextStyles.displayMedium?.copyWith(fontSize: 22,color: theme.textColor, fontWeight: FontWeight.w800))),
+                                Obx(() => Text('${userController.userName.value}!', style: AppTextStyles.displayMedium.copyWith(fontSize: 22,color: theme.textColor, fontWeight: FontWeight.w800))),
                               ],
                             ),
                           ),
@@ -257,9 +256,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             theme: theme,
                             onTap: () => Get.to(() => const NotificationsScreen()),
                           ),
-                          const SizedBox(width: 10),
-                          _iconBtn(Icons.person_outline_rounded, theme, () => widget.onTabChange(3)),
-                        ],
+                         ],
                       ),
                       const SizedBox(height: 20),
                       // Search Bar
@@ -276,7 +273,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             children: [
                               const Icon(Icons.search_rounded, color: AppColors.primaryPink, size: 20),
                               const SizedBox(width: 12),
-                              Text('search_hint'.tr, style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
+                              Text('search_hint'.tr, style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor)),
                               const Spacer(),
                               const Icon(Icons.tune_rounded, color: AppColors.primaryPink, size: 20),
                             ],
@@ -449,19 +446,19 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     );
   }
 
-  Widget _iconBtn(IconData icon, ThemeHelper theme, VoidCallback onTap) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: theme.lightPinkColor,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Icon(icon, color: AppColors.primaryPink, size: 22),
-      ),
-    );
-  }
+  // Widget _iconBtn(IconData icon, ThemeHelper theme, VoidCallback onTap) {
+  //   return GestureDetector(
+  //     onTap: onTap,
+  //     child: Container(
+  //       padding: const EdgeInsets.all(10),
+  //       decoration: BoxDecoration(
+  //         color: theme.lightPinkColor,
+  //         borderRadius: BorderRadius.circular(12),
+  //       ),
+  //       child: Icon(icon, color: AppColors.primaryPink, size: 22),
+  //     ),
+  //   );
+  // }
 
   Widget _buildRecentSalons(ThemeHelper theme) {
     return Obx(() {

@@ -145,14 +145,14 @@ class _QRScannerScreenState extends State<QRScannerScreen> {
             child: Text(
               'align_qr_frame'.tr,
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
+              style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 16),
             ),
           ),
 
           // Verification indicator
           if (_isVerifying)
             Container(
-              color: Colors.black.withOpacity(0.7),
+              color: Colors.black.withValues(alpha: 0.7),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

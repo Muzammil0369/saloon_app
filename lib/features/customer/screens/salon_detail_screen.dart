@@ -186,7 +186,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
           }
 
           final salonData = salonSnapshot.data!.data() as Map<String, dynamic>;
-          final String salonName = Get.find<LanguageController>().languageCode == 'ur'
+          final String salonName = Get.find<LanguageController>().languageCode.value == 'ur'
               ? (salonData['salonName_ur'] ?? salonData['salonName'] ?? widget.salon?['name'] ?? 'Unnamed Salon')
               : (salonData['salonName'] ?? widget.salon?['name'] ?? 'Unnamed Salon');
           final double salonRating = (salonData['rating'] ?? widget.salon?['rating'] ?? 0.0).toDouble();
@@ -228,9 +228,9 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                               begin: Alignment.topCenter,
                               end: Alignment.bottomCenter,
                               colors: [
-                                Colors.black.withOpacity(0.4),
+                                Colors.black.withValues(alpha: 0.4),
                                 Colors.transparent,
-                                Colors.black.withOpacity(0.6),
+                                Colors.black.withValues(alpha: 0.6),
                               ],
                             ),
                           ),
@@ -242,7 +242,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                             icon: Container(
                               padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.3),
+                                color: Colors.black.withValues(alpha: 0.3),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
@@ -284,7 +284,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                               const SizedBox(height: 8),
                               Text(
                                 salonName,
-                                style: AppTextStyles.displayMedium?.copyWith(
+                                style: AppTextStyles.displayMedium.copyWith(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -296,14 +296,14 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                   const SizedBox(width: 4),
                                   Text(
                                     salonRating.toStringAsFixed(1),
-                                    style: AppTextStyles.bodyMedium?.copyWith(color: Colors.white),
+                                    style: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
                                   ),
                                   const SizedBox(width: 16),
                                   Text(
                                     category,
                                     style: AppTextStyles.label.copyWith(
-                                      color: Colors.white.withOpacity(0.8),
-                                      backgroundColor: Colors.white.withOpacity(0.2),
+                                      color: Colors.white.withValues(alpha: 0.8),
+                                      backgroundColor: Colors.white.withValues(alpha: 0.2),
                                     ),
                                   ),
                                 ],
@@ -344,7 +344,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                               Expanded(
                                 child: Text(
                                   salonAddress,
-                                  style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                                  style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor),
                                 ),
                               ),
                             ],
@@ -438,7 +438,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                     padding: const EdgeInsets.all(20),
                                     child: Text(
                                       'no_services_available'.tr,
-                                      style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                                      style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor),
                                     ),
                                   ),
                                 );
@@ -460,7 +460,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                       decoration: BoxDecoration(
                                         gradient: isSelected
                                             ? LinearGradient(
-                                          colors: [AppColors.lightPink, AppColors.lightPink.withOpacity(0.5)],
+                                          colors: [AppColors.lightPink, AppColors.lightPink.withValues(alpha: 0.5)],
                                         )
                                             : null,
                                         color: isSelected ? null : theme.cardColor,
@@ -472,7 +472,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                         boxShadow: isSelected
                                             ? [
                                           BoxShadow(
-                                            color: AppColors.primaryPink.withOpacity(0.1),
+                                            color: AppColors.primaryPink.withValues(alpha: 0.1),
                                             blurRadius: 8,
                                             offset: const Offset(0, 2),
                                           ),
@@ -495,7 +495,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                               children: [
                                                 Text(
                                                   service['name'] ?? service['serviceName'] ?? 'Unnamed Service',
-                                                  style: AppTextStyles.bodyLarge?.copyWith(
+                                                  style: AppTextStyles.bodyLarge.copyWith(
                                                     fontWeight: FontWeight.w600,
                                                     color: theme.textColor,
                                                   ),
@@ -516,7 +516,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                           ),
                                           Text(
                                             'Rs. ${service['price'] ?? 0}',
-                                            style: AppTextStyles.bodyLarge?.copyWith(
+                                            style: AppTextStyles.bodyLarge.copyWith(
                                               color: AppColors.primaryPink,
                                               fontWeight: FontWeight.bold,
                                             ),
@@ -548,7 +548,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                                     children: [
                                       Icon(Icons.local_offer_outlined, size: 48, color: theme.mutedTextColor),
                                       const SizedBox(height: 12),
-                                      Text('no_active_offers'.tr, style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
+                                      Text('no_active_offers'.tr, style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor)),
                                     ],
                                   ),
                                 ),
@@ -665,7 +665,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                           ? null
                           : [
                         BoxShadow(
-                          color: AppColors.primaryPink.withOpacity(0.3),
+                          color: AppColors.primaryPink.withValues(alpha: 0.3),
                           blurRadius: 12,
                           offset: const Offset(0, 6),
                         ),
@@ -676,7 +676,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                         _bookingController.selectedServices.isEmpty
                             ? 'select_services'.tr
                             : '${'book_now'.tr} (Rs. ${_bookingController.totalPrice.toInt()})',
-                        style: AppTextStyles.bodyLarge?.copyWith(
+                        style: AppTextStyles.bodyLarge.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,
                           letterSpacing: 1,
@@ -701,7 +701,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
         const SizedBox(height: 6),
         Text(
           value,
-          style: AppTextStyles.bodyMedium?.copyWith(
+          style: AppTextStyles.bodyMedium.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.textColor,
           ),

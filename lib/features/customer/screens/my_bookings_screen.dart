@@ -47,7 +47,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('my_bookings'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('my_bookings'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -212,9 +212,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.15),
+                    color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: statusColor.withOpacity(0.3)),
+                    border: Border.all(color: statusColor.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
@@ -304,9 +304,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                       ? Container(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
+                      color: Colors.green.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.green.withOpacity(0.3)),
+                      border: Border.all(color: Colors.green.withValues(alpha: 0.3)),
                     ),
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
@@ -347,9 +347,9 @@ class _MyBookingsScreenState extends State<MyBookingsScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.amber.withOpacity(0.1),
+                    color: Colors.amber.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: Colors.amber.withOpacity(0.3)),
+                    border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
                   ),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,

@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:dotted_decoration/dotted_decoration.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_text_styles.dart';
 import '../../core/theme/theme_helper.dart';
 
 class UploadBox extends StatefulWidget {
@@ -57,7 +56,7 @@ class _UploadBoxState extends State<UploadBox> {
         height: 200,
         width: double.infinity,
         decoration: DottedDecoration(
-          color: theme.isDark ? AppColors.primaryPink.withOpacity(0.5) : Colors.pink.shade200,
+          color: theme.isDark ? AppColors.primaryPink.withValues(alpha: 0.5) : Colors.pink.shade200,
           shape: Shape.box,
           strokeWidth: 2,
           borderRadius: BorderRadius.circular(12),

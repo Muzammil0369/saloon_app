@@ -85,7 +85,7 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
             children: [
               Text(
                 existingService == null ? 'add_service'.tr : 'edit_service'.tr,
-                style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor),
+                style: AppTextStyles.headingLarge.copyWith(color: theme.textColor),
               ),
               const SizedBox(height: 24),
               _buildField('service_name'.tr, 'e.g. Classic Haircut', nameCtrl, theme),
@@ -167,7 +167,7 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('service_menu'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('service_menu'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -228,7 +228,7 @@ class _OwnerServicesManagementScreenState extends State<OwnerServicesManagementS
                         children: [
                           Text(
                             s['name'] ?? 'Unnamed',
-                            style: AppTextStyles.bodyLarge?.copyWith(
+                            style: AppTextStyles.bodyLarge.copyWith(
                               fontWeight: FontWeight.bold,
                               color: theme.textColor,
                             ),

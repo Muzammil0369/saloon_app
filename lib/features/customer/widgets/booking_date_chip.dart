@@ -36,7 +36,7 @@ class BookingDateChip extends StatelessWidget {
           ),
           boxShadow: isSelected ? [
             BoxShadow(
-              color: AppColors.primaryPink.withOpacity(0.3),
+              color: AppColors.primaryPink.withValues(alpha: 0.3),
               blurRadius: 8,
               offset: const Offset(0, 4),
             )
@@ -48,14 +48,14 @@ class BookingDateChip extends StatelessWidget {
             Text(
               dayName,
               style: AppTextStyles.label.copyWith(
-                color: isSelected ? Colors.white.withOpacity(0.8) : theme.mutedTextColor,
+                color: isSelected ? Colors.white.withValues(alpha: 0.8) : theme.mutedTextColor,
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               dayNum,
-              style: AppTextStyles.headingMedium?.copyWith(
+              style: AppTextStyles.headingMedium.copyWith(
                 color: isSelected ? Colors.white : theme.textColor,
                 fontSize: 18,
               ),

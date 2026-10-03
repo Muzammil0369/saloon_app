@@ -152,7 +152,7 @@ class _WithdrawalManagementScreenState extends State<WithdrawalManagementScreen>
                   children: [
                     CircleAvatar(
                       radius: 20,
-                      backgroundColor: statusColor.withOpacity(0.1),
+                      backgroundColor: statusColor.withValues(alpha: 0.1),
                       child: Icon(Icons.account_balance_wallet, color: statusColor, size: 20),
                     ),
                     const SizedBox(width: 12),
@@ -168,7 +168,7 @@ class _WithdrawalManagementScreenState extends State<WithdrawalManagementScreen>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: statusColor.withOpacity(0.1),
+                    color: statusColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(statusLabel, style: TextStyle(color: statusColor, fontSize: 12, fontWeight: FontWeight.w600)),

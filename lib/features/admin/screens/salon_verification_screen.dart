@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get/get.dart';
@@ -117,7 +116,7 @@ class SalonVerificationScreen extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: AdminColors.border),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 10, offset: const Offset(0, 4)),
         ],
       ),
       child: ExpansionTile(
@@ -125,7 +124,7 @@ class SalonVerificationScreen extends StatelessWidget {
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: AdminColors.primary.withOpacity(0.1),
+            color: AdminColors.primary.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(12),
           ),
           child: const Icon(Icons.store, color: AdminColors.primary, size: 24),

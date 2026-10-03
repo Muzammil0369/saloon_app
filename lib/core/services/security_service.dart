@@ -188,7 +188,7 @@ class SecurityService {
             code: 'WRONG_OWNER',
           );
         }
-        throw e;
+        rethrow;
       }
 
       // Verify booking exists and is paid

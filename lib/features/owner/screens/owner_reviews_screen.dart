@@ -20,7 +20,7 @@ class OwnerReviewsScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('reviews_ratings'.tr, style: AppTextStyles.headingLarge?.copyWith(fontSize: 17,color: theme.textColor)),
+        title: Text('reviews_ratings'.tr, style: AppTextStyles.headingLarge.copyWith(fontSize: 17,color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),

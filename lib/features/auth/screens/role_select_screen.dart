@@ -54,17 +54,17 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
               const SizedBox(height: 40),
 
               Obx(() => Text(
-                languageController.languageCode == 'ur'
+                languageController.languageCode.value == 'ur'
                     ? 'گلیم بک میں خوش آمدید! ✨'
                     : 'welcome_glambook'.tr,
-                style: AppTextStyles.displayLarge?.copyWith(color: theme.textColor),
+                style: AppTextStyles.displayLarge.copyWith(color: theme.textColor),
               )),
               const SizedBox(height: 12),
               Obx(() => Text(
-                languageController.languageCode == 'ur'
+                languageController.languageCode.value == 'ur'
                     ? 'منتخب کریں کہ آپ ایپ کو کیسے استعمال کرنا چاہتے ہیں'
                     : 'choose_app_usage'.tr,
-                style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor),
+                style: AppTextStyles.tagline.copyWith(color: theme.mutedTextColor),
               )),
 
               const SizedBox(height: 50),
@@ -105,7 +105,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryPink.withOpacity(0.3),
+                        color: AppColors.primaryPink.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),
@@ -114,7 +114,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
                   child: Center(
                     child: Text(
                       'continue'.tr,
-                      style: AppTextStyles.buttonText?.copyWith(fontSize: 16),
+                      style: AppTextStyles.buttonText.copyWith(fontSize: 16),
                     ),
                   ),
                 ),
@@ -125,13 +125,13 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
                   onTap: () => Get.toNamed('/login'),
                   child: Obx(() => RichText(
                     text: TextSpan(
-                      text: languageController.languageCode == 'ur'
+                      text: languageController.languageCode.value == 'ur'
                           ? 'پہلے سے اکاؤنٹ ہے؟ '
-                          : 'already_have_account'.tr + ' ',
-                      style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                          : '${'already_have_account'.tr} ',
+                      style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor),
                       children: [
                         TextSpan(
-                          text: languageController.languageCode == 'ur'
+                          text: languageController.languageCode.value == 'ur'
                               ? 'لاگ ان کریں'
                               : 'sign_in'.tr,
                           style: AppTextStyles.linkText,
@@ -150,7 +150,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
   }
 
   Widget _langBtn(String label, String code) {
-    final isSelected = languageController.languageCode == code;
+    final isSelected = languageController.languageCode.value == code;
     return GestureDetector(
       onTap: () => languageController.switchLanguage(code),
       child: Container(
@@ -178,7 +178,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(24),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primaryPink.withOpacity(0.05) : theme.cardColor,
+          color: isSelected ? AppColors.primaryPink.withValues(alpha: 0.05) : theme.cardColor,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
             color: isSelected ? AppColors.primaryPink : theme.borderColor,
@@ -186,7 +186,7 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
           ),
           boxShadow: isSelected ? [
             BoxShadow(
-              color: AppColors.primaryPink.withOpacity(0.1),
+              color: AppColors.primaryPink.withValues(alpha: 0.1),
               blurRadius: 10,
               offset: const Offset(0, 4),
             )
@@ -207,9 +207,9 @@ class _RoleSelectScreenState extends State<RoleSelectScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(subtitle, style: AppTextStyles.headingMedium?.copyWith(color: theme.textColor)),
+                  Text(subtitle, style: AppTextStyles.headingMedium.copyWith(color: theme.textColor)),
                   const SizedBox(height: 4),
-                  Text(title, style: AppTextStyles.bodySmall?.copyWith(color: theme.mutedTextColor)),
+                  Text(title, style: AppTextStyles.bodySmall.copyWith(color: theme.mutedTextColor)),
                 ],
               ),
             ),

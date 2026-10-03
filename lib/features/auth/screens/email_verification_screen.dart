@@ -120,7 +120,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     if (sent) {
       Get.snackbar(
         'email_sent'.tr,
-        'verification_email_resent'.tr + ' ${widget.email}',
+        '${'verification_email_resent'.tr} ${widget.email}',
         backgroundColor: AppColors.primaryPink,
         colorText: Colors.white,
       );
@@ -167,7 +167,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
                 Text(
                   _isVerified ? 'email_verified'.tr : 'verify_email'.tr,
-                  style: AppTextStyles.displayMedium?.copyWith(
+                  style: AppTextStyles.displayMedium.copyWith(
                     color: theme.textColor,
                     fontWeight: FontWeight.bold,
                   ),
@@ -178,7 +178,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
                 Text(
                   'verification_sent'.tr,
-                  style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                  style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 4),
@@ -190,7 +190,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   ),
                   child: Text(
                     widget.email,
-                    style: AppTextStyles.bodyLarge?.copyWith(
+                    style: AppTextStyles.bodyLarge.copyWith(
                       color: AppColors.primaryPink,
                       fontWeight: FontWeight.w600,
                     ),
@@ -235,7 +235,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       const SizedBox(width: 12),
                       Text(
                         'waiting_verification'.tr,
-                        style: AppTextStyles.bodySmall?.copyWith(color: theme.mutedTextColor),
+                        style: AppTextStyles.bodySmall.copyWith(color: theme.mutedTextColor),
                       ),
                     ],
                   ),
@@ -250,7 +250,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                           ? const CircularProgressIndicator(color: AppColors.primaryPink)
                           : AppButton(
                         label: _secondsRemaining > 0
-                            ? 'resend_in'.tr + ' ${_secondsRemaining}s'
+                            ? '${'resend_in'.tr} ${_secondsRemaining}s'
                             : 'resend_email'.tr,
                         onTap: _secondsRemaining > 0 ? () {} : _resendEmail,
                         isOutline: _secondsRemaining > 0,

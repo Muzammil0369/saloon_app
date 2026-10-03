@@ -42,15 +42,15 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.05),
+                      color: Colors.red.withValues(alpha: 0.05),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.withOpacity(0.2)),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
                         CircleAvatar(
                           radius: 16,
-                          backgroundColor: Colors.red.withOpacity(0.1),
+                          backgroundColor: Colors.red.withValues(alpha: 0.1),
                           child: Text(userName[0].toUpperCase(), style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
                         ),
                         const SizedBox(width: 8),
@@ -159,7 +159,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: isActive ? Colors.orange.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                  color: isActive ? Colors.orange.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Row(
@@ -271,9 +271,9 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.red.withOpacity(0.1),
+                      color: Colors.red.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.red.withOpacity(0.3)),
+                      border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       children: [
@@ -529,7 +529,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: isActive ? Colors.grey.shade200 : Colors.orange.shade300),
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 10, offset: const Offset(0, 2))],
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 10, offset: const Offset(0, 2))],
               ),
               child: Padding(
                 padding: const EdgeInsets.all(20),
@@ -626,7 +626,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(12),
                                 color: Colors.red.shade600,
-                                boxShadow: [BoxShadow(color: Colors.red.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 2))],
+                                boxShadow: [BoxShadow(color: Colors.red.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 2))],
                               ),
                               child: const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                                 Icon(Icons.delete_forever, size: 20, color: Colors.white),
@@ -659,7 +659,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       builder: (context, snapshot) {
         if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
         final users = _filterUsers(snapshot.data!.docs);
-        if (users.isEmpty) return _emptyState(role + 's');
+        if (users.isEmpty) return _emptyState('${role}s');
 
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 24),

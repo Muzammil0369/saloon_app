@@ -11,7 +11,6 @@ import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/services/auth_service.dart';
 import 'package:saloon_app/core/controllers/payment_controller.dart';
-import 'package:saloon_app/features/owner/screens/qr_scanner_screen.dart';
 import 'package:intl/intl.dart';
 
 const String _notifyBookingStatusUrl =
@@ -41,7 +40,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: theme.cardColor,
         elevation: 0,
-        title: Text('schedule'.tr, style: AppTextStyles.headingMedium?.copyWith(color: theme.textColor)),
+        title: Text('schedule'.tr, style: AppTextStyles.headingMedium.copyWith(color: theme.textColor)),
       ),
       body: SafeArea(
         child: Column(
@@ -70,7 +69,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text('${date.day}', style: AppTextStyles.headingSmall?.copyWith(
+                          Text('${date.day}', style: AppTextStyles.headingSmall.copyWith(
                             color: selected ? Colors.white : theme.textColor,
                           )),
                           Text(
@@ -116,7 +115,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                           const SizedBox(height: 16),
                           Text(
                             '${'no_bookings_date'.tr} ${_selectedDate.day}/${_selectedDate.month}',
-                            style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                            style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor),
                           ),
                         ],
                       ),
@@ -247,7 +246,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           decoration: BoxDecoration(
-                            color: AppColors.primaryPink.withOpacity(0.08),
+                            color: AppColors.primaryPink.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Row(
@@ -269,11 +268,11 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                       ],
                       Text(
                         time.split(' ').first,
-                        style: AppTextStyles.headingSmall?.copyWith(color: AppColors.primaryPink),
+                        style: AppTextStyles.headingSmall.copyWith(color: AppColors.primaryPink),
                       ),
                       Text(
                         time.split(' ').last,
-                        style: AppTextStyles.label?.copyWith(color: AppColors.primaryPink),
+                        style: AppTextStyles.label.copyWith(color: AppColors.primaryPink),
                       ),
 
                     ],
@@ -297,7 +296,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                                 Expanded(
                                   child: Text(
                                     name,
-                                    style: AppTextStyles.bodyLarge?.copyWith(
+                                    style: AppTextStyles.bodyLarge.copyWith(
                                       fontWeight: FontWeight.w700,
                                       color: theme.textColor,
                                     ),
@@ -311,7 +310,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(
-                              color: statusColor.withOpacity(0.1),
+                              color: statusColor.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Text(
@@ -328,7 +327,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                       const SizedBox(height: 6),
                       Text(
                         services,
-                        style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor),
+                        style: AppTextStyles.taglineSmall.copyWith(color: theme.mutedTextColor),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -351,7 +350,7 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                                 Icon(Icons.check_circle, size: 14, color: Colors.green),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'Paid via' '\n${paymentMethod}',
+                                  'Paid via' '\n$paymentMethod',
                                   style: TextStyle(color: Colors.green, fontSize: 10),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -501,10 +500,10 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
               ),
             ),
             const SizedBox(height: 20),
-            Text('collect_payment'.tr, style: AppTextStyles.headingMedium?.copyWith(color: theme.textColor)),
+            Text('collect_payment'.tr, style: AppTextStyles.headingMedium.copyWith(color: theme.textColor)),
             const SizedBox(height: 4),
-            Text('${'customer'.tr}: $customerName', style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
-            Text('${'total'.tr}: Rs. ${totalAmount.toStringAsFixed(0)}', style: AppTextStyles.headingLarge?.copyWith(
+            Text('${'customer'.tr}: $customerName', style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor)),
+            Text('${'total'.tr}: Rs. ${totalAmount.toStringAsFixed(0)}', style: AppTextStyles.headingLarge.copyWith(
               color: AppColors.primaryPink, fontWeight: FontWeight.bold,
             )),
             const SizedBox(height: 20),

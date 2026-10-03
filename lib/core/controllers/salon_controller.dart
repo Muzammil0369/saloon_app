@@ -31,7 +31,7 @@ class SalonController extends GetxController {
   void _updateFilteredList() {
     final langCode = Get.find<LanguageController>().languageCode;
     filteredSalons.value = salons.where((salon) {
-      final String nameToSearch = langCode == 'ur' 
+      final String nameToSearch = langCode.value == 'ur' 
           ? (salon['salonName_ur'] ?? salon['salonName'] ?? '') 
           : (salon['salonName'] ?? '');
           

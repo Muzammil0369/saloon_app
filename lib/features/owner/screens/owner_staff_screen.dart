@@ -25,7 +25,7 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('my_team'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('my_team'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -143,13 +143,13 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
               children: [
                 Row(
                   children: [
-                    Text(name, style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+                    Text(name, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
                     if (isOwner) ...[
                       const SizedBox(width: 8),
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                         decoration: BoxDecoration(
-                          color: AppColors.primaryPink.withOpacity(0.1),
+                          color: AppColors.primaryPink.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text('ustad'.tr, style: TextStyle(fontSize: 10, color: AppColors.primaryPink, fontWeight: FontWeight.w600)),
@@ -162,7 +162,7 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.star_rounded, size: 14, color: reviewCount > 0 ? Colors.amber : theme.mutedTextColor.withOpacity(0.4)),
+                    Icon(Icons.star_rounded, size: 14, color: reviewCount > 0 ? Colors.amber : theme.mutedTextColor.withValues(alpha: 0.4)),
                     const SizedBox(width: 3),
                     Text(
                       reviewCount > 0 ? rating.toStringAsFixed(1) : 'no_ratings_yet'.tr,

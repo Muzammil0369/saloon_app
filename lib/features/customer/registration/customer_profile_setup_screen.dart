@@ -6,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
@@ -188,7 +187,7 @@ class _CustomerProfileSetupScreenState extends State<CustomerProfileSetupScreen>
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('profile_setup'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('profile_setup'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
       ),
       body: SafeArea(
         child: SingleChildScrollView(
@@ -200,11 +199,11 @@ class _CustomerProfileSetupScreenState extends State<CustomerProfileSetupScreen>
               const SizedBox(height: 30),
 
               Text('complete_profile'.tr,
-                style: AppTextStyles.displayLarge?.copyWith(fontSize: 24, color: theme.textColor),
+                style: AppTextStyles.displayLarge.copyWith(fontSize: 24, color: theme.textColor),
               ),
               const SizedBox(height: 8),
               Text('add_photo_name_start'.tr,
-                style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor),
+                style: AppTextStyles.tagline.copyWith(color: theme.mutedTextColor),
               ),
 
               const SizedBox(height: 40),
@@ -247,7 +246,7 @@ class _CustomerProfileSetupScreenState extends State<CustomerProfileSetupScreen>
 
               const SizedBox(height: 40),
 
-              Text('fullName'.tr, style: AppTextStyles.headingSmall?.copyWith(color: theme.textColor)),
+              Text('fullName'.tr, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
               const SizedBox(height: 12),
               Container(
                 decoration: BoxDecoration(

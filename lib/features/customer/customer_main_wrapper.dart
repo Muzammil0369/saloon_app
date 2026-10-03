@@ -7,7 +7,6 @@ import 'package:saloon_app/features/customer/screens/explore_screen.dart';
 import 'package:saloon_app/features/customer/screens/customer_profile_screen.dart';
 import 'package:saloon_app/features/customer/screens/my_bookings_screen.dart';
 import 'package:saloon_app/features/customer/screens/qr_screen.dart';
-import 'package:saloon_app/shared/screens/wallet_screen.dart';
 
 import '../../core/controllers/language_controller.dart';
 import '../../core/controllers/salon_controller.dart';
@@ -58,7 +57,7 @@ class _CustomerMainWrapperState extends State<CustomerMainWrapper> {
     ];
 
     return Directionality(
-      textDirection: Get.find<LanguageController>().languageCode == 'ur'
+      textDirection: Get.find<LanguageController>().languageCode.value == 'ur'
           ? TextDirection.rtl
           : TextDirection.ltr,
       child: Scaffold(

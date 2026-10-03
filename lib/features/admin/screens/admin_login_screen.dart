@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/services/auth_service.dart';
 import 'package:saloon_app/core/services/database_service.dart';
@@ -101,7 +100,7 @@ class _AdminLoginScreenState extends State<AdminLoginScreen> {
               borderRadius: BorderRadius.circular(AppRadius.md),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),

@@ -39,7 +39,7 @@ class NotificationService {
     const InitializationSettings initSettings = InitializationSettings(
       android: AndroidInitializationSettings('@mipmap/ic_launcher'),
     );
-    await _localNotifications.initialize(settings: initSettings);
+    await _localNotifications.initialize(initSettings);
 
     // 3. Register background handler
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
@@ -71,10 +71,10 @@ class NotificationService {
 
       if (notification != null && android != null) {
         _localNotifications.show(
-          id: notification.hashCode,
-          title: notification.title,
-          body: notification.body,
-          notificationDetails: const NotificationDetails(
+          notification.hashCode,
+          notification.title,
+          notification.body,
+          const NotificationDetails(
             android: AndroidNotificationDetails(
               'high_importance_channel',
               'High Importance Notifications',

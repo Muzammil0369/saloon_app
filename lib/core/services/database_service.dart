@@ -82,7 +82,7 @@ class DatabaseService extends GetxService {
 
     return snapshot.docs.map((doc) => {
       'id': doc.id,
-      ...doc.data() as Map<String, dynamic>,
+      ...doc.data(),
     }).toList();
   }
 

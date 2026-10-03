@@ -2,7 +2,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:saloon_app/features/admin/theme/admin_colors.dart';
 import 'package:saloon_app/features/admin/widgets/admin_scaffold.dart';
 
 class AuditLogScreen extends StatefulWidget {
@@ -146,7 +145,7 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
         border: Border.all(color: Colors.grey.shade200),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withValues(alpha: 0.03),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -156,7 +155,7 @@ class _AuditLogScreenState extends State<AuditLogScreen> {
         leading: Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: actionInfo['color'].withOpacity(0.1),
+            color: actionInfo['color'].withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(actionInfo['icon'], color: actionInfo['color'], size: 22),

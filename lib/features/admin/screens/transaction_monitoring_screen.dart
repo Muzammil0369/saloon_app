@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-import 'package:saloon_app/features/admin/theme/admin_colors.dart';
 import 'package:saloon_app/features/admin/widgets/admin_scaffold.dart';
 import 'package:saloon_app/features/admin/widgets/admin_common_widgets.dart';
 
@@ -63,7 +62,7 @@ class TransactionMonitoringScreen extends StatelessWidget {
                     border: Border.all(color: Colors.grey.shade200),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.02),
+                        color: Colors.black.withValues(alpha: 0.02),
                         blurRadius: 4,
                         offset: const Offset(0, 2),
                       ),
@@ -76,7 +75,7 @@ class TransactionMonitoringScreen extends StatelessWidget {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: _getTypeColor(type).withOpacity(0.1),
+                          color: _getTypeColor(type).withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Icon(

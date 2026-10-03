@@ -27,7 +27,7 @@ class HelpSupportScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'help'.tr,
-          style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor),
+          style: AppTextStyles.headingLarge.copyWith(color: theme.textColor),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -75,7 +75,7 @@ class HelpSupportScreen extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               'faq_subtitle'.tr,
-              style: AppTextStyles.bodySmall?.copyWith(color: theme.mutedTextColor),
+              style: AppTextStyles.bodySmall.copyWith(color: theme.mutedTextColor),
             ),
             const SizedBox(height: 16),
 
@@ -125,7 +125,7 @@ class HelpSupportScreen extends StatelessWidget {
             Center(
               child: Text(
                 'app_version'.trParams({'version': '1.0.0'}),
-                style: AppTextStyles.caption?.copyWith(color: theme.mutedTextColor),
+                style: AppTextStyles.caption.copyWith(color: theme.mutedTextColor),
               ),
             ),
           ],
@@ -156,7 +156,7 @@ class HelpSupportScreen extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: AppTextStyles.bodyMedium?.copyWith(
+              style: AppTextStyles.bodyMedium.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.textColor,
               ),
@@ -193,7 +193,7 @@ class HelpSupportScreen extends StatelessWidget {
               collapsedIconColor: theme.mutedTextColor,
               title: Text(
                 q,
-                style: AppTextStyles.bodyMedium?.copyWith(
+                style: AppTextStyles.bodyMedium.copyWith(
                   fontWeight: FontWeight.bold,
                   color: theme.textColor,
                 ),
@@ -203,7 +203,7 @@ class HelpSupportScreen extends StatelessWidget {
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   child: Text(
                     a,
-                    style: AppTextStyles.bodySmall?.copyWith(color: theme.mutedTextColor),
+                    style: AppTextStyles.bodySmall.copyWith(color: theme.mutedTextColor),
                   ),
                 ),
               ],
@@ -247,7 +247,7 @@ class HelpSupportScreen extends StatelessWidget {
                   Text(title, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
                   Text(
                     val,
-                    style: AppTextStyles.bodyMedium?.copyWith(
+                    style: AppTextStyles.bodyMedium.copyWith(
                       fontWeight: FontWeight.bold,
                       color: theme.textColor,
                     ),

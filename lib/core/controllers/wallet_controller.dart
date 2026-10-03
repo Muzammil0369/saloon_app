@@ -130,8 +130,4 @@ class WalletController extends GetxController {
   double get totalSpent => wallet.value?.totalSpent ?? 0.0;
   bool canPay(double amount) => wallet.value?.canPay(amount) ?? false;
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
 }

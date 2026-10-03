@@ -27,9 +27,9 @@ class _OwnerDocumentsScreenState extends State<OwnerDocumentsScreen> {
   File? _cnicBack;
   File? _shopLicense;
   File? _shopOutsidePhoto;
-  List<File> _salonPhotos = [];
+  final List<File> _salonPhotos = [];
 
-  bool _isUploading = false;
+  final bool _isUploading = false;
 
   void _saveAndNext() {
     // Validate required documents
@@ -70,7 +70,7 @@ class _OwnerDocumentsScreenState extends State<OwnerDocumentsScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('documents'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('documents'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: theme.textColor),
           onPressed: () => Navigator.pop(context),
@@ -85,12 +85,12 @@ class _OwnerDocumentsScreenState extends State<OwnerDocumentsScreen> {
               const ProgressStepBar(totalSteps: 7, currentStep: 6),
               const SizedBox(height: 30),
 
-              Text('legal_documents'.tr + ' 📄',
-                style: AppTextStyles.displayLarge?.copyWith(fontSize: 25, color: theme.textColor),
+              Text('${'legal_documents'.tr} 📄',
+                style: AppTextStyles.displayLarge.copyWith(fontSize: 25, color: theme.textColor),
               ),
               const SizedBox(height: 8),
               Text('upload_documents_desc'.tr,
-                  style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor)),
+                  style: AppTextStyles.tagline.copyWith(color: theme.mutedTextColor)),
 
               const SizedBox(height: 32),
 
@@ -98,9 +98,9 @@ class _OwnerDocumentsScreenState extends State<OwnerDocumentsScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
+                  color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.orange.withOpacity(0.3)),
+                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   children: [
@@ -206,7 +206,7 @@ class _OwnerDocumentsScreenState extends State<OwnerDocumentsScreen> {
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(8),
           ),
           child: Icon(icon, color: color, size: 18),
@@ -291,7 +291,7 @@ class _OwnerDocumentsScreenState extends State<OwnerDocumentsScreen> {
                       decoration: BoxDecoration(
                         color: Colors.red,
                         shape: BoxShape.circle,
-                        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
+                        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
                       ),
                       child: const Icon(Icons.close, color: Colors.white, size: 16),
                     ),
@@ -379,7 +379,7 @@ class _OwnerDocumentsScreenState extends State<OwnerDocumentsScreen> {
                           decoration: BoxDecoration(
                             color: Colors.red,
                             shape: BoxShape.circle,
-                            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
+                            boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
                           ),
                           child: const Icon(Icons.close, color: Colors.white, size: 14),
                         ),

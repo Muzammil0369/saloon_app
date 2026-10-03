@@ -33,16 +33,16 @@ class ThemeHelper {
   // Shadow
   BoxShadow get cardShadow => BoxShadow(
     color: isDark
-        ? Colors.black.withOpacity(0.3)
-        : AppColors.primaryPink.withOpacity(0.05),
+        ? Colors.black.withValues(alpha: 0.3)
+        : AppColors.primaryPink.withValues(alpha: 0.05),
     blurRadius: 10,
     offset: const Offset(0, 4),
   );
 
   BoxShadow get softShadow => BoxShadow(
     color: isDark
-        ? Colors.black.withOpacity(0.2)
-        : AppColors.primaryPink.withOpacity(0.08),
+        ? Colors.black.withValues(alpha: 0.2)
+        : AppColors.primaryPink.withValues(alpha: 0.08),
     blurRadius: 8,
     offset: const Offset(0, 2),
   );

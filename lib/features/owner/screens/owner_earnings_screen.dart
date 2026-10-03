@@ -58,7 +58,7 @@ class _OwnerEarningsScreenState extends State<OwnerEarningsScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('earnings'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('earnings'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -179,13 +179,13 @@ class _OwnerEarningsScreenState extends State<OwnerEarningsScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text('total_revenue'.tr, style: AppTextStyles.label.copyWith(color: Colors.white.withOpacity(0.8))),
+                              Text('total_revenue'.tr, style: AppTextStyles.label.copyWith(color: Colors.white.withValues(alpha: 0.8))),
                               const SizedBox(height: 4),
                               Text('Rs. ${totalRevenue.toStringAsFixed(0)}',
                                 style: AppTextStyles.headingLarge.copyWith(color: theme.textColor, fontSize: 22)),
                               const SizedBox(height: 8),
                               Text('${'commission'.tr}: Rs. ${totalCommission.toStringAsFixed(0)}',
-                                  style: AppTextStyles.label.copyWith(color: Colors.white.withOpacity(0.8))),
+                                  style: AppTextStyles.label.copyWith(color: Colors.white.withValues(alpha: 0.8))),
                             ],
                           ),
                         ),
@@ -196,7 +196,7 @@ class _OwnerEarningsScreenState extends State<OwnerEarningsScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text('recent_transactions'.tr, style: AppTextStyles.headingSmall?.copyWith(color: theme.textColor)),
+                            Text('recent_transactions'.tr, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
                             Text('${transactions.length} ${'total'.tr}', style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
                           ],
                         ),
@@ -247,7 +247,7 @@ class _OwnerEarningsScreenState extends State<OwnerEarningsScreen> {
         color: theme.cardColor,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [theme.softShadow],
-        border: Border.all(color: color.withOpacity(0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -322,7 +322,7 @@ class _OwnerEarningsScreenState extends State<OwnerEarningsScreen> {
           Container(
             width: 40, height: 40,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(icon, color: color, size: 20),

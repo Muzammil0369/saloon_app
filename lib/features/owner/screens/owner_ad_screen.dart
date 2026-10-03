@@ -148,7 +148,7 @@ class _OwnerAdScreenState extends State<OwnerAdScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('ads_offers'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('ads_offers'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -266,7 +266,7 @@ class _OwnerAdScreenState extends State<OwnerAdScreen> {
                           return FilterChip(
                             label: Text('$name (${'rs'.tr} ${s['price']})'),
                             selected: isSelected,
-                            selectedColor: AppColors.primaryPink.withOpacity(0.15),
+                            selectedColor: AppColors.primaryPink.withValues(alpha: 0.15),
                             checkmarkColor: AppColors.primaryPink,
                             onSelected: (sel) => setState(() {
                               if (sel) {

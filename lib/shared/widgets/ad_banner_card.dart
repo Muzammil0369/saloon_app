@@ -84,7 +84,7 @@ class AdBannerCard extends StatelessWidget {
           image: bgImage != null ? DecorationImage(image: bgImage, fit: BoxFit.cover) : null,
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(color: AppColors.primaryPink.withOpacity(0.25), blurRadius: 15, offset: const Offset(0, 8)),
+            BoxShadow(color: AppColors.primaryPink.withValues(alpha: 0.25), blurRadius: 15, offset: const Offset(0, 8)),
           ],
         ),
         child: Container(
@@ -94,7 +94,7 @@ class AdBannerCard extends StatelessWidget {
               ? BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             gradient: LinearGradient(
-              colors: [Colors.black.withOpacity(0.15), Colors.black.withOpacity(0.55)],
+              colors: [Colors.black.withValues(alpha: 0.15), Colors.black.withValues(alpha: 0.55)],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
@@ -138,7 +138,7 @@ class AdBannerCard extends StatelessWidget {
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.2),
+                      color: Colors.white.withValues(alpha: 0.2),
                       borderRadius: BorderRadius.circular(6),
                     ),
                     child: Text(
@@ -151,7 +151,7 @@ class AdBannerCard extends StatelessWidget {
                 // 3. Big offer name — the headline
                 Text(
                   offerTitle,
-                  style: AppTextStyles.headingMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                  style: AppTextStyles.headingMedium.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -164,7 +164,7 @@ class AdBannerCard extends StatelessWidget {
                       Text(
                         '${'rs'.tr} $originalPrice',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           decoration: TextDecoration.lineThrough,
                           fontSize: 12,
                         ),
@@ -183,7 +183,7 @@ class AdBannerCard extends StatelessWidget {
                   const SizedBox(height: 4),
                   Text(
                     servicesLine,
-                    style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 11),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 11),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),

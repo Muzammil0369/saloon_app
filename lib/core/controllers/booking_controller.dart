@@ -161,8 +161,4 @@ class BookingController extends GetxController {
     services.refresh();
   }
 
-  @override
-  void onClose() {
-    super.onClose();
-  }
 }

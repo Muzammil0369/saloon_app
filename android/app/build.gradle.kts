@@ -8,8 +8,12 @@ plugins {
 
 android {
     namespace = "com.example.saloon_app"
-    compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Explicitly overridden (instead of flutter.compileSdkVersion) — mobile_scanner
+    // requires compileSdk 36, which is newer than Flutter 3.27.0's own default of 35.
+    compileSdk = 36
+    // Explicitly overridden — several plugins (Firebase, mobile_scanner, geolocator, etc.)
+    // require this specific NDK version. NDKs are backward compatible, so this is safe.
+    ndkVersion = "27.0.12077973"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -26,7 +30,9 @@ android {
         applicationId = "com.example.saloon_app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
-        minSdk = flutter.minSdkVersion
+        // Explicitly overridden — mobile_scanner's camera library requires minSdk 23,
+        // higher than Flutter's own default of 21.
+        minSdk = 23
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
@@ -41,9 +47,9 @@ android {
     }
 
 }
-    dependencies {
-        coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")   // add this
-    }
+dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")   // add this
+}
 
 flutter {
     source = "../.."

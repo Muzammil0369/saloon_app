@@ -134,7 +134,7 @@ class _OwnerBusinessHoursScreenState extends State<OwnerBusinessHoursScreen> {
       appBar: AppBar(
         title: Text(
           'business_hours'.tr,
-          style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor),
+          style: AppTextStyles.headingLarge.copyWith(color: theme.textColor),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -150,7 +150,7 @@ class _OwnerBusinessHoursScreenState extends State<OwnerBusinessHoursScreen> {
                 children: [
                   Text(
                     'business_hours_explainer'.tr,
-                    style: AppTextStyles.bodyMedium?.copyWith(
+                    style: AppTextStyles.bodyMedium.copyWith(
                       color: theme.mutedTextColor,
                     ),
                   ),

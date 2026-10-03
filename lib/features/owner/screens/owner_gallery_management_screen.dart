@@ -129,7 +129,7 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
       Get.snackbar('success'.tr, 'image_uploaded'.tr);
     } catch (e) {
       setState(() => _isUploading = false);
-      Get.snackbar('error'.tr, 'failed_upload_image'.tr + ': $e');
+      Get.snackbar('error'.tr, '${'failed_upload_image'.tr}: $e');
     }
   }
 
@@ -202,7 +202,7 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('salon_gallery'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('salon_gallery'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -347,9 +347,9 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                   decoration: BoxDecoration(
-                                    color: AppColors.primaryPink.withOpacity(0.9),
+                                    color: AppColors.primaryPink.withValues(alpha: 0.9),
                                     borderRadius: BorderRadius.circular(10),
-                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4)],
+                                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4)],
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
@@ -400,7 +400,7 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
                                   decoration: BoxDecoration(
                                     color: AppColors.errorRed,
                                     shape: BoxShape.circle,
-                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 4)],
+                                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.3), blurRadius: 4)],
                                   ),
                                   child: const Icon(Icons.close_rounded, color: Colors.white, size: 16),
                                 ),
@@ -417,7 +417,7 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
 
           if (_isUploading)
             Container(
-              color: Colors.black.withOpacity(0.5),
+              color: Colors.black.withValues(alpha: 0.5),
               child: Center(
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,

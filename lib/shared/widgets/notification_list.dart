@@ -89,7 +89,7 @@ class NotificationsList extends StatelessWidget {
                     ),
                   ),
                   Expanded(
-                      child: Text('notifications'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor, fontSize: 18))),
+                      child: Text('notifications'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor, fontSize: 18))),
                   if (unreadCount > 0)
                     GestureDetector(
                       onTap: () => _markAllRead(docs),
@@ -106,7 +106,7 @@ class NotificationsList extends StatelessWidget {
                   children: [
                     Icon(Icons.notifications_none_rounded, size: 48, color: theme.borderColor),
                     const SizedBox(height: 12),
-                    Text('no_notifications'.tr, style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor)),
+                    Text('no_notifications'.tr, style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor)),
                   ],
                 ),
               )
@@ -153,7 +153,7 @@ class NotificationsList extends StatelessWidget {
                               children: [
                                 Text(
                                   n['title'] ?? '',
-                                  style: AppTextStyles.cardTitle?.copyWith(
+                                  style: AppTextStyles.cardTitle.copyWith(
                                     color: theme.textColor,
                                     fontWeight: unread ? FontWeight.w800 : FontWeight.w600,
                                   ),
@@ -161,7 +161,7 @@ class NotificationsList extends StatelessWidget {
                                 const SizedBox(height: 3),
                                 Text(
                                   n['body'] ?? '',
-                                  style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor),
+                                  style: AppTextStyles.taglineSmall.copyWith(color: theme.mutedTextColor),
                                   maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -174,7 +174,7 @@ class NotificationsList extends StatelessWidget {
                             children: [
                               Text(
                                 _relativeTime(n['createdAt'] as Timestamp?),
-                                style: AppTextStyles.label?.copyWith(fontSize: 9, color: theme.mutedTextColor),
+                                style: AppTextStyles.label.copyWith(fontSize: 9, color: theme.mutedTextColor),
                               ),
                               if (unread) ...[
                                 const SizedBox(height: 6),

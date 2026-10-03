@@ -82,7 +82,7 @@ class _OwnerPaymentQrScreenState extends State<OwnerPaymentQrScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('payment_qr'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('payment_qr'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -100,7 +100,7 @@ class _OwnerPaymentQrScreenState extends State<OwnerPaymentQrScreen> {
               children: [
                 Text(
                   'payment_qr_explainer'.tr,
-                  style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                  style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor),
                 ),
                 const SizedBox(height: 24),
 

@@ -212,7 +212,7 @@ class TransactionModel {
       type: TransactionType.commission,
       status: TransactionStatus.completed,
       amount: amount,
-      description: 'Platform commission (${rate}%)',
+      description: 'Platform commission ($rate%)',
       referenceId: bookingId,
       commissionRate: rate,
       metadata: {'ownerId': ownerId},

@@ -258,7 +258,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   shape: BoxShape.circle,
                 ),
                 todayDecoration: BoxDecoration(
-                  color: AppColors.primaryPink.withOpacity(0.5),
+                  color: AppColors.primaryPink.withValues(alpha: 0.5),
                   shape: BoxShape.circle,
                 ),
               ),
@@ -345,7 +345,7 @@ class _BookingScreenState extends State<BookingScreen> {
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               decoration: BoxDecoration(
                                 color: isFull
-                                    ? theme.borderColor.withOpacity(0.2)
+                                    ? theme.borderColor.withValues(alpha: 0.2)
                                     : (isSelected
                                           ? AppColors.primaryPink
                                           : theme.cardColor),
@@ -359,7 +359,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                     ? [
                                         BoxShadow(
                                           color: AppColors.primaryPink
-                                              .withOpacity(0.3),
+                                              .withValues(alpha: 0.3),
                                           blurRadius: 8,
                                           offset: const Offset(0, 3),
                                         ),
@@ -432,7 +432,7 @@ class _BookingScreenState extends State<BookingScreen> {
                             ? Border.all(color: AppColors.primaryPink, width: 2)
                             : (staff['isOwner'] == true
                                   ? Border.all(
-                                      color: AppColors.primaryPink.withOpacity(
+                                      color: AppColors.primaryPink.withValues(alpha: 
                                         0.4,
                                       ),
                                       width: 1,
@@ -490,7 +490,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                       child: Text(
                                         staff['name'],
                                         style: AppTextStyles.bodyLarge
-                                            ?.copyWith(
+                                            .copyWith(
                                               fontWeight: FontWeight.bold,
                                               color: theme.textColor,
                                             ),
@@ -506,7 +506,7 @@ class _BookingScreenState extends State<BookingScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: AppColors.primaryPink
-                                              .withOpacity(0.1),
+                                              .withValues(alpha: 0.1),
                                           borderRadius: BorderRadius.circular(
                                             6,
                                           ),
@@ -574,12 +574,12 @@ class _BookingScreenState extends State<BookingScreen> {
                               decoration: BoxDecoration(
                                 color:
                                     (isBusy ? Colors.redAccent : Colors.green)
-                                        .withOpacity(0.1),
+                                        .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color:
                                       (isBusy ? Colors.redAccent : Colors.green)
-                                          .withOpacity(0.3),
+                                          .withValues(alpha: 0.3),
                                 ),
                               ),
                               child: Text(

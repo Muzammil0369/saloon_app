@@ -267,7 +267,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: AppColors.primaryPink.withOpacity(0.1),
+                                        color: AppColors.primaryPink.withValues(alpha: 0.1),
                                         blurRadius: 40,
                                         offset: const Offset(0, 20),
                                       ),
@@ -317,7 +317,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                       child: CircularProgressIndicator(
                         value: progress,
                         strokeWidth: 3,
-                        backgroundColor: AppColors.border.withOpacity(0.3),
+                        backgroundColor: AppColors.border.withValues(alpha: 0.3),
                         valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryPink),
                       ),
                     ),

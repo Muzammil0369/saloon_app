@@ -193,7 +193,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('edit_profile'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+              Text('edit_profile'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
               const SizedBox(height: 24),
               Text('full_name'.tr, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
               const SizedBox(height: 8),
@@ -344,7 +344,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('profile'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('profile'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
       ),
       body: SafeArea(
         child: RefreshIndicator(
@@ -432,18 +432,18 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                                 );
                               }
                               return Text(
-                                languageController.languageCode == 'ur'
+                                languageController.languageCode.value == 'ur'
                                     ? (userController.userNameUr.value.isNotEmpty
                                     ? userController.userNameUr.value
                                     : userController.userName.value)
                                     : userController.userName.value,
-                                style: AppTextStyles.headingMedium?.copyWith(color: theme.textColor),
+                                style: AppTextStyles.headingMedium.copyWith(color: theme.textColor),
                               );
                             }),
                             const SizedBox(height: 2),
                             Obx(() => Text(
                               userController.userEmail.value,
-                              style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor),
+                              style: AppTextStyles.taglineSmall.copyWith(color: theme.mutedTextColor),
                             )),
                           ],
                         ),
@@ -508,7 +508,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                           Expanded(
                             child: Text(
                               'language'.tr,
-                              style: AppTextStyles.bodyLarge?.copyWith(
+                              style: AppTextStyles.bodyLarge.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textColor,
                               ),
@@ -524,8 +524,8 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                _langButton('en', 'english'.tr, languageController.languageCode == 'en'),
-                                _langButton('ur', 'urdu'.tr, languageController.languageCode == 'ur'),
+                                _langButton('en', 'english'.tr, languageController.languageCode.value == 'en'),
+                                _langButton('ur', 'urdu'.tr, languageController.languageCode.value == 'ur'),
                               ],
                             ),
                           ),
@@ -559,7 +559,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     color: theme.cardColor,
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [theme.softShadow],
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
+                    border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                   ),
                   child: Material(
                     color: Colors.transparent,
@@ -570,7 +570,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                       leading: Container(
                         width: 40, height: 40,
-                        decoration: BoxDecoration(color: Colors.red.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+                        decoration: BoxDecoration(color: Colors.red.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
                         child: const Icon(Icons.delete_forever, size: 20, color: Colors.red),
                       ),
                       title: Text('delete_account'.tr, style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.red)),
@@ -591,14 +591,14 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                     decoration: BoxDecoration(
                       color: theme.cardColor,
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.redAccent.withOpacity(0.3)),
+                      border: Border.all(color: Colors.redAccent.withValues(alpha: 0.3)),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 20),
                         const SizedBox(width: 10),
-                        Text('logout'.tr, style: AppTextStyles.buttonText?.copyWith(color: Colors.redAccent)),
+                        Text('logout'.tr, style: AppTextStyles.buttonText.copyWith(color: Colors.redAccent)),
                       ],
                     ),
                   ),
@@ -621,7 +621,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
           child: Icon(icon, size: 20, color: iconColor),
         ),
         const SizedBox(width: 12),
-        Expanded(child: Text(title, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: theme.textColor))),
+        Expanded(child: Text(title, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: theme.textColor))),
         Switch(value: value, onChanged: (_) => onToggle(), activeColor: AppColors.primaryPink),
       ],
     );
@@ -644,10 +644,10 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           leading: Container(
             width: 40, height: 40,
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, size: 20, color: color),
           ),
-          title: Text(title, style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+          title: Text(title, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
           subtitle: Text(subtitle, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
           trailing: Icon(Icons.chevron_right_rounded, color: theme.mutedTextColor),
         ),

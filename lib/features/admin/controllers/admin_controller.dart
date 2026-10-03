@@ -123,7 +123,7 @@ class AdminController extends GetxController {
       double revenue = 0;
       double commission = 0;
       for (var doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         final type = data['type'] as String? ?? '';
         final amount = (data['amount'] as num?)?.toDouble() ?? 0.0;
         if (type == 'commission') {

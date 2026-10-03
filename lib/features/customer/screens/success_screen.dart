@@ -39,7 +39,7 @@ class SuccessScreen extends StatelessWidget {
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.success.withOpacity(0.2),
+                      color: AppColors.success.withValues(alpha: 0.2),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -57,7 +57,7 @@ class SuccessScreen extends StatelessWidget {
               // ── Message ──
               Text(
                 'booking_success'.tr,
-                style: AppTextStyles.displayMedium?.copyWith(
+                style: AppTextStyles.displayMedium.copyWith(
                   color: theme.textColor,
                   fontSize: 24,
                 ),
@@ -66,7 +66,7 @@ class SuccessScreen extends StatelessWidget {
               const SizedBox(height: 12),
               Text(
                 'booking_success_desc'.tr,
-                style: AppTextStyles.bodyMedium?.copyWith(
+                style: AppTextStyles.bodyMedium.copyWith(
                   color: theme.mutedTextColor,
                   height: 1.5,
                 ),
@@ -107,7 +107,7 @@ class SuccessScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.button),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.primaryPink.withOpacity(0.3),
+                        color: AppColors.primaryPink.withValues(alpha: 0.3),
                         blurRadius: 12,
                         offset: const Offset(0, 6),
                       ),
@@ -116,7 +116,7 @@ class SuccessScreen extends StatelessWidget {
                   child: Center(
                     child: Text(
                       'go_to_home'.tr,
-                      style: AppTextStyles.buttonText?.copyWith(fontSize: 16),
+                      style: AppTextStyles.buttonText.copyWith(fontSize: 16),
                     ),
                   ),
                 ),
@@ -135,9 +135,9 @@ class SuccessScreen extends StatelessWidget {
       children: [
         Icon(icon, size: 18, color: AppColors.primaryPink),
         const SizedBox(width: 12),
-        Text(label, style: AppTextStyles.bodySmall?.copyWith(color: theme.mutedTextColor)),
+        Text(label, style: AppTextStyles.bodySmall.copyWith(color: theme.mutedTextColor)),
         const Spacer(),
-        Text(value, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+        Text(value, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
       ],
     );
   }

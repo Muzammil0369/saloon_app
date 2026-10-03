@@ -61,7 +61,7 @@ class SalonCard extends StatelessWidget {
     final theme = ThemeHelper(context);
 
     return Directionality(
-      textDirection: Get.find<LanguageController>().languageCode == 'ur'
+      textDirection: Get.find<LanguageController>().languageCode.value == 'ur'
         ? TextDirection.rtl
         : TextDirection.ltr,
       child: GestureDetector(
@@ -111,7 +111,7 @@ class SalonCard extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 salon['name'] ?? 'salon'.tr,
-                                style: AppTextStyles.bodyLarge?.copyWith(
+                                style: AppTextStyles.bodyLarge.copyWith(
                                   fontWeight: FontWeight.bold,
                                   color: theme.textColor,
                                 ),
@@ -196,7 +196,7 @@ class SalonCard extends StatelessWidget {
               ),
             ),
             Positioned.directional(
-              textDirection: Get.find<LanguageController>().languageCode == 'ur'
+              textDirection: Get.find<LanguageController>().languageCode.value == 'ur'
                   ? TextDirection.rtl
                   : TextDirection.ltr,
               top: 8,

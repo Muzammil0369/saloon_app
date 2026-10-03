@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 
 class SplashScreen extends StatefulWidget {
-  const SplashScreen({Key? key}) : super(key: key);
+  const SplashScreen({super.key});
 
   @override
   State<SplashScreen> createState() => _SplashScreenState();
@@ -128,7 +128,7 @@ class _SplashScreenState extends State<SplashScreen>
                             'Where Beauty Meets Convenience',
                             textAlign: TextAlign.center,
                             style: AppTextStyles.tagline.copyWith(
-                              color: Colors.white.withOpacity(0.85),
+                              color: Colors.white.withValues(alpha: 0.85),
                               fontSize: 14,
                             ),
                           ),
@@ -141,7 +141,7 @@ class _SplashScreenState extends State<SplashScreen>
                               borderRadius: BorderRadius.circular(10), // Clean rounded ends
                               child: LinearProgressIndicator(
                                 value: _controller.value, // Smoothly filled from 0.0 to 1.0 by controller
-                                backgroundColor: Colors.white.withOpacity(0.15), // Dim background track
+                                backgroundColor: Colors.white.withValues(alpha: 0.15), // Dim background track
                                 valueColor: const AlwaysStoppedAnimation<Color>(Colors.white), // Solid white loading progress
                                 minHeight: 4, // Ultra-sleek thickness
                               ),

@@ -73,7 +73,7 @@ class _FavouriteSalonsScreenState extends State<FavouriteSalonsScreen> {
             salonLoc.latitude, salonLoc.longitude,
           );
           final double distKm = distInMeters / 1000;
-          final String unit = Get.find<LanguageController>().languageCode == 'ur' ? 'km'.tr : 'km';
+          final String unit = Get.find<LanguageController>().languageCode.value == 'ur' ? 'km'.tr : 'km';
           distanceText = '${distKm.toStringAsFixed(1)} $unit';
         }
 
@@ -107,7 +107,7 @@ class _FavouriteSalonsScreenState extends State<FavouriteSalonsScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('favourite_salons'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('favourite_salons'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,

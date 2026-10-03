@@ -5,7 +5,6 @@ import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
-import 'package:saloon_app/core/theme/app_theme.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/constants/app_radius.dart';
 import 'package:saloon_app/core/services/auth_service.dart';
@@ -147,7 +146,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
             children: [
               Text(
                 'edit_business_info'.tr,
-                style: AppTextStyles.headingLarge?.copyWith(
+                style: AppTextStyles.headingLarge.copyWith(
                   color: theme.textColor,
                 ),
               ),
@@ -295,8 +294,9 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
         stream: _getOwnerData(),
         builder: (context, ownerSnapshot) {
           final data = ownerSnapshot.data;
-          if (data == null)
+          if (data == null) {
             return const Center(child: CircularProgressIndicator());
+          }
           return StreamBuilder<Map<String, int>>(
             stream: _getBookingStats(),
             builder: (context, bookingSnapshot) {
@@ -342,10 +342,10 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                           ),
                           const SizedBox(height: 16),
                           Obx(() => Text(
-                            Get.find<LanguageController>().languageCode == 'ur'
+                            Get.find<LanguageController>().languageCode.value == 'ur'
                                 ? (data['salonName_ur'] ?? data['salonName'] ?? 'salonName'.tr)
                                 : (data['salonName'] ?? 'salonName'.tr),
-                            style: AppTextStyles.displayMedium?.copyWith(
+                            style: AppTextStyles.displayMedium.copyWith(
                               fontSize: 24,
                               color: theme.textColor,
                               fontWeight: FontWeight.bold,
@@ -524,7 +524,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                           Expanded(
                             child: Text(
                               'language'.tr,
-                              style: AppTextStyles.bodyLarge?.copyWith(
+                              style: AppTextStyles.bodyLarge.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: theme.textColor,
                               ),
@@ -540,8 +540,8 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                _langButton('en', 'english'.tr, languageController.languageCode == 'en'),
-                                _langButton('ur', 'urdu'.tr, languageController.languageCode == 'ur'),
+                                _langButton('en', 'english'.tr, languageController.languageCode.value == 'en'),
+                                _langButton('ur', 'urdu'.tr, languageController.languageCode.value == 'ur'),
                               ],
                             ),
                           ),
@@ -558,7 +558,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                         color: theme.cardColor,
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [theme.softShadow],
-                        border: Border.all(color: Colors.red.withOpacity(0.3)),
+                        border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                       ),
                       child: ListTile(
                         onTap: _deleteAccount,
@@ -570,7 +570,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                           width: 40,
                           height: 40,
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.1),
+                            color: Colors.red.withValues(alpha: 0.1),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Icon(
@@ -612,13 +612,13 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
                             color: theme.cardColor,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.redAccent.withOpacity(0.3),
+                              color: Colors.redAccent.withValues(alpha: 0.3),
                             ),
                           ),
                           child: Center(
                             child: Text(
                               'logout_business'.tr,
-                              style: AppTextStyles.buttonText?.copyWith(
+                              style: AppTextStyles.buttonText.copyWith(
                                 color: Colors.redAccent,
                                 fontWeight: FontWeight.bold,
                               ),
@@ -679,7 +679,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
         ),
         title: Text(
           title,
-          style: AppTextStyles.bodyLarge?.copyWith(
+          style: AppTextStyles.bodyLarge.copyWith(
             fontWeight: FontWeight.bold,
             color: theme.textColor,
           ),
@@ -713,10 +713,10 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
           leading: Container(
             width: 40, height: 40,
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
             child: Icon(icon, size: 20, color: color),
           ),
-          title: Text(title, style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+          title: Text(title, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
           subtitle: Text(subtitle, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
           trailing: Icon(Icons.chevron_right_rounded, color: theme.mutedTextColor),
         ),
@@ -753,7 +753,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
           Expanded(
             child: Text(
               title,
-              style: AppTextStyles.bodyLarge?.copyWith(
+              style: AppTextStyles.bodyLarge.copyWith(
                 fontWeight: FontWeight.bold,
                 color: theme.textColor,
               ),
@@ -774,7 +774,7 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
       children: [
         Text(
           value,
-          style: AppTextStyles.headingMedium?.copyWith(
+          style: AppTextStyles.headingMedium.copyWith(
             color: color ?? AppColors.primaryPink,
             fontWeight: FontWeight.bold,
             fontSize: 18,

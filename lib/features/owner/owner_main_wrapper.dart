@@ -51,7 +51,7 @@ class _OwnerMainWrapperState extends State<OwnerMainWrapper> {
     ];
 
     return Directionality(
-      textDirection: Get.find<LanguageController>().languageCode == 'ur' 
+      textDirection: Get.find<LanguageController>().languageCode.value == 'ur' 
           ? TextDirection.rtl 
           : TextDirection.ltr,
       child: Scaffold(

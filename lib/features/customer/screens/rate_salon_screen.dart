@@ -92,7 +92,7 @@ class _RateSalonScreenState extends State<RateSalonScreen> {
       Get.snackbar('success'.tr, 'review_submitted'.tr);
     } catch (e) {
       setState(() => _isSubmitting = false);
-      Get.snackbar('error'.tr, 'failed_submit_review'.tr + ': $e');
+      Get.snackbar('error'.tr, '${'failed_submit_review'.tr}: $e');
     }
   }
 
@@ -103,7 +103,7 @@ class _RateSalonScreenState extends State<RateSalonScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('rate_salon'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('rate_salon'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
       ),
@@ -114,7 +114,7 @@ class _RateSalonScreenState extends State<RateSalonScreen> {
           children: [
             Text(
               widget.salonName,
-              style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor),
+              style: AppTextStyles.headingLarge.copyWith(color: theme.textColor),
             ),
             const SizedBox(height: 8),
             Text('rate_your_experience'.tr, style: TextStyle(color: theme.mutedTextColor)),

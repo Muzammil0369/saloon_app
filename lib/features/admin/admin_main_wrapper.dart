@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:saloon_app/features/admin/screens/admin_settings_screen.dart';
 import 'package:saloon_app/features/admin/widgets/admin_top_bar.dart';
 import 'package:saloon_app/features/admin/screens/audit_log_screen.dart';
-import 'controllers/admin_controller.dart';
 import 'screens/admin_dashboard_screen.dart';
 import 'screens/salon_verification_screen.dart';
 import 'screens/transaction_monitoring_screen.dart';
@@ -80,7 +79,7 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
       drawer: isDesktop ? null : Drawer(child: _buildSidebarContent()),
       body: Row(
         children: [
-          if (isDesktop) Container(width: 280, child: _buildSidebarContent()),
+          if (isDesktop) SizedBox(width: 280, child: _buildSidebarContent()),
           Expanded(
             child: Column(
               children: [
@@ -122,7 +121,7 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AdminColors.primary.withOpacity(0.1),
+                    color: AdminColors.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Icon(Icons.auto_awesome, color: AdminColors.primary, size: 24),
@@ -180,7 +179,7 @@ class _AdminMainWrapperState extends State<AdminMainWrapper> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
           decoration: BoxDecoration(
-            color: isSelected ? AdminColors.primary.withOpacity(0.05) : Colors.transparent,
+            color: isSelected ? AdminColors.primary.withValues(alpha: 0.05) : Colors.transparent,
             borderRadius: BorderRadius.circular(8),
           ),
           child: Row(

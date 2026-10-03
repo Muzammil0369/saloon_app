@@ -7,7 +7,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:saloon_app/core/theme/app_colors.dart';
-import 'package:saloon_app/core/theme/app_gradients.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/services/auth_service.dart';
@@ -80,7 +79,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
         .map((snapshot) {
       double total = 0;
       for (var doc in snapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
+        final data = doc.data();
         total += (data['amount'] ?? 0.0).toDouble();
       }
       return total;
@@ -157,8 +156,8 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                     child: CircleAvatar(
                       radius: 50,
                       backgroundColor: AppColors.primaryPink,
-                      backgroundImage: data != null ? _getProfileImage(data!) : null,
-                      child: data == null || _hasNoImage(data!)
+                      backgroundImage: data != null ? _getProfileImage(data) : null,
+                      child: data == null || _hasNoImage(data)
                           ? const Icon(Icons.storefront_rounded, size: 50, color: Colors.white)
                           : null,
                     ),
@@ -173,10 +172,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                       children: [
                         // Salon Name - Dynamically translated
                         Obx(() => Text(
-                          languageController.languageCode == 'ur'
+                          languageController.languageCode.value == 'ur'
                               ? (data?['salonName_ur'] ?? data?['salonName'] ?? 'my_salon'.tr)
                               : (data?['salonName'] ?? 'my_salon'.tr),
-                          style: AppTextStyles.headingLarge?.copyWith(
+                          style: AppTextStyles.headingLarge.copyWith(
                             fontSize: 18,
                             color: theme.textColor,
                           ),
@@ -185,10 +184,10 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                         )),
                         // Address - Dynamically translated
                         Obx(() => Text(
-                          languageController.languageCode == 'ur'
+                          languageController.languageCode.value == 'ur'
                               ? (data?['address_ur'] ?? data?['address'] ?? 'location'.tr)
                               : (data?['address'] ?? 'location'.tr),
-                          style: AppTextStyles.taglineSmall?.copyWith(
+                          style: AppTextStyles.taglineSmall.copyWith(
                             color: theme.mutedTextColor,
                           ),
                           maxLines: 2,
@@ -298,7 +297,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
               const SizedBox(height: 24),
 
               // Today's Summary
-              Text("todays_summary".tr, style: AppTextStyles.headingLarge?.copyWith(fontSize: 16, color: theme.textColor)),
+              Text("todays_summary".tr, style: AppTextStyles.headingLarge.copyWith(fontSize: 16, color: theme.textColor)),
               const SizedBox(height: 12),
 
               StreamBuilder<QuerySnapshot>(
@@ -332,7 +331,7 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text("pending_requests".tr, style: AppTextStyles.headingLarge?.copyWith(fontSize: 16, color: theme.textColor)),
+                  Text("pending_requests".tr, style: AppTextStyles.headingLarge.copyWith(fontSize: 16, color: theme.textColor)),
                   GestureDetector(onTap: () => widget.onTabChange(1), child: Text('manage_all'.tr, style: AppTextStyles.linkText)),
                 ],
               ),
@@ -349,10 +348,12 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                   if (snapshot.connectionState == ConnectionState.waiting) return const CircularProgressIndicator();
 
                   final docs = snapshot.data!.docs;
-                  if (docs.isEmpty) return Padding(
+                  if (docs.isEmpty) {
+                    return Padding(
                     padding: const EdgeInsets.all(20),
                     child: Center(child: Text('no_pending_requests'.tr, style: TextStyle(color: theme.mutedTextColor))),
                   );
+                  }
 
                   return ListView.builder(
                     shrinkWrap: true,
@@ -429,16 +430,16 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
           decoration: BoxDecoration(color: theme.lightPinkColor, borderRadius: BorderRadius.circular(10)),
           child: Column(children: [
-            Text(time.split(' ').first, style: AppTextStyles.headingSmall?.copyWith(color: AppColors.primaryPink)),
-            Text(time.split(' ').length > 1 ? time.split(' ')[1] : '', style: AppTextStyles.label?.copyWith(color: AppColors.primaryPink)),
+            Text(time.split(' ').first, style: AppTextStyles.headingSmall.copyWith(color: AppColors.primaryPink)),
+            Text(time.split(' ').length > 1 ? time.split(' ')[1] : '', style: AppTextStyles.label.copyWith(color: AppColors.primaryPink)),
           ]),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(name, style: AppTextStyles.bodyMedium?.copyWith(fontWeight: FontWeight.w600, color: theme.textColor)),
+            Text(name, style: AppTextStyles.bodyMedium.copyWith(fontWeight: FontWeight.w600, color: theme.textColor)),
             const SizedBox(height: 2),
-            Text(serviceName, style: AppTextStyles.taglineSmall?.copyWith(color: theme.mutedTextColor)),
+            Text(serviceName, style: AppTextStyles.taglineSmall.copyWith(color: theme.mutedTextColor)),
           ]),
         ),
         GestureDetector(

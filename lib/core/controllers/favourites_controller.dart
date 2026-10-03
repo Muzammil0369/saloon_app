@@ -63,5 +63,6 @@ class FavouritesController extends GetxController {
   }
 
   // Public so the favourites screen can refresh after navigating away/back
+  @override
   Future<void> refresh() => _loadFavourites();
 }

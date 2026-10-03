@@ -37,7 +37,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('add_address'.tr, style: AppTextStyles.headingMedium?.copyWith(color: theme.textColor)),
+            Text('add_address'.tr, style: AppTextStyles.headingMedium.copyWith(color: theme.textColor)),
             const SizedBox(height: 16),
             TextField(
               controller: labelController,
@@ -98,7 +98,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('saved_addresses'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('saved_addresses'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -162,7 +162,7 @@ class _SavedAddressesScreenState extends State<SavedAddressesScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(title, style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
+                          Text(title, style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.bold, color: theme.textColor)),
                           Text(address, style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
                         ],
                       ),

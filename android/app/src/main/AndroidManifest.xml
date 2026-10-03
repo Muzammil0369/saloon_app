@@ -13,6 +13,9 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyD0RHz9bl-05jcqnCCFzV9vsVnDLrz__S4"/>
+        <meta-data
+            android:name="com.google.android.geo.RENDERER"
+            android:value="LATEST"/>
 
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_icon"

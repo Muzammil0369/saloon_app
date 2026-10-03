@@ -105,7 +105,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'welcome_back'.tr + ' 👋',
+                  '${'welcome_back'.tr} 👋',
                   style: AppTextStyles.headingLarge.copyWith(
                     fontSize: 32,
                     color: theme.textColor,
@@ -187,7 +187,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Text(
-                            'create_account'.tr + ' 🚀',
+                            '${'create_account'.tr} 🚀',
                             style: AppTextStyles.linkText.copyWith(fontWeight: FontWeight.bold),
                           ),
                         ),

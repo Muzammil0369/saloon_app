@@ -21,7 +21,7 @@ class OwnerCoworkersScreen extends StatefulWidget {
 class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
   final ImagePicker _picker = ImagePicker();
   bool _hasCoworkers = false;
-  List<Map<String, dynamic>> _workers = [];
+  final List<Map<String, dynamic>> _workers = [];
 
   void _addWorker() {
     showModalBottomSheet(
@@ -74,7 +74,7 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('coworkers'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('coworkers'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: theme.textColor),
           onPressed: () => Navigator.pop(context),
@@ -89,12 +89,12 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
               const ProgressStepBar(totalSteps: 7, currentStep: 5),
               const SizedBox(height: 30),
 
-              Text('your_team'.tr + ' 👥',
-                style: AppTextStyles.displayLarge?.copyWith(fontSize: 25, color: theme.textColor),
+              Text('${'your_team'.tr} 👥',
+                style: AppTextStyles.displayLarge.copyWith(fontSize: 25, color: theme.textColor),
               ),
               const SizedBox(height: 8),
               Text('do_you_have_workers'.tr,
-                  style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor)),
+                  style: AppTextStyles.tagline.copyWith(color: theme.mutedTextColor)),
 
               const SizedBox(height: 30),
 
@@ -209,7 +209,7 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
                       children: [
                         const Icon(Icons.person_add_rounded, color: AppColors.primaryPink),
                         const SizedBox(width: 8),
-                        Text('add_coworker'.tr, style: AppTextStyles.buttonText?.copyWith(color: AppColors.primaryPink)),
+                        Text('add_coworker'.tr, style: AppTextStyles.buttonText.copyWith(color: AppColors.primaryPink)),
                       ],
                     ),
                   ),
@@ -270,7 +270,7 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(worker['name'] ?? 'Unnamed', style: AppTextStyles.bodyLarge?.copyWith(fontWeight: FontWeight.w600)),
+                Text(worker['name'] ?? 'Unnamed', style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
                 Text('Father: ${worker['fatherName'] ?? 'N/A'}', style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
                 if (worker['cnic'] != null && worker['cnic'].toString().isNotEmpty)
@@ -384,7 +384,7 @@ class _WorkerFormState extends State<_WorkerForm> {
 
               Text(
                 widget.existingWorker != null ? 'edit_coworker'.tr : 'add_coworker'.tr,
-                style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor),
+                style: AppTextStyles.headingLarge.copyWith(color: theme.textColor),
               ),
               const SizedBox(height: 16),  // Reduced from 24
 
@@ -410,11 +410,11 @@ class _WorkerFormState extends State<_WorkerForm> {
               const SizedBox(height: 12),  // Reduced from 16
 
               // Name
-              _buildField('full_name'.tr + ' *', 'e.g. Ahmed Khan', _nameController, theme),
+              _buildField('${'full_name'.tr} *', 'e.g. Ahmed Khan', _nameController, theme),
               const SizedBox(height: 12),  // Reduced from 16
 
               // Father Name
-              _buildField('father_name'.tr + ' *', 'e.g. Muhammad Khan', _fatherNameController, theme),
+              _buildField('${'father_name'.tr} *', 'e.g. Muhammad Khan', _fatherNameController, theme),
               const SizedBox(height: 12),  // Reduced from 16
 
               // CNIC (Optional)

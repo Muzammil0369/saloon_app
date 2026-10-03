@@ -146,7 +146,7 @@ class _OwnerBasicInfoScreenState extends State<OwnerBasicInfoScreen> {
         automaticallyImplyLeading: false,
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('salon_info'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('salon_info'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: theme.textColor),
           onPressed: () => Navigator.pop(context),
@@ -166,12 +166,12 @@ class _OwnerBasicInfoScreenState extends State<OwnerBasicInfoScreen> {
                       const ProgressStepBar(totalSteps: 7, currentStep: 3),
                       const SizedBox(height: 30),
 
-                      Text('basic_details'.tr + '🏪',
-                        style: AppTextStyles.displayLarge?.copyWith(fontSize: 25, color: theme.textColor),
+                      Text('${'basic_details'.tr}🏪',
+                        style: AppTextStyles.displayLarge.copyWith(fontSize: 25, color: theme.textColor),
                       ),
                       const SizedBox(height: 8),
                       Text('tell_about_salon'.tr,
-                          style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor)),
+                          style: AppTextStyles.tagline.copyWith(color: theme.mutedTextColor)),
                       const SizedBox(height: 32),
 
                       // ✅ Owner Profile Photo
@@ -238,7 +238,7 @@ class _OwnerBasicInfoScreenState extends State<OwnerBasicInfoScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text('Salon Location', style: AppTextStyles.headingSmall?.copyWith(color: theme.textColor)),
+                          Text('Salon Location', style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
                           GestureDetector(
                             onTap: _isLoadingLocation ? null : _goToCurrentLocation,
                             child: Container(
@@ -267,7 +267,7 @@ class _OwnerBasicInfoScreenState extends State<OwnerBasicInfoScreen> {
                         const SizedBox(height: 4),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                          decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                          decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
                           child: Text('📍 Selected: ${_selectedLocation!.latitude.toStringAsFixed(6)}, ${_selectedLocation!.longitude.toStringAsFixed(6)}',
                               style: TextStyle(fontSize: 11, color: Colors.green.shade700)),
                         ),
@@ -279,7 +279,7 @@ class _OwnerBasicInfoScreenState extends State<OwnerBasicInfoScreen> {
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(16),
                           border: Border.all(color: theme.borderColor, width: 2),
-                          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+                          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 10, offset: const Offset(0, 4))],
                         ),
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(16),
@@ -361,7 +361,7 @@ class _OwnerBasicInfoScreenState extends State<OwnerBasicInfoScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: AppTextStyles.headingSmall?.copyWith(color: theme.textColor)),
+        Text(label, style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
         const SizedBox(height: 8),
         Container(
           decoration: BoxDecoration(color: theme.cardColor, borderRadius: BorderRadius.circular(14), border: Border.all(color: theme.borderColor)),

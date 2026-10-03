@@ -78,7 +78,7 @@ class UserController extends GetxController {
   // Helper getter for display name
   String get displayName {
     final langCode = Get.find<LanguageController>().languageCode;
-    if (langCode == 'ur' && userNameUr.value.isNotEmpty) {
+    if (langCode.value == 'ur' && userNameUr.value.isNotEmpty) {
       return userNameUr.value;
     }
     return userName.value;

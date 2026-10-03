@@ -4,7 +4,6 @@ import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/services/auth_service.dart';
-import 'package:saloon_app/features/owner/registration/owner_basic_info_screen.dart';
 import 'package:saloon_app/shared/widgets/app_button.dart';
 import 'package:saloon_app/shared/widgets/progress_step_bar.dart';
 
@@ -114,7 +113,7 @@ class _OwnerRegistrationScreenState extends State<OwnerRegistrationScreen> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        title: Text('owner_sign_up'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('owner_sign_up'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_rounded, color: theme.textColor),
           onPressed: () => Get.back(),
@@ -129,12 +128,12 @@ class _OwnerRegistrationScreenState extends State<OwnerRegistrationScreen> {
               const ProgressStepBar(totalSteps: 7, currentStep: 1),
               const SizedBox(height: 30),
 
-              Text('register_salon'.tr + ' 🏪',
-                style: AppTextStyles.displayLarge?.copyWith(fontSize: 26, color: theme.textColor),
+              Text('${'register_salon'.tr} 🏪',
+                style: AppTextStyles.displayLarge.copyWith(fontSize: 26, color: theme.textColor),
               ),
               const SizedBox(height: 8),
               Text('create_account_manage_business'.tr,
-                  style: AppTextStyles.tagline?.copyWith(color: theme.mutedTextColor)),
+                  style: AppTextStyles.tagline.copyWith(color: theme.mutedTextColor)),
 
               const SizedBox(height: 32),
 
@@ -287,7 +286,7 @@ class _OwnerRegistrationScreenState extends State<OwnerRegistrationScreen> {
   }
 
   Widget _buildLabel(String text) {
-    return Text(text, style: AppTextStyles.headingSmall?.copyWith(color: ThemeHelper(context).textColor));
+    return Text(text, style: AppTextStyles.headingSmall.copyWith(color: ThemeHelper(context).textColor));
   }
 
   Widget _buildTextField({

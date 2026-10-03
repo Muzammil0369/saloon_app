@@ -79,7 +79,7 @@ class _QRScreenState extends State<QRScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       appBar: AppBar(
-        title: Text('secure_qr'.tr, style: AppTextStyles.headingLarge?.copyWith(color: theme.textColor)),
+        title: Text('secure_qr'.tr, style: AppTextStyles.headingLarge.copyWith(color: theme.textColor)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -100,7 +100,7 @@ class _QRScreenState extends State<QRScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.green),
                 ),
@@ -116,7 +116,7 @@ class _QRScreenState extends State<QRScreen> {
               const SizedBox(height: 8),
               Text(
                 'show_qr_at_salon'.tr,
-                style: AppTextStyles.bodyMedium?.copyWith(color: theme.mutedTextColor),
+                style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor),
                 textAlign: TextAlign.center,
               ),
               const SizedBox(height: 4),
@@ -124,7 +124,7 @@ class _QRScreenState extends State<QRScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: _secondsRemaining < 30 ? Colors.red.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                  color: _secondsRemaining < 30 ? Colors.red.withValues(alpha: 0.1) : Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -148,7 +148,7 @@ class _QRScreenState extends State<QRScreen> {
                   borderRadius: BorderRadius.circular(24),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
+                      color: Colors.black.withValues(alpha: 0.1),
                       blurRadius: 20,
                       offset: const Offset(0, 10),
                     ),
@@ -185,9 +185,9 @@ class _QRScreenState extends State<QRScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.red.withOpacity(0.05),
+                  color: Colors.red.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.red.withOpacity(0.2)),
+                  border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   children: [
@@ -196,7 +196,7 @@ class _QRScreenState extends State<QRScreen> {
                     Expanded(
                       child: Text(
                         'do_not_share'.tr,
-                        style: TextStyle(color: Colors.red.withOpacity(0.8), fontSize: 11),
+                        style: TextStyle(color: Colors.red.withValues(alpha: 0.8), fontSize: 11),
                       ),
                     ),
                   ],
@@ -213,7 +213,7 @@ class _QRScreenState extends State<QRScreen> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.green.withOpacity(0.1),
+        color: Colors.green.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
