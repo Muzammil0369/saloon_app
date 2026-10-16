@@ -10,6 +10,7 @@ import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/controllers/user_controller.dart';
 import 'package:saloon_app/features/customer/screens/notifications_screen.dart';
+import 'package:saloon_app/features/customer/screens/customer_search_screen.dart';
 import 'package:saloon_app/features/customer/screens/salon_detail_screen.dart';
 import 'package:saloon_app/shared/widgets/salon_card.dart';
 import 'package:saloon_app/shared/widgets/ad_banner_card.dart';
@@ -256,12 +257,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                             theme: theme,
                             onTap: () => Get.to(() => const NotificationsScreen()),
                           ),
-                         ],
+                        ],
                       ),
                       const SizedBox(height: 20),
                       // Search Bar
                       GestureDetector(
-                        onTap: () => widget.onTabChange(1),
+                        onTap: () => Get.to(() => const CustomerSearchScreen()),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
