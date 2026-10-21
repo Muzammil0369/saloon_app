@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -122,6 +123,8 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
             .toList();
 
         final photos = data['salonPhotos'];
+        final ownerName =
+        (data['ownerName'] ?? data['fullName'] ?? '').toString();
         return <String, dynamic>{
           'ownerId': doc.id,
           'name': isUr
@@ -138,7 +141,21 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
               data['profileImage'] ??
               ((photos is List && photos.isNotEmpty) ? photos.first : null),
           'services': services,
-          'workers': workers,
+          'workers': [
+            if (ownerName.isNotEmpty)
+              {
+                'name': ownerName,
+                'imageUrl': data['ownerProfileImage'],
+                'rating': (data['ownerStaffRating'] ?? 0).toDouble(),
+              },
+            ...workers,
+          ],
+          'ownerName': data['ownerName'],
+          'ownerProfileImage': data['ownerProfileImage'],
+          'phoneNumber': data['phoneNumber'],
+          'businessHours': data['businessHours'],
+          'hasCoworkers': data['hasCoworkers'],
+          'rawWorkers': data['workers'],
         };
       }).toList();
 
@@ -166,6 +183,37 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
     _debounce?.cancel();
     setState(() => _query = text.trim());
     _focus.unfocus();
+  }
+
+  // ---------- Helpers ----------
+
+  /// Staff/salon photos are stored either as http URLs or base64 data URIs.
+  ImageProvider? _imageProvider(dynamic raw) {
+    final url = raw?.toString() ?? '';
+    if (url.isEmpty) return null;
+    if (url.startsWith('http')) return CachedNetworkImageProvider(url);
+    if (url.startsWith('data:image')) {
+      try {
+        return MemoryImage(base64Decode(url.split(',').last));
+      } catch (_) {
+        return null;
+      }
+    }
+    return null;
+  }
+
+  /// Fade + slide-up entrance, staggered by list position.
+  Widget _entrance(int index, Widget child) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 350 + (index.clamp(0, 8) * 60)),
+      curve: Curves.easeOutCubic,
+      builder: (_, v, c) => Opacity(
+        opacity: v,
+        child: Transform.translate(offset: Offset(0, (1 - v) * 24), child: c),
+      ),
+      child: child,
+    );
   }
 
   // ---------- Matching ----------
@@ -335,9 +383,11 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
         Wrap(
           spacing: 10,
           runSpacing: 10,
-          children: _popularServices
-              .map((s) => _chip(s, theme, Icons.content_cut_rounded))
-              .toList(),
+          children: [
+            for (int i = 0; i < _popularServices.length; i++)
+              _entrance(i,
+                  _chip(_popularServices[i], theme, Icons.content_cut_rounded)),
+          ],
         ),
         const SizedBox(height: 28),
         Text('popular_searches'.tr,
@@ -386,9 +436,12 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: results.length,
-      itemBuilder: (_, i) => SalonCard(
-        salon: results[i],
-        onTap: () => _openSalon(results[i]),
+      itemBuilder: (_, i) => _entrance(
+        i,
+        SalonCard(
+          salon: results[i],
+          onTap: () => _openSalon(results[i]),
+        ),
       ),
     );
   }
@@ -403,7 +456,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
       itemBuilder: (_, i) {
         final r = results[i];
         final minPrice = r['minPrice'];
-        return Material(
+        return _entrance(i, Material(
           color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
@@ -456,7 +509,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
               ),
             ),
           ),
-        );
+        ));
       },
     );
   }
@@ -472,7 +525,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
         final r = results[i];
         final img = r['imageUrl'];
         final rating = (r['rating'] as num).toDouble();
-        return Material(
+        return _entrance(i, Material(
           color: theme.cardColor,
           borderRadius: BorderRadius.circular(16),
           child: InkWell(
@@ -486,16 +539,22 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
               ),
               child: Row(
                 children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundColor: theme.lightPinkColor,
-                    backgroundImage: (img is String && img.isNotEmpty)
-                        ? CachedNetworkImageProvider(img)
-                        : null,
-                    child: (img is String && img.isNotEmpty)
-                        ? null
-                        : const Icon(Icons.person,
-                        color: AppColors.primaryPink),
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: LinearGradient(
+                          colors: [AppColors.primaryPink, Color(0xFFFF9A9E)]),
+                    ),
+                    child: CircleAvatar(
+                      radius: 26,
+                      backgroundColor: theme.lightPinkColor,
+                      backgroundImage: _imageProvider(img),
+                      child: _imageProvider(img) != null
+                          ? null
+                          : const Icon(Icons.person,
+                          color: AppColors.primaryPink),
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -525,7 +584,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
               ),
             ),
           ),
-        );
+        ));
       },
     );
   }
@@ -549,4 +608,31 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
       ),
     );
   }
+}
+
+
+/// Premium open animation: fade + gentle scale-up + slide from the search bar.
+Route<T> searchRoute<T>() {
+  return PageRouteBuilder<T>(
+    transitionDuration: const Duration(milliseconds: 420),
+    reverseTransitionDuration: const Duration(milliseconds: 300),
+    pageBuilder: (_, __, ___) => const CustomerSearchScreen(),
+    transitionsBuilder: (_, animation, __, child) {
+      final curved =
+      CurvedAnimation(parent: animation, curve: Curves.easeOutBack);
+      final fade =
+      CurvedAnimation(parent: animation, curve: Curves.easeOut);
+      return FadeTransition(
+        opacity: fade,
+        child: SlideTransition(
+          position: Tween<Offset>(begin: const Offset(0, 0.08), end: Offset.zero)
+              .animate(curved),
+          child: ScaleTransition(
+            scale: Tween<double>(begin: 0.94, end: 1).animate(curved),
+            child: child,
+          ),
+        ),
+      );
+    },
+  );
 }

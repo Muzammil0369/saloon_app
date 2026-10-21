@@ -262,7 +262,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                       const SizedBox(height: 20),
                       // Search Bar
                       GestureDetector(
-                        onTap: () => Get.to(() => const CustomerSearchScreen()),
+                        onTap: () => Navigator.of(context).push(searchRoute()),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(

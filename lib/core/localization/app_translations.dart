@@ -81,6 +81,7 @@ class AppTranslations extends Translations {
       'view_all': 'View All',
       'book_now': 'Book Now',
       'view_details': 'View Details',
+      'failed_to_load_salons': 'Failed to load salons',
 
       // Booking
       'book_appointment': 'Book Appointment',
@@ -597,6 +598,8 @@ class AppTranslations extends Translations {
       'select_at_least_one_service': 'Please select at least one service',
       'offers': 'Offers',
       'no_active_offers': 'No active offers right now',
+      'price': 'Price',
+      'has_active_offer': 'Has an active offer',
       'offer_valid_for_days': 'Offer valid for (days)',
       'included_services': 'Included Services',
 
@@ -672,6 +675,19 @@ class AppTranslations extends Translations {
       'Fri': 'Fri',
       'Sat': 'Sat',
       'Sun': 'Sun',
+
+      // ==================== SEARCH SCREEN ====================
+      'salons': 'Salons',
+      'staff_plural': 'Staff',
+      'popular_services': 'Popular Services',
+      'popular_searches': 'Popular Searches',
+      'no_salons_found': 'No salons found',
+      'no_services_found': 'No services found',
+      'no_staff_found': 'No staff found',
+      'offered_by': 'Offered by',
+      'salons_lowercase': 'salons',
+      'from': 'from',
+      'at': 'at',
     },
     'ur': {
       // Auth
@@ -751,6 +767,7 @@ class AppTranslations extends Translations {
       'view_all': 'سب دیکھیں',
       'book_now': 'ابھی بک کریں',
       'view_details': 'تفصیلات دیکھیں',
+      'failed_to_load_salons': 'سیلون لوڈ کرنے میں ناکام',
 
       // Booking
       'book_appointment': 'اپوائنٹمنٹ بک کریں',
@@ -1267,6 +1284,8 @@ class AppTranslations extends Translations {
       'select_at_least_one_service': 'براہ کرم کم از کم ایک سروس منتخب کریں',
       'offers': 'آفرز',
       'no_active_offers': 'اس وقت کوئی فعال آفر نہیں',
+      'price': 'قیمت',
+      'has_active_offer': 'فعال آفر موجود ہے',
       'offer_valid_for_days': 'آفر کی مدت (دن)',
       'included_services': 'شامل سروسز',
 
@@ -1342,6 +1361,19 @@ class AppTranslations extends Translations {
       'Fri': 'جمعہ',
       'Sat': 'ہفتہ',
       'Sun': 'اتوار',
+
+      // ==================== SEARCH SCREEN ====================
+      'salons': 'سیلون',
+      'staff_plural': 'عملہ',
+      'popular_services': 'مقبول سروسز',
+      'popular_searches': 'مقبول تلاشیں',
+      'no_salons_found': 'کوئی سیلون نہیں ملا',
+      'no_services_found': 'کوئی سروس نہیں ملی',
+      'no_staff_found': 'کوئی عملہ نہیں ملا',
+      'offered_by': 'پیش کردہ از',
+      'salons_lowercase': 'سیلون',
+      'from': 'سے',
+      'at': 'پر',
     },
   };
 }
