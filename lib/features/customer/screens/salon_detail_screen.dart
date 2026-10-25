@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -26,12 +27,14 @@ class SalonDetailScreen extends StatefulWidget {
   final Map<String, dynamic>? salon;
   final String? ownerId;
   final int initialTabIndex; // 0 = Services (default), 1 = Offers
+  final String initialQuery; // search text carried over from the search screen
 
   const SalonDetailScreen({
     super.key,
     this.salon,
     this.ownerId,
     this.initialTabIndex = 0,
+    this.initialQuery = '',
   });
 
   @override
@@ -42,6 +45,24 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
   final BookingController _bookingController = Get.put(BookingController());
   final DatabaseService _dbService = DatabaseService.instance;
   late int _selectedTab = widget.initialTabIndex;
+  // The menu query lives in a notifier so typing only rebuilds the menu —
+  // never the whole page (which re-created the Firestore stream each time).
+  late final ValueNotifier<String> _menuQuery =
+  ValueNotifier<String>(widget.initialQuery.trim());
+  Timer? _menuDebounce;
+  late final Stream<DocumentSnapshot> _salonStream =
+  _dbService.getSalonStream(_ownerId);
+  late final TextEditingController _menuController =
+  TextEditingController(text: widget.initialQuery.trim());
+  String _selectedCategory = 'all';
+
+  @override
+  void dispose() {
+    _menuDebounce?.cancel();
+    _menuQuery.dispose();
+    _menuController.dispose();
+    super.dispose();
+  }
 
   String get _ownerId => widget.ownerId ?? widget.salon?['ownerId'] ?? '';
 
@@ -164,9 +185,10 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
     return Scaffold(
       backgroundColor: theme.backgroundColor,
       body: StreamBuilder<DocumentSnapshot>(
-        stream: _dbService.getSalonStream(_ownerId),
+        stream: _salonStream,
         builder: (context, salonSnapshot) {
-          if (salonSnapshot.connectionState == ConnectionState.waiting) {
+          if (!salonSnapshot.hasData &&
+              salonSnapshot.connectionState == ConnectionState.waiting) {
             return  Center(
               child: CircularProgressIndicator(color: AppColors.primaryPink),
             );
@@ -355,7 +377,7 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
 
                     // ── Services / Offers Tab Bar ──
                     Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 20,vertical: 12),
                       child: Container(
                         padding: const EdgeInsets.all(4),
                         decoration: BoxDecoration(
@@ -410,127 +432,8 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
                       ),
                     ),
 
-                    // ── Services Section ──
-                    if (_selectedTab == 0)
-                      Padding(
-                        padding: const EdgeInsets.all(20),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'our_services'.tr,
-                              style: AppTextStyles.headingSmall.copyWith(color: theme.textColor),
-                            ),
-                            const SizedBox(height: 16),
-                            Obx(() {
-                              if (_bookingController.isLoading.value) {
-                                return const Center(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(20),
-                                    child: CircularProgressIndicator(color: AppColors.primaryPink),
-                                  ),
-                                );
-                              }
-
-                              if (_bookingController.services.isEmpty) {
-                                return Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(20),
-                                    child: Text(
-                                      'no_services_available'.tr,
-                                      style: AppTextStyles.bodyMedium.copyWith(color: theme.mutedTextColor),
-                                    ),
-                                  ),
-                                );
-                              }
-
-                              return ListView.separated(
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                itemCount: _bookingController.services.length,
-                                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                                itemBuilder: (context, index) {
-                                  final service = _bookingController.services[index];
-                                  final isSelected = service['isSelected'] ?? false;
-                                  return GestureDetector(
-                                    onTap: () => _bookingController.toggleService(index),
-                                    child: AnimatedContainer(
-                                      duration: const Duration(milliseconds: 200),
-                                      padding: const EdgeInsets.all(16),
-                                      decoration: BoxDecoration(
-                                        gradient: isSelected
-                                            ? LinearGradient(
-                                          colors: [AppColors.lightPink, AppColors.lightPink.withValues(alpha: 0.5)],
-                                        )
-                                            : null,
-                                        color: isSelected ? null : theme.cardColor,
-                                        borderRadius: BorderRadius.circular(AppRadius.lg),
-                                        border: Border.all(
-                                          color: isSelected ? AppColors.primaryPink : theme.borderColor,
-                                          width: isSelected ? 2 : 1,
-                                        ),
-                                        boxShadow: isSelected
-                                            ? [
-                                          BoxShadow(
-                                            color: AppColors.primaryPink.withValues(alpha: 0.1),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 2),
-                                          ),
-                                        ]
-                                            : null,
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          AnimatedContainer(
-                                            duration: const Duration(milliseconds: 200),
-                                            child: Icon(
-                                              isSelected ? Icons.check_circle : Icons.circle_outlined,
-                                              color: isSelected ? AppColors.primaryPink : theme.mutedTextColor,
-                                            ),
-                                          ),
-                                          const SizedBox(width: 12),
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  service['name'] ?? service['serviceName'] ?? 'Unnamed Service',
-                                                  style: AppTextStyles.bodyLarge.copyWith(
-                                                    fontWeight: FontWeight.w600,
-                                                    color: theme.textColor,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 4),
-                                                Row(
-                                                  children: [
-                                                    Icon(Icons.timer_outlined, size: 14, color: theme.mutedTextColor),
-                                                    const SizedBox(width: 4),
-                                                    Text(
-                                                      '${service['duration'] ?? 30} min',
-                                                      style: AppTextStyles.label.copyWith(color: theme.mutedTextColor),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          Text(
-                                            'Rs. ${service['price'] ?? 0}',
-                                            style: AppTextStyles.bodyLarge.copyWith(
-                                              color: AppColors.primaryPink,
-                                              fontWeight: FontWeight.bold,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  );
-                                },
-                              );
-                            }),
-                          ],
-                        ),
-                      ),
+                    // ── Services Section (menu style) ──
+                    if (_selectedTab == 0) _buildServicesMenu(theme),
 
                     // ── Offers Section ──
                     if (_selectedTab == 1)
@@ -689,6 +592,312 @@ class _SalonDetailScreenState extends State<SalonDetailScreen> {
             ],
           );
         },
+      ),
+    );
+  }
+
+  // ───────────────────────── Menu-style services ─────────────────────────
+
+  bool _matchesQuery(Map service, String q) {
+    if (q.isEmpty) return false;
+    final hay = '${service['name'] ?? service['serviceName'] ?? ''} '
+        '${service['category'] ?? ''} ${service['description'] ?? ''}'
+        .toLowerCase();
+    return hay.contains(q.toLowerCase());
+  }
+
+  Widget _buildServicesMenu(ThemeHelper theme) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      child: ValueListenableBuilder<String>(
+        valueListenable: _menuQuery,
+        builder: (context, q, _) => Obx(() {
+          if (_bookingController.isLoading.value) {
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(color: AppColors.primaryPink),
+              ),
+            );
+          }
+
+          final all = _bookingController.services;
+          if (all.isEmpty) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text('no_services_available'.tr,
+                    style: AppTextStyles.bodyMedium
+                        .copyWith(color: theme.mutedTextColor)),
+              ),
+            );
+          }
+
+          // Indexes are kept so toggling still hits the right controller entry.
+          final entries = List.generate(all.length, (i) => MapEntry(i, all[i]));
+          final categories = <String>{
+            for (final e in entries)
+              if ((e.value['category'] ?? '').toString().trim().isNotEmpty)
+                e.value['category'].toString().trim()
+          }.toList();
+
+          var visible = entries.where((e) {
+            if (_selectedCategory == 'all') return true;
+            return (e.value['category'] ?? '').toString().trim() ==
+                _selectedCategory;
+          }).toList();
+
+          final matched = q.isEmpty
+              ? <MapEntry<int, Map<String, dynamic>>>[]
+              : visible.where((e) => _matchesQuery(e.value, q)).toList();
+          final rest = q.isEmpty
+              ? visible
+              : visible.where((e) => !_matchesQuery(e.value, q)).toList();
+
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Search inside the menu
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                decoration: BoxDecoration(
+                  color: theme.cardColor,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: theme.borderColor),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.search_rounded,
+                        color: AppColors.primaryPink, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: TextField(
+                        controller: _menuController,
+                        onChanged: (v) {
+                          _menuDebounce?.cancel();
+                          _menuDebounce = Timer(
+                              const Duration(milliseconds: 300),
+                                  () => _menuQuery.value = v.trim());
+                        },
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: theme.textColor),
+                        decoration: InputDecoration(
+                          focusedBorder: InputBorder.none,
+                          enabledBorder: InputBorder.none,
+                          disabledBorder: InputBorder.none,
+                          border: InputBorder.none,
+                          hintText: 'search_services'.tr,
+                          hintStyle: AppTextStyles.bodyMedium
+                              .copyWith(color: theme.mutedTextColor),
+                        ),
+                      ),
+                    ),
+                    ValueListenableBuilder<TextEditingValue>(
+                      valueListenable: _menuController,
+                      builder: (_, value, __) => value.text.isEmpty
+                          ? const SizedBox.shrink()
+                          : GestureDetector(
+                        onTap: () {
+                          _menuDebounce?.cancel();
+                          _menuController.clear();
+                          _menuQuery.value = '';
+                        },
+                        child: Icon(Icons.close_rounded,
+                            size: 20, color: theme.mutedTextColor),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Category chips (only when the owner has categorised services)
+              if (categories.length > 1) ...[
+                const SizedBox(height: 14),
+                SizedBox(
+                  height: 36,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      _categoryChip('all', 'all'.tr, theme),
+                      for (final c in categories) _categoryChip(c, c, theme),
+                    ],
+                  ),
+                ),
+              ],
+
+              if (matched.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                _menuHeader('based_on_your_search'.tr, theme,
+                    icon: Icons.auto_awesome_rounded),
+                const SizedBox(height: 10),
+                ...matched.map((e) => _menuItem(e.key, e.value, theme)),
+              ],
+
+              if (rest.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                _menuHeader(
+                    matched.isNotEmpty ? 'all_services'.tr : 'our_services'.tr,
+                    theme),
+                const SizedBox(height: 10),
+                ...rest.map((e) => _menuItem(e.key, e.value, theme)),
+              ],
+
+              if (matched.isEmpty && rest.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(28),
+                    child: Text('no_services_found'.tr,
+                        style: AppTextStyles.bodyMedium
+                            .copyWith(color: theme.mutedTextColor)),
+                  ),
+                ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  Widget _menuHeader(String title, ThemeHelper theme, {IconData? icon}) {
+    return Row(
+      children: [
+        if (icon != null) ...[
+          Icon(icon, size: 18, color: AppColors.primaryPink),
+          const SizedBox(width: 6),
+        ],
+        Text(title,
+            style: AppTextStyles.headingSmall.copyWith(color: theme.textColor)),
+      ],
+    );
+  }
+
+  Widget _categoryChip(String value, String label, ThemeHelper theme) {
+    final selected = _selectedCategory == value;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedCategory = value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? AppColors.primaryPink : theme.cardColor,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+                color: selected ? AppColors.primaryPink : theme.borderColor),
+          ),
+          child: Text(label,
+              style: TextStyle(
+                  color: selected ? Colors.white : theme.textColor,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 13)),
+        ),
+      ),
+    );
+  }
+
+  Widget _menuItem(int index, Map<String, dynamic> service, ThemeHelper theme) {
+    final bool isSelected = service['isSelected'] ?? false;
+    final String name =
+        service['name'] ?? service['serviceName'] ?? 'Unnamed Service';
+    final String description = (service['description'] ?? '').toString();
+    final img = service['imageUrl'] ?? service['image'];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: GestureDetector(
+        onTap: () => _bookingController.toggleService(index),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 220),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: isSelected ? theme.lightPinkColor : theme.cardColor,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: isSelected ? AppColors.primaryPink : theme.borderColor,
+              width: isSelected ? 1.8 : 1,
+            ),
+            boxShadow: isSelected
+                ? [
+              BoxShadow(
+                color: AppColors.primaryPink.withValues(alpha: 0.12),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              )
+            ]
+                : [theme.softShadow],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name,
+                        style: AppTextStyles.bodyLarge.copyWith(
+                            fontWeight: FontWeight.w700,
+                            color: theme.textColor)),
+                    if (description.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(description,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.bodySmall
+                              .copyWith(color: theme.mutedTextColor)),
+                    ],
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Text('Rs. ${service['price'] ?? 0}',
+                            style: AppTextStyles.bodyLarge.copyWith(
+                                color: AppColors.primaryPink,
+                                fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 12),
+                        Icon(Icons.timer_outlined,
+                            size: 14, color: theme.mutedTextColor),
+                        const SizedBox(width: 3),
+                        Text('${service['duration'] ?? 30} min',
+                            style: AppTextStyles.label
+                                .copyWith(color: theme.mutedTextColor)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Column(
+                children: [
+                  if (img is String && img.isNotEmpty) ...[
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SizedBox(
+                          width: 76, height: 76, child: _buildImage(img)),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 220),
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color:
+                      isSelected ? AppColors.primaryPink : theme.cardColor,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.primaryPink),
+                    ),
+                    child: Icon(
+                      isSelected ? Icons.check_rounded : Icons.add_rounded,
+                      color: isSelected ? Colors.white : AppColors.primaryPink,
+                      size: 22,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

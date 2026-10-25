@@ -307,6 +307,30 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
                               ],
                             ),
                           ),
+                          if (data['isUrgent'] == true)
+                            Container(
+                              margin: const EdgeInsets.only(right: 6),
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFF6B35).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.bolt_rounded, size: 12, color: Color(0xFFFF6B35)),
+                                  const SizedBox(width: 2),
+                                  Text(
+                                    'urgent_badge'.tr,
+                                    style: const TextStyle(
+                                      color: Color(0xFFFF6B35),
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                             decoration: BoxDecoration(

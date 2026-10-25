@@ -280,6 +280,7 @@ class _CustomerSearchScreenState extends State<CustomerSearchScreen>
     Get.to(() => SalonDetailScreen(
       ownerId: salon['ownerId'],
       salon: salon,
+      initialQuery: _query,
     ));
   }
 

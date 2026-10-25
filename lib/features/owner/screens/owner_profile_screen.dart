@@ -243,27 +243,14 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
     try {
       final authService = Get.find<AuthService>();
       final userId = authService.uid!;
-      await FirebaseFirestore.instance
-          .collection('owners')
-          .doc(userId)
-          .delete();
-      await FirebaseFirestore.instance.collection('users').doc(userId).delete();
+      // Dependent data first, profile docs LAST (a failure part-way must not
+      // leave a half-deleted account). Payment transactions are financial
+      // records and are kept — clients are not allowed to delete them.
       final bookings = await FirebaseFirestore.instance
           .collection('bookings')
           .where('ownerId', isEqualTo: userId)
           .get();
       for (var doc in bookings.docs) {
-        await doc.reference.delete();
-      }
-      await FirebaseFirestore.instance
-          .collection('wallets')
-          .doc(userId)
-          .delete();
-      final transactions = await FirebaseFirestore.instance
-          .collection('transactions')
-          .where('metadata.ownerId', isEqualTo: userId)
-          .get();
-      for (var doc in transactions.docs) {
         await doc.reference.delete();
       }
       final services = await FirebaseFirestore.instance
@@ -273,6 +260,20 @@ class _OwnerProfileScreenState extends State<OwnerProfileScreen> {
       for (var doc in services.docs) {
         await doc.reference.delete();
       }
+      try {
+        await FirebaseFirestore.instance.collection('ads').doc(userId).delete();
+      } catch (_) {}
+      try {
+        await FirebaseFirestore.instance
+            .collection('wallets')
+            .doc(userId)
+            .delete();
+      } catch (_) {}
+      await FirebaseFirestore.instance
+          .collection('owners')
+          .doc(userId)
+          .delete();
+      await FirebaseFirestore.instance.collection('users').doc(userId).delete();
       await authService.logout();
       Get.offAllNamed('/auth-gate');
       Get.snackbar(

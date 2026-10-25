@@ -16,6 +16,8 @@ import '../../../core/theme/app_gradients.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_controller.dart';
 import '../../../core/theme/theme_helper.dart';
+import '../../../core/controllers/search_radius_controller.dart';
+import '../../../shared/widgets/radius_selector.dart';
 import 'favourite_salons_screen.dart';
 import 'help_support_screen.dart';
 
@@ -264,12 +266,15 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       final authService = Get.find<AuthService>();
       final userId = authService.uid!;
 
-      await FirebaseFirestore.instance.collection('users').doc(userId).delete();
+      // Order matters: remove dependent data first and the profile LAST, so a
+      // failure part-way never leaves a half-deleted account. Payment
+      // transactions are financial records and stay (clients can't delete them).
       final bookings = await FirebaseFirestore.instance.collection('bookings').where('customerId', isEqualTo: userId).get();
       for (var doc in bookings.docs) { await doc.reference.delete(); }
+      final addresses = await FirebaseFirestore.instance.collection('users').doc(userId).collection('addresses').get();
+      for (var doc in addresses.docs) { await doc.reference.delete(); }
       await FirebaseFirestore.instance.collection('wallets').doc(userId).delete();
-      final transactions = await FirebaseFirestore.instance.collection('transactions').where('userId', isEqualTo: userId).get();
-      for (var doc in transactions.docs) { await doc.reference.delete(); }
+      await FirebaseFirestore.instance.collection('users').doc(userId).delete();
 
       await authService.logout();
       Get.offAllNamed('/auth-gate');
@@ -546,6 +551,14 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                 _menuTile(Icons.location_on_rounded, 'saved_addresses'.tr, 'saved_addresses_subtitle'.tr, Colors.blue, theme, () {
                   Get.to(() => const SavedAddressesScreen());
                 }),
+                Obx(() => _menuTile(
+                  Icons.radar_rounded,
+                  'search_radius'.tr,
+                  '${'within'.tr} ${SearchRadiusController.instance.km.value} km',
+                  AppColors.primaryPink,
+                  theme,
+                      () => showRadiusSheet(context),
+                )),
                 _menuTile(Icons.help_rounded, 'help'.tr, 'help_subtitle'.tr, Colors.orange, theme, () {
                   Get.to(() => const HelpSupportScreen());
                 }),

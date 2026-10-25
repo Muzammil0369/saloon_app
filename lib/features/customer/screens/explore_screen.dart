@@ -1,10 +1,15 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../../core/controllers/language_controller.dart';
+import '../../../core/controllers/search_radius_controller.dart';
+import '../../../shared/widgets/radius_selector.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/theme_helper.dart';
@@ -39,6 +44,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
   List<Map<String, dynamic>> _allSalons = [];
   bool _loadingSalons = true;
   StreamSubscription<QuerySnapshot>? _ownersSub;
+  final SearchRadiusController _radius = SearchRadiusController.instance;
+  Worker? _radiusWorker;
+
+  double _zoomForRadius() {
+    final r = _radius.km.value.toDouble();
+    return (14 - math.log(r / 2) / math.ln2).clamp(9.5, 14.0);
+  }
 
   @override
   void initState() {
@@ -46,11 +58,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
     _initLocation();
     _loadActiveOffers();
     _listenToOwners();
+    // Radius changed from the profile screen: refresh markers + camera.
+    _radiusWorker = ever(_radius.km, (_) {
+      if (!mounted) return;
+      setState(() => _markers = _computeMarkers(_allSalons));
+      _animateToUserLocation();
+    });
   }
 
   @override
   void dispose() {
     _ownersSub?.cancel();
+    _radiusWorker?.dispose();
     _searchController.dispose();
     _searchDebounce?.cancel();
     super.dispose();
@@ -182,7 +201,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
     if (_userLatLng == null || _mapControllerInstance == null) return;
     try {
       _mapControllerInstance!.animateCamera(CameraUpdate.newCameraPosition(
-        CameraPosition(target: _userLatLng!, zoom: 14),
+        CameraPosition(target: _userLatLng!, zoom: _zoomForRadius()),
       ));
     } catch (e) {
       debugPrint('Map animation error: $e');
@@ -205,6 +224,10 @@ class _ExploreScreenState extends State<ExploreScreen> {
     }
 
     for (final s in salons) {
+      if (_userLatLng != null &&
+          (s['distanceValue'] as double) > _radius.km.value) {
+        continue; // outside the customer's search radius
+      }
       if (s['showOnMap'] == true) {
         markers.add(Marker(
           markerId: MarkerId('salon_${s['ownerId']}'),
@@ -293,7 +316,13 @@ class _ExploreScreenState extends State<ExploreScreen> {
           _selectedPriceTiers.contains(_priceTierFor(s['priceValue'] as double));
       final matchesOffers = !_offersOnly ||
           _ownerIdsWithActiveOffers.contains(s['ownerId']);
-      return matchesSearch && matchesFilter && matchesPrice && matchesOffers;
+      final matchesRadius = _userLatLng == null ||
+          (s['distanceValue'] as double) <= _radius.km.value;
+      return matchesSearch &&
+          matchesFilter &&
+          matchesPrice &&
+          matchesOffers &&
+          matchesRadius;
     }).toList();
 
     return _sortSalons(filtered);
@@ -692,18 +721,47 @@ class _ExploreScreenState extends State<ExploreScreen> {
         // Map
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(16),
+          // NOTE: no ClipRRect around the map — clipping a Google Maps platform
+          // view makes it render blank until it's touched. A border instead.
+          child: Container(
+            height: 180,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: theme.borderColor),
+            ),
             child: SizedBox(
               height: 180,
               child: GoogleMap(
                 key: const ValueKey('explore_map'),
                 initialCameraPosition: _userLatLng != null
-                    ? CameraPosition(target: _userLatLng!, zoom: 14)
+                    ? CameraPosition(target: _userLatLng!, zoom: _zoomForRadius())
                     : _defaultPosition,
                 markers: markers,
+                circles: _userLatLng == null
+                    ? const <Circle>{}
+                    : {
+                  Circle(
+                    circleId: const CircleId('search_radius'),
+                    center: _userLatLng!,
+                    radius: _radius.km.value * 1000.0,
+                    fillColor: AppColors.primaryPink.withValues(alpha: 0.08),
+                    strokeColor: AppColors.primaryPink.withValues(alpha: 0.6),
+                    strokeWidth: 2,
+                  ),
+                },
+                gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
+                  Factory<OneSequenceGestureRecognizer>(
+                          () => EagerGestureRecognizer()),
+                },
                 onMapCreated: (controller) {
                   _mapControllerInstance = controller;
+                  // Nudge the camera once the surface is attached so the
+                  // tiles paint immediately instead of waiting for a touch.
+                  Future.delayed(const Duration(milliseconds: 350), () {
+                    if (mounted) {
+                      controller.moveCamera(CameraUpdate.scrollBy(0, 0));
+                    }
+                  });
                   if (!_mapController.isCompleted) {
                     _mapController.complete(controller);
                   }
@@ -809,9 +867,36 @@ class _ExploreScreenState extends State<ExploreScreen> {
             SizedBox(
               height: MediaQuery.of(context).size.height * 0.4,
               child: Center(
-                child: Text(
-                  'no_salons'.tr,
-                  style: TextStyle(color: theme.textColor),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.radar_rounded,
+                        size: 52, color: theme.mutedTextColor),
+                    const SizedBox(height: 12),
+                    Text(
+                      _userLatLng != null
+                          ? '${'no_salons_in_radius'.tr} ${_radius.km.value} km'
+                          : 'no_salons'.tr,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: theme.textColor),
+                    ),
+                    if (_userLatLng != null) ...[
+                      const SizedBox(height: 12),
+                      OutlinedButton.icon(
+                        onPressed: () => showRadiusSheet(context),
+                        icon: const Icon(Icons.tune_rounded,
+                            color: AppColors.primaryPink, size: 18),
+                        label: Text('increase_radius'.tr,
+                            style: const TextStyle(
+                                color: AppColors.primaryPink)),
+                        style: OutlinedButton.styleFrom(
+                          side: const BorderSide(color: AppColors.primaryPink),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ),

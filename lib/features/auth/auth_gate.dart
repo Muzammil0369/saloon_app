@@ -80,26 +80,18 @@ class AuthGate extends StatelessWidget {
 
         debugPrint('AuthGate: Owner doc status: "$ownerStatus", User doc status: "$userStatus"');
 
-        // ✅ Check either collection for approved/active status
-        final isApproved = (ownerStatus != null && ownerStatus.trim().toLowerCase() == 'approved') ||
-            (userStatus != null && userStatus.trim().toLowerCase() == 'active');
+        // Only the owners/{uid} document decides approval, and only an admin
+        // can set it to 'approved'. (users.status is 'active' for every new
+        // account, so it must NOT grant access — it let owners who never
+        // finished registration straight into the dashboard.)
+        final isApproved =
+            ownerStatus != null && ownerStatus.trim().toLowerCase() == 'approved';
 
         if (isApproved) {
           debugPrint('AuthGate: ✅ Owner is APPROVED - Redirecting to OwnerMainWrapper');
 
-          // Sync status if mismatched
-          if (ownerStatus != 'approved' && userStatus == 'active') {
-            await FirebaseFirestore.instance.collection('owners').doc(uid).update({
-              'status': 'approved',
-              'isActive': true,
-              'showOnMap': true,
-            });
-          }
-          if (userStatus != 'active' && ownerStatus == 'approved') {
-            await FirebaseFirestore.instance.collection('users').doc(uid).update({
-              'status': 'active',
-            });
-          }
+          // (No client-side status syncing: approval fields are admin-only
+          // in firestore.rules. Admin approval already updates both docs.)
 
           return const OwnerMainWrapper();
         } else if (ownerStatus == 'rejected' || userStatus == 'rejected') {

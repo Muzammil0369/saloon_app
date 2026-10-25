@@ -11,6 +11,7 @@ import 'package:saloon_app/core/theme/theme_helper.dart';
 import 'package:saloon_app/core/controllers/user_controller.dart';
 import 'package:saloon_app/features/customer/screens/notifications_screen.dart';
 import 'package:saloon_app/features/customer/screens/customer_search_screen.dart';
+import 'package:saloon_app/features/customer/screens/urgent_booking_screen.dart';
 import 'package:saloon_app/features/customer/screens/salon_detail_screen.dart';
 import 'package:saloon_app/shared/widgets/salon_card.dart';
 import 'package:saloon_app/shared/widgets/ad_banner_card.dart';
@@ -19,6 +20,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../core/controllers/language_controller.dart';
 import '../../../core/controllers/salon_controller.dart';
+import '../../../core/controllers/search_radius_controller.dart';
+import '../../../shared/widgets/radius_selector.dart';
 
 class CustomerHomeScreen extends StatefulWidget {
   final Function(int) onTabChange;
@@ -33,6 +36,10 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   final userController = Get.find<UserController>();
   final salonController = Get.find<SalonController>();
   Position? _currentPosition;
+  final SearchRadiusController _radius = SearchRadiusController.instance;
+  Worker? _radiusWorker;
+  late final Stream<QuerySnapshot> _ownersStream =
+  FirebaseFirestore.instance.collection('owners').snapshots();
   List<Map<String, dynamic>> _nearbyAds = [];
   bool _isLoadingAds = true;
 
@@ -54,6 +61,17 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _radiusWorker = ever(_radius.km, (_) {
+      if (!mounted) return;
+      setState(() {});
+      _loadNearbyAds();
+    });
+  }
+
+  @override
+  void dispose() {
+    _radiusWorker?.dispose();
+    super.dispose();
   }
 
   Future<void> _getCurrentLocation() async {
@@ -92,7 +110,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         }
 
         // Skip ads with no usable distance, or too far to be relevant
-        if (distanceKm > _maxAdDistanceKm) continue;
+        if (distanceKm > _radius.km.value) continue;
 
         ads.add({
           ...data,
@@ -285,6 +303,60 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   ),
                 ),
 
+                // Urgent booking entry
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+                  child: GestureDetector(
+                    onTap: () => Navigator.of(context).push(urgentRoute()),
+                    child: Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFF6B35), AppColors.primaryPink],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFFFF6B35).withValues(alpha: 0.30),
+                            blurRadius: 14,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: 0.22),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.bolt_rounded, color: Colors.white, size: 26),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('urgent_title'.tr,
+                                    style: AppTextStyles.bodyLarge.copyWith(
+                                        color: Colors.white, fontWeight: FontWeight.w800)),
+                                const SizedBox(height: 2),
+                                Text('urgent_card_subtitle'.tr,
+                                    style: TextStyle(
+                                        color: Colors.white.withValues(alpha: 0.92), fontSize: 12.5)),
+                              ],
+                            ),
+                          ),
+                          const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+
                 // Promo Banner — nearest active salon ads, sorted by distance
                 if (_isLoadingAds)
                   const Padding(
@@ -335,9 +407,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
 
                 // Salons List
                 StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('owners')
-                      .snapshots(),
+                  stream: _ownersStream,
                   builder: (context, snapshot) {
                     if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
                       return const Padding(
@@ -384,7 +454,42 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                       );
                     }
 
-                    final salons = _processSalonSnapshot(snapshot.data!, _currentPosition);
+                    var salons = _processSalonSnapshot(snapshot.data!, _currentPosition);
+
+                    // Only salons inside the customer's search radius
+                    // (skipped when location is unavailable).
+                    if (_currentPosition != null) {
+                      salons = salons
+                          .where((s) =>
+                      ((s['distanceValue'] ?? double.infinity) as double) <=
+                          _radius.km.value)
+                          .toList();
+                    }
+
+                    if (salons.isEmpty) {
+                      return Padding(
+                        padding: const EdgeInsets.all(32),
+                        child: Center(
+                          child: Column(
+                            children: [
+                              Icon(Icons.radar_rounded, size: 48, color: theme.mutedTextColor),
+                              const SizedBox(height: 10),
+                              Text(
+                                '${'no_salons_in_radius'.tr} ${_radius.km.value} km',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(color: theme.mutedTextColor),
+                              ),
+                              const SizedBox(height: 10),
+                              TextButton.icon(
+                                onPressed: () => showRadiusSheet(context),
+                                icon: const Icon(Icons.tune_rounded, size: 18),
+                                label: Text('increase_radius'.tr),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }
 
                     salons.sort((a, b) {
                       final distA = (a['distanceValue'] ?? double.infinity) as double;
