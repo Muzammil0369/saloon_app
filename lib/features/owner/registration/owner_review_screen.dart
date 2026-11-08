@@ -122,9 +122,6 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
         'services': widget.salonData['services'] ?? [],
         'workers': workersFinal.isNotEmpty ? workersFinal : (widget.salonData['workers'] ?? []),
         'hasCoworkers': widget.salonData['hasCoworkers'] ?? false,
-        'cnicFront': cnicFrontFinal,
-        'cnicBack': cnicBackFinal,
-        'shopLicense': shopLicenseFinal,
         'shopOutsidePhoto': shopOutsideFinal,
         'salonPhotos': salonPhotosFinal,
         'ownerProfileImage': ownerProfileFinal,
@@ -138,6 +135,14 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, location);
+
+      // Sensitive verification documents go to a private doc (admin + owner only)
+      await FirebaseFirestore.instance.collection('owner_private').doc(uid).set({
+        'cnicFront': cnicFrontFinal,
+        'cnicBack': cnicBackFinal,
+        'shopLicense': shopLicenseFinal,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
 
       await dbService.saveUserProfile(uid, {
         'role': 'owner',

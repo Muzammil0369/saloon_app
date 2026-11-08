@@ -249,15 +249,35 @@ class SalonVerificationScreen extends StatelessWidget {
           _sectionTitle('📄 Documents'),
           const SizedBox(height: 12),
 
-          Row(
-            children: [
-              if (data['cnicFront'] != null) Expanded(child: _documentPreview('CNIC Front', data['cnicFront'], context)),
-              if (data['cnicFront'] != null && data['cnicBack'] != null) const SizedBox(width: 10),
-              if (data['cnicBack'] != null) Expanded(child: _documentPreview('CNIC Back', data['cnicBack'], context)),
-            ],
+          FutureBuilder<DocumentSnapshot<Map<String, dynamic>>>(
+            future: FirebaseFirestore.instance.collection('owner_private').doc(docId).get(),
+            builder: (context, snap) {
+              if (snap.connectionState == ConnectionState.waiting) {
+                return const Padding(
+                  padding: EdgeInsets.all(12),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+              // Falls back to the old public fields for owners registered earlier
+              final priv = snap.data?.data() ?? <String, dynamic>{};
+              final cnicFront = priv['cnicFront'] ?? data['cnicFront'];
+              final cnicBack = priv['cnicBack'] ?? data['cnicBack'];
+              final shopLicense = priv['shopLicense'] ?? data['shopLicense'];
+              return Column(
+                children: [
+                  Row(
+                    children: [
+                      if (cnicFront != null) Expanded(child: _documentPreview('CNIC Front', cnicFront, context)),
+                      if (cnicFront != null && cnicBack != null) const SizedBox(width: 10),
+                      if (cnicBack != null) Expanded(child: _documentPreview('CNIC Back', cnicBack, context)),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  if (shopLicense != null) _documentPreview('Shop License', shopLicense, context),
+                ],
+              );
+            },
           ),
-          const SizedBox(height: 10),
-          if (data['shopLicense'] != null) _documentPreview('Shop License', data['shopLicense'], context),
           const SizedBox(height: 10),
           if (data['shopOutsidePhoto'] != null) _documentPreview('Shop Outside', data['shopOutsidePhoto'], context),
 
