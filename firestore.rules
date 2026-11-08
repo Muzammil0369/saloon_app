@@ -1,0 +1,291 @@
+rules_version = '2';
+
+// =============================================================================
+// SALONIFY — Firestore security rules (complete)
+//
+// Notes
+//  * Supabase Edge Functions use the Firebase Admin SDK, which BYPASSES these
+//    rules. That is why wallets / transactions / withdrawals stay client-locked.
+//  * Anything not matched below is DENIED by default.
+//  * Known trade-offs are marked "TRADE-OFF" — they need app changes to close.
+// =============================================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ------------------------------------------------------------------ helpers
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isSelf(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Safe even if the caller's users/{uid} doc doesn't exist (e.g. mid-way
+    // through account deletion) — returns '' instead of erroring.
+    function myRole() {
+      return exists(/databases/$(database)/documents/users/$(request.auth.uid))
+        ? get(/databases/$(database)/documents/users/$(request.auth.uid)).data.get('role', '')
+        : '';
+    }
+
+    function isAdmin() {
+      return request.auth != null && myRole() == 'admin';
+    }
+
+    function changedKeys() {
+      return request.resource.data.diff(resource.data).affectedKeys();
+    }
+
+    // ==================================================================== USERS
+    match /users/{userId} {
+      // TRADE-OFF: any signed-in user can read any profile (names, fcm token).
+      // Needed today for owner <-> customer lookups.
+      allow read: if signedIn();
+
+      // Users may only create themselves as customer or owner — never admin.
+      // (Admin accounts are created from the Firebase console.)
+      allow create: if isSelf(userId)
+        && request.resource.data.get('role', '') in ['customer', 'owner'];
+
+      allow update: if isAdmin() || (
+        isSelf(userId)
+        // role can never be changed by the user themselves
+        && !changedKeys().hasAny(['role'])
+        // status: a user may only move themselves to 'pending'
+        // (owner registration); only an admin can activate / suspend.
+        && (!changedKeys().hasAny(['status'])
+            || request.resource.data.status == 'pending')
+      );
+
+      allow delete: if isSelf(userId) || isAdmin();
+
+      // Saved addresses — private to the user
+      match /addresses/{addressId} {
+        allow read: if isSelf(userId) || isAdmin();
+        allow create, update, delete: if isSelf(userId);
+      }
+    }
+
+    // =================================================================== OWNERS
+    // TRADE-OFF: public read (browsing salons without login). The owner doc
+    // currently also holds CNIC / licence photos — move those to
+    // owner_private/{ownerId} (rules below are ready) before public launch.
+    match /owners/{ownerId} {
+      allow read: if true;
+
+      // An owner may only create their own doc, and only as 'pending'.
+      allow create: if isSelf(ownerId)
+        && request.resource.data.get('status', 'pending') == 'pending';
+
+      allow update: if isAdmin()
+        // 1) the owner editing their own salon — but never approval / rating fields
+        || (isSelf(ownerId)
+            && !changedKeys().hasAny(['cnicVerified', 'rating', 'reviewCount'])
+            && (!changedKeys().hasAny(['status'])
+                || request.resource.data.status == 'pending'))
+        // 2) a customer submitting a review updates ONLY the aggregate rating
+        || (signedIn() && request.auth.uid != ownerId
+            && changedKeys().hasOnly(['rating', 'reviewCount'])
+            && request.resource.data.rating is number
+            && request.resource.data.rating >= 0
+            && request.resource.data.rating <= 5
+            && request.resource.data.reviewCount is int
+            && request.resource.data.reviewCount >= 0);
+
+      allow delete: if isSelf(ownerId) || isAdmin();
+    }
+
+    // Sensitive verification documents (CNIC, licence). Ready for the planned
+    // split out of owners/{id}; unused until the app writes here.
+    match /owner_private/{ownerId} {
+      allow read: if isSelf(ownerId) || isAdmin();
+      allow create, update: if isSelf(ownerId);
+      allow delete: if isSelf(ownerId) || isAdmin();
+    }
+
+    // ================================================================== SERVICES
+    match /services/{serviceId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isAdmin() || (
+        signedIn()
+        && resource.data.ownerId == request.auth.uid
+        && request.resource.data.ownerId == resource.data.ownerId
+      );
+      allow delete: if isAdmin()
+        || (signedIn() && resource.data.ownerId == request.auth.uid);
+    }
+
+    // ================================================================= BOOKINGS
+    match /bookings/{bookingId} {
+      // TRADE-OFF: signed-in users can read bookings because the booking
+      // screens query a salon's bookings to grey out taken slots.
+      // Fix later by reading only `slot_locks` for availability.
+      allow read: if signedIn();
+
+      // A customer can only create a booking for themselves, unpaid & pending.
+      allow create: if signedIn()
+        && request.resource.data.customerId == request.auth.uid
+        && request.resource.data.get('status', 'pending') == 'pending'
+        && request.resource.data.get('paymentStatus', 'unpaid') == 'unpaid';
+
+      allow update: if isAdmin()
+        // salon owner: manages status / QR / payment fields; parties are fixed
+        || (signedIn()
+            && resource.data.ownerId == request.auth.uid
+            && request.resource.data.customerId == resource.data.customerId
+            && request.resource.data.ownerId == resource.data.ownerId)
+        // customer: may only mark reviewed or cancel — never pay/confirm
+        || (signedIn()
+            && resource.data.customerId == request.auth.uid
+            && changedKeys().hasOnly(['reviewed', 'status', 'cancelledAt',
+                                      'cancelReason', 'updatedAt'])
+            && (!changedKeys().hasAny(['status'])
+                || request.resource.data.status == 'cancelled'));
+
+      allow delete: if isAdmin() || (signedIn() && (
+        resource.data.customerId == request.auth.uid
+        || resource.data.ownerId == request.auth.uid));
+    }
+
+    // ============================================================== SLOT LOCKS
+    // Double-booking guard. Written inside a transaction together with the
+    // booking (see booking_lock_service.dart). A lock whose booking was
+    // cancelled/deleted is treated as free by the app and overwritten.
+    match /slot_locks/{lockId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.ownerId is string
+        && request.resource.data.bookingId is string
+        && request.resource.data.staffId is string;
+      allow delete: if isAdmin();
+    }
+
+    // ================================================================== WALLETS
+    // Balances can only be changed by Edge Functions (Admin SDK).
+    match /wallets/{userId} {
+      allow read: if isSelf(userId) || isAdmin();
+      allow create: if isSelf(userId)
+        && request.resource.data.get('balance', 0) == 0
+        && request.resource.data.get('commissionOwed', 0) == 0
+        && request.resource.data.get('totalSpent', 0) == 0;
+      allow update: if false;
+      // needed for in-app account deletion
+      allow delete: if isSelf(userId) || isAdmin();
+    }
+
+    // ============================================================== TRANSACTIONS
+    // Financial records are immutable for clients. Customers read their own,
+    // owners read the ones where they are the paid salon (metadata.ownerId).
+    match /transactions/{transactionId} {
+      allow read: if signedIn() && (
+        resource.data.userId == request.auth.uid
+        || (('metadata' in resource.data)
+            && ('ownerId' in resource.data.metadata)
+            && resource.data.metadata.ownerId == request.auth.uid)
+        || isAdmin()
+      );
+      allow create, update: if false;
+      allow delete: if isAdmin();
+    }
+
+    // ============================================================ WITHDRAWALS
+    match /withdrawal_requests/{requestId} {
+      allow read: if signedIn()
+        && (resource.data.ownerId == request.auth.uid || isAdmin());
+      allow create: if false;              // created by Edge Function
+      allow update, delete: if isAdmin();
+    }
+
+    // ================================================================ QR TOKENS
+    // doc id = bookingId. Customer creates; owner reads + marks used.
+    match /qr_tokens/{bookingId} {
+      allow read: if signedIn() && (
+        resource.data.customerId == request.auth.uid
+        || resource.data.ownerId == request.auth.uid
+        || isAdmin());
+      allow create: if signedIn()
+        && request.resource.data.customerId == request.auth.uid;
+      allow update: if signedIn() && (
+        resource.data.customerId == request.auth.uid
+        || resource.data.ownerId == request.auth.uid
+        || isAdmin());
+      allow delete: if isAdmin() || (signedIn()
+        && resource.data.customerId == request.auth.uid);
+    }
+
+    // ============================================================ NOTIFICATIONS
+    // Server (Admin SDK) writes most of them; the app writes review notices.
+    match /notifications/{notificationId} {
+      allow read: if signedIn()
+        && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if signedIn() && request.resource.data.userId is string;
+      // the recipient can only mark as read
+      allow update: if signedIn()
+        && resource.data.userId == request.auth.uid
+        && changedKeys().hasOnly(['read']);
+      allow delete: if signedIn() && resource.data.userId == request.auth.uid;
+    }
+
+    // ================================================================== REVIEWS
+    match /reviews/{reviewId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.auth.uid == request.resource.data.customerId
+        && request.resource.data.ownerId is string
+        && request.resource.data.rating is number
+        && request.resource.data.rating >= 1
+        && request.resource.data.rating <= 5;
+      allow update: if signedIn() && request.auth.uid == resource.data.customerId
+        && request.resource.data.customerId == resource.data.customerId
+        && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if signedIn()
+        && (request.auth.uid == resource.data.customerId || isAdmin());
+    }
+
+    // ============================================================ ADS / OFFERS
+    match /ads/{ownerId} {
+      allow read: if true;
+      allow create: if isSelf(ownerId);
+      allow update: if isSelf(ownerId) || isAdmin();
+      allow delete: if isSelf(ownerId) || isAdmin();
+    }
+
+    // ===================================================== LOGS (admin-read only)
+    // Clients may append log entries; only admins can read, edit or purge.
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if signedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    match /security_logs/{logId} {
+      allow read: if isAdmin();
+      allow create: if signedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    match /security_alerts/{alertId} {
+      allow read: if isAdmin();
+      allow create: if signedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    match /moderation_logs/{logId} {
+      allow read, write: if isAdmin();
+    }
+
+    // ================================================ NOT USED BY THE APP YET
+    // Locked to admins until chat / disputes are actually built.
+    match /messages/{messageId} {
+      allow read, write: if isAdmin();
+    }
+
+    match /disputes/{disputeId} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
