@@ -1,3 +1,4 @@
+import 'package:saloon_app/core/services/notification_writer.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -699,7 +700,8 @@ class _UrgentBookingScreenState extends State<UrgentBookingScreen> {
             slotCount: option.needSlots,
           );
 
-          _notifyOwner(ref.id);
+          NotificationWriter.newBooking(ref.id); // instant in-app
+          _notifyOwner(ref.id); // push
           Get.back(); // close sheet
           Get.off(() => SuccessScreen(
             bookingId: ref.id,

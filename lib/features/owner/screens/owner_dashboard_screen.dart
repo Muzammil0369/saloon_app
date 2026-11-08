@@ -1,4 +1,5 @@
 // lib/features/owner/screens/owner_dashboard_screen.dart
+import 'package:saloon_app/core/services/notification_writer.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -21,6 +22,7 @@ const String _supabasePublishableKeyDashboard =
     'sb_publishable_iO6I9436lSKFoeq_9bDXgQ_p8hXXD2L';
 
 Future<void> _notifyCustomerFromDashboard(String bookingId, String newStatus) async {
+  NotificationWriter.bookingStatus(bookingId, newStatus); // instant in-app
   try {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     if (idToken == null) return;
@@ -350,9 +352,9 @@ class _OwnerDashboardScreenState extends State<OwnerDashboardScreen> {
                   final docs = snapshot.data!.docs;
                   if (docs.isEmpty) {
                     return Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Center(child: Text('no_pending_requests'.tr, style: TextStyle(color: theme.mutedTextColor))),
-                  );
+                      padding: const EdgeInsets.all(20),
+                      child: Center(child: Text('no_pending_requests'.tr, style: TextStyle(color: theme.mutedTextColor))),
+                    );
                   }
 
                   return ListView.builder(

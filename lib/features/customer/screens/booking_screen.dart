@@ -1,3 +1,4 @@
+import 'package:saloon_app/core/services/notification_writer.dart';
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import 'package:saloon_app/shared/widgets/app_button.dart';
 import 'package:saloon_app/features/customer/screens/success_screen.dart';
 import 'package:saloon_app/core/controllers/user_controller.dart';
 import '../../../core/services/auth_service.dart';
+import '../../../core/services/booking_lock_service.dart';
 
 const String _notifyNewBookingUrl =
     'https://rzypfwjhngpwlxfbxtcg.supabase.co/functions/v1/notify-new-booking';
@@ -41,7 +43,7 @@ class _BookingScreenState extends State<BookingScreen> {
   // 10 AM–8 PM / every day only if the owner hasn't set hours yet (e.g. an
   // older account created before this feature existed).
   late final Map<String, dynamic>? _businessHours =
-      widget.salon['businessHours'] as Map<String, dynamic>?;
+  widget.salon['businessHours'] as Map<String, dynamic>?;
   late final List<String> _allTimeSlots = _generateTimeSlots();
   late final Set<int> _workingDays = Set<int>.from(
     (_businessHours?['workingDays'] as List?)?.map((e) => e as int) ??
@@ -117,7 +119,7 @@ class _BookingScreenState extends State<BookingScreen> {
     pool.add({
       'id': 'owner',
       'name':
-          widget.salon['ownerName'] ?? widget.salon['fullName'] ?? 'owner'.tr,
+      widget.salon['ownerName'] ?? widget.salon['fullName'] ?? 'owner'.tr,
       'imageUrl': widget.salon['ownerProfileImage'],
       'isOwner': true,
       'phone': widget.salon['phoneNumber'],
@@ -141,7 +143,7 @@ class _BookingScreenState extends State<BookingScreen> {
     // Highest-rated staff first. Everyone defaults to 0 until real ratings exist,
     // in which case they keep their original (owner-first) order.
     pool.sort(
-      (a, b) => (b['rating'] as double).compareTo(a['rating'] as double),
+          (a, b) => (b['rating'] as double).compareTo(a['rating'] as double),
     );
     return pool;
   }
@@ -186,16 +188,16 @@ class _BookingScreenState extends State<BookingScreen> {
           .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
           .where('date', isLessThan: Timestamp.fromDate(endOfDay))
           .where(
-            'status',
-            whereIn: [
-              'pending',
-              'confirmed',
-              'in_progress',
-              'completed',
-              'paid',
-              'verified',
-            ],
-          )
+        'status',
+        whereIn: [
+          'pending',
+          'confirmed',
+          'in_progress',
+          'completed',
+          'paid',
+          'verified',
+        ],
+      )
           .get();
 
       final Map<String, Set<String>> bookedMap = {};
@@ -295,8 +297,8 @@ class _BookingScreenState extends State<BookingScreen> {
               )
             else
               ..._groupedSlots.entries.where((e) => e.value.isNotEmpty).map((
-                entry,
-              ) {
+                  entry,
+                  ) {
                 final sectionIcon = switch (entry.key) {
                   'morning' => Icons.wb_twilight_rounded,
                   'afternoon' => Icons.wb_sunny_rounded,
@@ -337,9 +339,9 @@ class _BookingScreenState extends State<BookingScreen> {
                             onTap: isFull
                                 ? null
                                 : () => setState(() {
-                                    _selectedTime = time;
-                                    _selectedStaffId = null;
-                                  }),
+                              _selectedTime = time;
+                              _selectedStaffId = null;
+                            }),
                             child: Container(
                               width: 96,
                               padding: const EdgeInsets.symmetric(vertical: 12),
@@ -347,8 +349,8 @@ class _BookingScreenState extends State<BookingScreen> {
                                 color: isFull
                                     ? theme.borderColor.withValues(alpha: 0.2)
                                     : (isSelected
-                                          ? AppColors.primaryPink
-                                          : theme.cardColor),
+                                    ? AppColors.primaryPink
+                                    : theme.cardColor),
                                 borderRadius: BorderRadius.circular(14),
                                 border: Border.all(
                                   color: isSelected
@@ -357,13 +359,13 @@ class _BookingScreenState extends State<BookingScreen> {
                                 ),
                                 boxShadow: isSelected
                                     ? [
-                                        BoxShadow(
-                                          color: AppColors.primaryPink
-                                              .withValues(alpha: 0.3),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 3),
-                                        ),
-                                      ]
+                                  BoxShadow(
+                                    color: AppColors.primaryPink
+                                        .withValues(alpha: 0.3),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ]
                                     : null,
                               ),
                               child: Column(
@@ -376,8 +378,8 @@ class _BookingScreenState extends State<BookingScreen> {
                                       color: isFull
                                           ? theme.mutedTextColor
                                           : (isSelected
-                                                ? Colors.white
-                                                : theme.textColor),
+                                          ? Colors.white
+                                          : theme.textColor),
                                       fontWeight: FontWeight.w600,
                                       fontSize: 13,
                                     ),
@@ -431,13 +433,13 @@ class _BookingScreenState extends State<BookingScreen> {
                         border: isSelected
                             ? Border.all(color: AppColors.primaryPink, width: 2)
                             : (staff['isOwner'] == true
-                                  ? Border.all(
-                                      color: AppColors.primaryPink.withValues(alpha: 
-                                        0.4,
-                                      ),
-                                      width: 1,
-                                    )
-                                  : null),
+                            ? Border.all(
+                          color: AppColors.primaryPink.withValues(alpha:
+                          0.4,
+                          ),
+                          width: 1,
+                        )
+                            : null),
                       ),
                       child: Row(
                         children: [
@@ -454,27 +456,27 @@ class _BookingScreenState extends State<BookingScreen> {
                                 width: 2,
                               ),
                               image:
-                                  (imageUrl != null &&
-                                      imageUrl.isNotEmpty &&
-                                      _getImageProvider(imageUrl) != null)
+                              (imageUrl != null &&
+                                  imageUrl.isNotEmpty &&
+                                  _getImageProvider(imageUrl) != null)
                                   ? DecorationImage(
-                                      image: _getImageProvider(imageUrl)!,
-                                      fit: BoxFit.cover,
-                                    )
+                                image: _getImageProvider(imageUrl)!,
+                                fit: BoxFit.cover,
+                              )
                                   : null,
                             ),
                             child:
-                                (imageUrl == null ||
-                                    imageUrl.isEmpty ||
-                                    _getImageProvider(imageUrl) == null)
+                            (imageUrl == null ||
+                                imageUrl.isEmpty ||
+                                _getImageProvider(imageUrl) == null)
                                 ? Icon(
-                                    staff['isOwner'] == true
-                                        ? Icons.star
-                                        : Icons.person,
-                                    color: staff['isOwner'] == true
-                                        ? AppColors.primaryPink
-                                        : theme.mutedTextColor,
-                                  )
+                              staff['isOwner'] == true
+                                  ? Icons.star
+                                  : Icons.person,
+                              color: staff['isOwner'] == true
+                                  ? AppColors.primaryPink
+                                  : theme.mutedTextColor,
+                            )
                                 : null,
                           ),
                           const SizedBox(width: 14),
@@ -491,9 +493,9 @@ class _BookingScreenState extends State<BookingScreen> {
                                         staff['name'],
                                         style: AppTextStyles.bodyLarge
                                             .copyWith(
-                                              fontWeight: FontWeight.bold,
-                                              color: theme.textColor,
-                                            ),
+                                          fontWeight: FontWeight.bold,
+                                          color: theme.textColor,
+                                        ),
                                         overflow: TextOverflow.ellipsis,
                                       ),
                                     ),
@@ -573,13 +575,13 @@ class _BookingScreenState extends State<BookingScreen> {
                               ),
                               decoration: BoxDecoration(
                                 color:
-                                    (isBusy ? Colors.redAccent : Colors.green)
-                                        .withValues(alpha: 0.1),
+                                (isBusy ? Colors.redAccent : Colors.green)
+                                    .withValues(alpha: 0.1),
                                 borderRadius: BorderRadius.circular(10),
                                 border: Border.all(
                                   color:
-                                      (isBusy ? Colors.redAccent : Colors.green)
-                                          .withValues(alpha: 0.3),
+                                  (isBusy ? Colors.redAccent : Colors.green)
+                                      .withValues(alpha: 0.3),
                                 ),
                               ),
                               child: Text(
@@ -604,7 +606,7 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 30),
             // Price Summary Section
             Obx(
-              () => Container(
+                  () => Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: theme.cardColor,
@@ -624,11 +626,11 @@ class _BookingScreenState extends State<BookingScreen> {
                       _priceRow(
                         '${'discount'.tr} (${_bookingController.discountRate.value.toInt()}%)',
                         _bookingController.services
-                                .where((s) => s['isSelected'] == true)
-                                .fold(
-                                  0.0,
-                                  (sum, s) => sum + (s['price'] as int),
-                                ) *
+                            .where((s) => s['isSelected'] == true)
+                            .fold(
+                          0.0,
+                              (sum, s) => sum + (s['price'] as int),
+                        ) *
                             (_bookingController.discountRate.value / 100),
                         true,
                       ),
@@ -645,13 +647,13 @@ class _BookingScreenState extends State<BookingScreen> {
             ),
             const SizedBox(height: 40),
             Obx(
-              () => AppButton(
+                  () => AppButton(
                 label:
-                    '${'confirm_booking'.tr} (Rs. ${_bookingController.totalPrice.toInt()})',
+                '${'confirm_booking'.tr} (Rs. ${_bookingController.totalPrice.toInt()})',
                 onTap:
-                    (_selectedDay != null &&
-                        _selectedTime != null &&
-                        _selectedStaffId != null)
+                (_selectedDay != null &&
+                    _selectedTime != null &&
+                    _selectedStaffId != null)
                     ? _submitBooking
                     : () => Get.snackbar('required'.tr, 'please_select'.tr),
               ),
@@ -663,11 +665,11 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Widget _priceRow(
-    String label,
-    double price,
-    bool isDiscount, {
-    bool isTotal = false,
-  }) {
+      String label,
+      double price,
+      bool isDiscount, {
+        bool isTotal = false,
+      }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -700,7 +702,7 @@ class _BookingScreenState extends State<BookingScreen> {
     final authService = Get.find<AuthService>();
     final bookingRef = FirebaseFirestore.instance.collection('bookings').doc();
     final selectedStaff = _staffPool.firstWhere(
-      (s) => s['id'] == _selectedStaffId,
+          (s) => s['id'] == _selectedStaffId,
     );
 
     final bookingData = {
@@ -710,7 +712,7 @@ class _BookingScreenState extends State<BookingScreen> {
       'customerImage': Get.find<UserController>().userProfileImage.value,
       'ownerId': widget.ownerId,
       'salonName':
-          widget.salon['salonName'] ?? widget.salon['name'] ?? 'Unnamed Salon',
+      widget.salon['salonName'] ?? widget.salon['name'] ?? 'Unnamed Salon',
       'services': _bookingController.selectedServices,
       'totalPrice': _bookingController.totalPrice.toInt(),
       'date': Timestamp.fromDate(
@@ -724,21 +726,45 @@ class _BookingScreenState extends State<BookingScreen> {
     };
 
     try {
-      await bookingRef.set(bookingData);
+      // Reserve the slot(s) and create the booking atomically, so two
+      // customers can never both get the same staff member at the same time.
+      final timeParts = _selectedTime!.split(' ');
+      final hm = timeParts[0].split(':');
+      var startHour = int.parse(hm[0]) % 12;
+      if (timeParts[1].toUpperCase() == 'PM') startHour += 12;
+      final startMinute = startHour * 60 + int.parse(hm[1]);
+      final totalMinutes = _bookingController.totalDuration;
+      final slotCount = ((totalMinutes <= 0 ? 30 : totalMinutes) / 30).ceil();
+
+      await BookingLockService.createBookingWithLocks(
+        bookingRef: bookingRef,
+        bookingData: bookingData,
+        ownerId: widget.ownerId,
+        day: _selectedDay!,
+        staffId: _selectedStaffId!,
+        startMinute: startMinute,
+        slotCount: slotCount,
+      );
       setState(() => _isLoading = false);
       _bookingController.discountRate.value = 0.0; // Reset discount
 
       // Notify the owner (in-app + push) — fire-and-forget, never blocks
       // the booking success flow even if the notification fails.
-      _notifyOwnerOfNewBooking(bookingRef.id);
+      NotificationWriter.newBooking(bookingRef.id); // instant in-app
+      _notifyOwnerOfNewBooking(bookingRef.id); // push
 
       Get.to(
-        () => SuccessScreen(
+            () => SuccessScreen(
           bookingId: bookingRef.id,
           dateTime:
-              '${_selectedDay!.toString().split(' ')[0]} · $_selectedTime',
+          '${_selectedDay!.toString().split(' ')[0]} · $_selectedTime',
         ),
       );
+    } on SlotTakenException {
+      setState(() => _isLoading = false);
+      Get.snackbar('error'.tr, 'slot_just_taken'.tr,
+          backgroundColor: Colors.redAccent, colorText: Colors.white);
+      _loadBookedSlotsForDay(_selectedDay!); // refresh so it shows as taken
     } catch (e) {
       setState(() => _isLoading = false);
       Get.snackbar(

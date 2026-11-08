@@ -1,4 +1,5 @@
 // lib/features/owner/screens/owner_schedule_screen.dart
+import 'package:saloon_app/core/services/notification_writer.dart';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -447,7 +448,8 @@ class _OwnerScheduleScreenState extends State<OwnerScheduleScreen> {
       );
 
       // Notify the customer — fire-and-forget, never blocks the status update.
-      _notifyCustomerOfStatusChange(bookingId, newStatus);
+      NotificationWriter.bookingStatus(bookingId, newStatus); // instant in-app
+      _notifyCustomerOfStatusChange(bookingId, newStatus); // push
     } catch (e) {
       Get.snackbar('error'.tr, 'failed_update_status'.tr);
     }
