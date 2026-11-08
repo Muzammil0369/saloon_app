@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class AuthService extends GetxService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -285,10 +286,117 @@ class AuthService extends GetxService {
     }
   }
 
+  // ==================== GOOGLE SIGN-IN ====================
+  /// Step 1: Google account picker -> Firebase sign-in.
+  /// Returns whether a Salonify profile (users/{uid}) already exists.
+  /// A brand-new Google user has NO profile yet: the UI must ask for a role
+  /// and call [completeGoogleSignup] (or [logout] if they back out).
+  Future<GoogleAuthResult> signInWithGoogle() async {
+    try {
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) {
+        return GoogleAuthResult(cancelled: true); // user closed the picker
+      }
+      final googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      final cred = await _auth.signInWithCredential(credential);
+      final uid = cred.user!.uid;
+
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (doc.exists) {
+        _userRole = doc.data()?['role'] as String?;
+        await _firestore.collection('users').doc(uid).update({
+          'lastLoginAt': FieldValue.serverTimestamp(),
+        }).catchError((_) {});
+        return GoogleAuthResult(success: true, isNewUser: false);
+      }
+      return GoogleAuthResult(success: true, isNewUser: true);
+    } on FirebaseAuthException catch (e) {
+      String error;
+      switch (e.code) {
+        case 'account-exists-with-different-credential':
+          error = 'This email is already registered with a password. Please sign in with your email and password.';
+          break;
+        case 'user-disabled':
+          error = 'This account has been disabled';
+          break;
+        case 'network-request-failed':
+          error = 'No internet connection';
+          break;
+        default:
+          error = 'Google sign-in failed. Please try again.';
+      }
+      return GoogleAuthResult(error: error);
+    } catch (e) {
+      debugPrint('Google sign-in error: $e');
+      return GoogleAuthResult(error: 'Google sign-in failed. Please try again.');
+    }
+  }
+
+  /// Step 2 (new Google users only): create the same documents email sign-up
+  /// creates, for the chosen role ('customer' or 'owner').
+  Future<bool> completeGoogleSignup(String role) async {
+    final u = _auth.currentUser;
+    if (u == null || (role != 'customer' && role != 'owner')) return false;
+    try {
+      await _firestore.collection('users').doc(u.uid).set({
+        'name': (u.displayName ?? '').trim().isEmpty ? (role == 'owner' ? 'Owner' : 'Customer') : u.displayName!.trim(),
+        'email': (u.email ?? '').toLowerCase(),
+        'role': role,
+        'status': 'active',
+        'signInMethod': 'google',
+        'createdAt': FieldValue.serverTimestamp(),
+        'lastLoginAt': FieldValue.serverTimestamp(),
+        'deviceInfo': {
+          'platform': GetPlatform.isAndroid ? 'android' : GetPlatform.isIOS ? 'ios' : 'web',
+          'appVersion': '1.0.0',
+        },
+      });
+
+      if (role == 'owner') {
+        await _firestore.collection('owners').doc(u.uid).set({
+          'status': 'pending',
+          'isActive': false,
+          'showOnMap': false,
+          'createdAt': FieldValue.serverTimestamp(),
+          'registrationStep': 1,
+        });
+      } else {
+        await _firestore.collection('wallets').doc(u.uid).set({
+          'balance': 0.0,
+          'commissionOwed': 0.0,
+          'totalSpent': 0.0,
+          'isActive': true,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+
+      await _firestore.collection('audit_logs').add({
+        'action': 'USER_REGISTERED',
+        'userId': u.uid,
+        'role': role,
+        'method': 'google',
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+
+      _userRole = role;
+      return true;
+    } catch (e) {
+      debugPrint('completeGoogleSignup failed: $e');
+      return false;
+    }
+  }
+
   // ==================== LOGOUT ====================
   Future<void> logout() async {
     _userRole = null;
     _lastAttempts.clear();
+    try {
+      await GoogleSignIn().signOut(); // so the account picker shows next time
+    } catch (_) {}
     await _auth.signOut();
   }
 
@@ -314,4 +422,17 @@ class LoginResult {
   final String? error;
 
   LoginResult({required this.success, this.error});
+}
+
+class GoogleAuthResult {
+  final bool success;
+  final bool cancelled;
+  final bool isNewUser;
+  final String? error;
+  GoogleAuthResult({
+    this.success = false,
+    this.cancelled = false,
+    this.isNewUser = false,
+    this.error,
+  });
 }

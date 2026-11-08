@@ -12,7 +12,20 @@
           "package_name": "com.example.saloon_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "324975557388-rk6fdkd6gmdmtlego8h9vv0flrigak79.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.saloon_app",
+            "certificate_hash": "eb9bae869023beac2b95a7d240d1f58191ecf90a"
+          }
+        },
+        {
+          "client_id": "324975557388-kn3por1etvtbr0pgbfjjvniabt51ffd8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD0RHz9bl-05jcqnCCFzV9vsVnDLrz__S4"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "324975557388-kn3por1etvtbr0pgbfjjvniabt51ffd8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
