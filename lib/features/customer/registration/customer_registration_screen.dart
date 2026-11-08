@@ -93,7 +93,6 @@ class _CustomerRegistrationScreenState extends State<CustomerRegistrationScreen>
     setState(() => _isLoading = false);
 
     if (result.success) {
-      await Get.find<AuthService>().sendEmailVerification();
       Get.to(() => EmailVerificationScreen(
         email: email,
         role: 'customer',

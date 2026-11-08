@@ -1,4 +1,5 @@
 // lib/features/customer/screens/customer_profile_screen.dart
+import 'package:saloon_app/shared/widgets/reauth_dialog.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -262,6 +263,9 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
     if (confirm != true) return;
 
+    // Re-confirm identity BEFORE deleting anything (Firebase requires a recent sign-in).
+    if (!await reauthenticateForDeletion()) return;
+
     try {
       final authService = Get.find<AuthService>();
       final userId = authService.uid!;
@@ -276,7 +280,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
       await FirebaseFirestore.instance.collection('wallets').doc(userId).delete();
       await FirebaseFirestore.instance.collection('users').doc(userId).delete();
 
-      await authService.logout();
+      await authService.deleteAuthAccount(); // also removes it from Firebase Authentication
       Get.offAllNamed('/auth-gate');
       Get.snackbar('success'.tr, 'account_deleted'.tr);
     } catch (e) {

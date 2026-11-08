@@ -161,6 +161,7 @@ class _CustomerProfileSetupScreenState extends State<CustomerProfileSetupScreen>
         'name': englishName,
         'name_ur': urduName,
         'role': 'customer',
+        'profileSetupDone': true,
         'profileImage': profileImageUrl,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
@@ -240,9 +241,9 @@ class _CustomerProfileSetupScreenState extends State<CustomerProfileSetupScreen>
                           child: const Icon(Icons.camera_alt_rounded, size: 22, color: Colors.white),
                         ),
                       )],
-                    ),
                   ),
                 ),
+              ),
 
               const SizedBox(height: 40),
 

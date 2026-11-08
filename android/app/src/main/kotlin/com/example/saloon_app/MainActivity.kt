@@ -1,4 +1,4 @@
-package com.example.saloon_app
+package com.mzappstudio.salonify
 
 import io.flutter.embedding.android.FlutterActivity
 

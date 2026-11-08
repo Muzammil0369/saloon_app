@@ -5,6 +5,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:saloon_app/features/auth/screens/onboarding_screen.dart';
 import 'package:saloon_app/features/auth/screens/role_select_screen.dart';
 import 'package:saloon_app/features/auth/screens/login_screen.dart';
+import 'package:saloon_app/features/auth/screens/email_verification_screen.dart';
+import 'package:saloon_app/features/customer/registration/customer_profile_setup_screen.dart';
+import 'package:saloon_app/features/owner/registration/owner_basic_info_screen.dart';
 import 'package:saloon_app/features/customer/customer_main_wrapper.dart';
 import 'package:saloon_app/features/owner/owner_main_wrapper.dart';
 import 'package:saloon_app/features/owner/registration/owner_pending_screen.dart';
@@ -68,7 +71,21 @@ class AuthGate extends StatelessWidget {
     final userStatus = data['status'] as String?;
     debugPrint('AuthGate: User role: $role, User status: $userStatus');
 
+    // Email/password accounts must verify their email first (Google accounts skip this).
+    if ((role == 'customer' || role == 'owner') && authService.needsEmailVerification) {
+      debugPrint('AuthGate: Email not verified -> EmailVerificationScreen');
+      return EmailVerificationScreen(
+        email: authService.user.value?.email ?? (data['email'] as String? ?? ''),
+        role: role!,
+      );
+    }
+
     if (role == 'customer') {
+      // Registered but never finished profile setup -> resume it.
+      if (data['profileSetupDone'] == false) {
+        debugPrint('AuthGate: Customer profile setup unfinished -> CustomerProfileSetupScreen');
+        return const CustomerProfileSetupScreen();
+      }
       debugPrint('AuthGate: Redirecting to CustomerMainWrapper');
       return const CustomerMainWrapper();
     } else if (role == 'owner') {
@@ -94,6 +111,10 @@ class AuthGate extends StatelessWidget {
           // in firestore.rules. Admin approval already updates both docs.)
 
           return const OwnerMainWrapper();
+        } else if (ownerDoc.data()?['isCompleted'] != true && ownerStatus != 'rejected') {
+          // Created the account but never submitted the application -> resume it.
+          debugPrint('AuthGate: Owner registration unfinished -> OwnerBasicInfoScreen');
+          return const OwnerBasicInfoScreen();
         } else if (ownerStatus == 'rejected' || userStatus == 'rejected') {
           debugPrint('AuthGate: ❌ Owner was REJECTED');
           return const OwnerPendingScreen();

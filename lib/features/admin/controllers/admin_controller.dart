@@ -1,4 +1,6 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
@@ -22,36 +24,76 @@ class AdminController extends GetxController {
   var bookingTrend = "+0%".obs;
   var revenueTrend = "+0%".obs;
 
+  final List<StreamSubscription> _subs = [];
+  StreamSubscription<User?>? _authSub;
+  bool _started = false;
+
   @override
   void onInit() {
     super.onInit();
-    _fetchAllStats();
-    _listenToStats();
+    // Only an ADMIN may read all users / bookings / transactions (see
+    // firestore.rules), so stats start only after an admin signs in. This
+    // also stops every customer/owner device from downloading whole collections.
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) async {
+      if (user == null) {
+        _stopStats();
+        return;
+      }
+      try {
+        final doc = await _firestore.collection('users').doc(user.uid).get();
+        if (doc.data()?['role'] == 'admin') {
+          if (!_started) {
+            _started = true;
+            _fetchAllStats();
+            _listenToStats();
+          }
+        } else {
+          _stopStats();
+        }
+      } catch (_) {
+        _stopStats();
+      }
+    });
+  }
+
+  void _stopStats() {
+    for (final s in _subs) {
+      s.cancel();
+    }
+    _subs.clear();
+    _started = false;
+  }
+
+  @override
+  void onClose() {
+    _stopStats();
+    _authSub?.cancel();
+    super.onClose();
   }
 
   // Real-time listeners for auto-updates
   void _listenToStats() {
     // Listen to users collection for customers and admins
-    _firestore.collection('users').snapshots().listen((snap) {
+    _subs.add(_firestore.collection('users').snapshots().listen((snap) {
       _getTotalCustomers();
       _getTotalAdmins();
-    });
+    }, onError: (_) {}));
 
     // Listen to owners collection (this has all the data)
-    _firestore.collection('owners').snapshots().listen((snap) {
+    _subs.add(_firestore.collection('owners').snapshots().listen((snap) {
       _getTotalOwners();
       _getPendingVerifications();
-    });
+    }, onError: (_) {}));
 
     // Listen to bookings
-    _firestore.collection('bookings').snapshots().listen((snap) {
+    _subs.add(_firestore.collection('bookings').snapshots().listen((snap) {
       _getTotalBookings();
-    });
+    }, onError: (_) {}));
 
     // Listen to transactions
-    _firestore.collection('transactions').snapshots().listen((snap) {
+    _subs.add(_firestore.collection('transactions').snapshots().listen((snap) {
       _getTotalRevenue();
-    });
+    }, onError: (_) {}));
   }
 
   void _fetchAllStats() {

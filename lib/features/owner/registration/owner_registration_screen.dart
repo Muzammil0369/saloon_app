@@ -93,7 +93,6 @@ class _OwnerRegistrationScreenState extends State<OwnerRegistrationScreen> {
     setState(() => _isLoading = false);
 
     if (result.success) {
-      await Get.find<AuthService>().sendEmailVerification();
       Get.to(() => EmailVerificationScreen(
         email: email,
         role: 'owner',

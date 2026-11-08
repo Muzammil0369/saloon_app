@@ -76,23 +76,41 @@ class AuthService extends GetxService {
 
 // ==================== EMAIL VERIFICATION ====================
 
-// Send verification email
+// Send verification email (Firebase built-in mail — free on the Spark plan).
+  // Returns true if the mail was sent OR the address is already verified.
+  // On failure returns false and fills [lastVerificationError].
+  String? lastVerificationError;
+
   Future<bool> sendEmailVerification() async {
-    try {
-      final user = _auth.currentUser;
-      if (user != null && !user.emailVerified) {
-        try {
-          await user.sendEmailVerification();
-        } catch (e) {
-          debugPrint('Error sending verification email: $e');
-          // Continue anyway - return true for testing
-        }
-      }
-      return true; // ← Always return true
-    } catch (e) {
-      debugPrint('Error sending verification email: $e');
-      return true; // ← Always return true even on error
+    lastVerificationError = null;
+    final user = _auth.currentUser;
+    if (user == null) {
+      lastVerificationError = 'Please sign in again.';
+      return false;
     }
+    if (user.emailVerified) return true;
+    try {
+      await user.sendEmailVerification();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      debugPrint('sendEmailVerification failed: ${e.code}');
+      lastVerificationError = e.code == 'too-many-requests'
+          ? 'Too many emails requested. Please wait a few minutes and try again.'
+          : 'Could not send the email. Check your connection and try again.';
+      return false;
+    } catch (e) {
+      debugPrint('sendEmailVerification failed: $e');
+      lastVerificationError = 'Could not send the email. Please try again.';
+      return false;
+    }
+  }
+
+  /// True for password accounts whose email is not verified yet.
+  /// Google accounts are already verified by Google.
+  bool get needsEmailVerification {
+    final u = _auth.currentUser;
+    if (u == null || u.emailVerified) return false;
+    return u.providerData.any((p) => p.providerId == 'password');
   }
 
 // Check if email is verified
@@ -158,6 +176,7 @@ class AuthService extends GetxService {
         'email': email.trim().toLowerCase(),
         'role': role,
         'status': 'active',
+        if (role == 'customer') 'profileSetupDone': false,
         'createdAt': FieldValue.serverTimestamp(),
         'lastLoginAt': FieldValue.serverTimestamp(),
         'deviceInfo': {
@@ -347,6 +366,7 @@ class AuthService extends GetxService {
         'email': (u.email ?? '').toLowerCase(),
         'role': role,
         'status': 'active',
+        if (role == 'customer') 'profileSetupDone': false,
         'signInMethod': 'google',
         'createdAt': FieldValue.serverTimestamp(),
         'lastLoginAt': FieldValue.serverTimestamp(),
@@ -388,6 +408,61 @@ class AuthService extends GetxService {
       debugPrint('completeGoogleSignup failed: $e');
       return false;
     }
+  }
+
+  // ==================== ACCOUNT DELETION ====================
+  /// True when the signed-in user logs in with email + password.
+  bool get usesPasswordLogin =>
+      _auth.currentUser?.providerData.any((p) => p.providerId == 'password') ?? false;
+
+  /// Firebase only lets a RECENTLY signed-in user delete their account, so the
+  /// app re-confirms identity first. Returns an error message, or null on success.
+  Future<String?> reauthenticateWithPassword(String password) async {
+    final u = _auth.currentUser;
+    if (u == null || u.email == null) return 'Please sign in again.';
+    try {
+      await u.reauthenticateWithCredential(
+        EmailAuthProvider.credential(email: u.email!, password: password),
+      );
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'wrong-password' || e.code == 'invalid-credential') return 'Incorrect password';
+      if (e.code == 'too-many-requests') return 'Too many attempts. Try again later.';
+      return 'Could not confirm your identity. Please try again.';
+    } catch (_) {
+      return 'Could not confirm your identity. Please try again.';
+    }
+  }
+
+  Future<String?> reauthenticateWithGoogle() async {
+    final u = _auth.currentUser;
+    if (u == null) return 'Please sign in again.';
+    try {
+      final googleUser = await GoogleSignIn().signIn();
+      if (googleUser == null) return 'Cancelled';
+      final googleAuth = await googleUser.authentication;
+      await u.reauthenticateWithCredential(GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      ));
+      return null;
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-mismatch') return 'Please choose the same Google account you signed in with.';
+      return 'Could not confirm your identity. Please try again.';
+    } catch (_) {
+      return 'Could not confirm your identity. Please try again.';
+    }
+  }
+
+  /// Removes the sign-in itself from Firebase Authentication (the "Users" tab).
+  /// Call AFTER the Firestore data is deleted and after re-authentication.
+  Future<void> deleteAuthAccount() async {
+    await _auth.currentUser?.delete();
+    try {
+      await GoogleSignIn().signOut();
+    } catch (_) {}
+    _userRole = null;
+    _lastAttempts.clear();
   }
 
   // ==================== LOGOUT ====================

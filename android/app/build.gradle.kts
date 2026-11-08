@@ -7,7 +7,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.saloon_app"
+    namespace = "com.mzappstudio.salonify"
     // Explicitly overridden (instead of flutter.compileSdkVersion) — mobile_scanner
     // requires compileSdk 36, which is newer than Flutter 3.27.0's own default of 35.
     compileSdk = 36
@@ -27,7 +27,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.saloon_app"
+        applicationId = "com.mzappstudio.salonify"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         // Explicitly overridden — mobile_scanner's camera library requires minSdk 23,
