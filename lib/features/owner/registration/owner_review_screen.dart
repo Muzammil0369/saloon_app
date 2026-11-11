@@ -1,3 +1,4 @@
+import 'package:saloon_app/core/services/media_upload_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -27,18 +28,19 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
 
 
 // Add this helper method inside the class:
-  Future<String> _fileToBase64(String? filePath) async {
-    if (filePath == null || filePath.isEmpty) return '';
-    try {
-      final file = File(filePath);
-      if (!await file.exists()) return filePath;
-      final bytes = await file.readAsBytes();
-      final base64 = base64Encode(bytes);
-      return 'data:image/jpeg;base64,$base64';
-    } catch (e) {
-      debugPrint('Base64 conversion failed: $e');
-      return filePath;
-    }
+  /// Public photo: uploads to Supabase and returns the public URL.
+  Future<String> _uploadPublic(String? path, String kind) async {
+    if (path == null || path.isEmpty) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path; // already uploaded
+    final result = await MediaUploadService.uploadFile(File(path), kind: kind);
+    return result.url ?? '';
+  }
+
+  /// Private document (CNIC, licence): uploads and returns only the storage path.
+  Future<String> _uploadPrivate(String? path, String kind) async {
+    if (path == null || path.isEmpty) return '';
+    final result = await MediaUploadService.uploadFile(File(path), kind: kind);
+    return result.path;
   }
 
   void _submitVerification() async {
@@ -58,19 +60,19 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
     }
 
     try {
-      // Convert all images to base64 (NO Cloudinary)
-      final cnicFrontFinal = await _fileToBase64(widget.salonData['cnicFront']);
-      final cnicBackFinal = await _fileToBase64(widget.salonData['cnicBack']);
-      final shopLicenseFinal = await _fileToBase64(widget.salonData['shopLicense']);
-      final shopOutsideFinal = await _fileToBase64(widget.salonData['shopOutsidePhoto']);
-      final ownerProfileFinal = await _fileToBase64(widget.salonData['ownerProfileImage']);
+      // Upload all images to Supabase Storage
+      final cnicFrontFinal = await _uploadPrivate(widget.salonData['cnicFront'], 'cnic_front');
+      final cnicBackFinal = await _uploadPrivate(widget.salonData['cnicBack'], 'cnic_back');
+      final shopLicenseFinal = await _uploadPrivate(widget.salonData['shopLicense'], 'shop_license');
+      final shopOutsideFinal = await _uploadPublic(widget.salonData['shopOutsidePhoto'], 'salon');
+      final ownerProfileFinal = await _uploadPublic(widget.salonData['ownerProfileImage'], 'avatar');
 
       // Convert salon photos
       List<String> salonPhotosFinal = [];
       if (widget.salonData['salonPhotos'] != null) {
         setState(() => _uploadStatus = 'Processing salon photos...');
         for (var path in (widget.salonData['salonPhotos'] as List)) {
-          salonPhotosFinal.add(await _fileToBase64(path.toString()));
+          salonPhotosFinal.add(await _uploadPublic(path.toString(), 'salon'));
         }
       }
 
@@ -82,7 +84,7 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
           if (worker is Map) {
             final w = Map<String, dynamic>.from(worker);
             if (w['profileImage'] != null) {
-              w['profileImage'] = await _fileToBase64(w['profileImage'].toString());
+              w['profileImage'] = await _uploadPublic(w['profileImage'].toString(), 'worker');
             }
             workersFinal.add(w);
           }

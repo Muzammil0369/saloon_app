@@ -1,3 +1,4 @@
+import 'package:saloon_app/core/services/media_upload_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
@@ -11,9 +12,6 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:http/http.dart' as http;
 import '../../../core/services/auth_service.dart';
 
-// ImgBB API key - used to upload gallery/logo images to the cloud.
-// Get your own free key at https://api.imgbb.com/ if you ever need to rotate it.
-const String _imgbbApiKey = '854c22d480dce931a496682c8cdbb164';
 
 class OwnerGalleryManagementScreen extends StatefulWidget {
   const OwnerGalleryManagementScreen({super.key});
@@ -88,26 +86,8 @@ class _OwnerGalleryManagementScreenState extends State<OwnerGalleryManagementScr
     setState(() => _isUploading = true);
 
     try {
-      // 1. Read image bytes and base64-encode (ImgBB accepts base64 uploads)
-      final bytes = await imageFile.readAsBytes();
-      final base64Image = base64Encode(bytes);
-
-      // 2. Upload to ImgBB
-      final response = await http.post(
-        Uri.parse('https://api.imgbb.com/1/upload?key=$_imgbbApiKey'),
-        body: {'image': base64Image},
-      );
-
-      if (response.statusCode != 200) {
-        throw Exception('ImgBB upload failed (${response.statusCode})');
-      }
-
-      final decoded = jsonDecode(response.body);
-      if (decoded['success'] != true) {
-        throw Exception('ImgBB upload rejected the image');
-      }
-
-      final String downloadUrl = decoded['data']['url'];
+      final result = await MediaUploadService.uploadFile(imageFile, kind: 'salon');
+      final String downloadUrl = result.url!;
 
       // 3. UPDATE FIRESTORE with the real hosted URL
       final updatedImages = [..._images, downloadUrl];

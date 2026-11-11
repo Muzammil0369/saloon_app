@@ -1,4 +1,5 @@
 // lib/features/customer/registration/customer_profile_setup_screen.dart
+import 'package:saloon_app/core/services/media_upload_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:cloudinary_public/cloudinary_public.dart';
@@ -86,51 +87,15 @@ class _CustomerProfileSetupScreenState extends State<CustomerProfileSetupScreen>
     if (_profileImage == null) return null;
 
     setState(() => _isUploading = true);
-
     try {
-      // ✅ FIRST: Try Cloudinary upload
-      final cloudinary = CloudinaryPublic(
-        'dz6j2cdqu',
-        'salon_photos',
-        cache: false,
-      );
-
-      final response = await cloudinary.uploadFile(
-        CloudinaryFile.fromFile(
-          _profileImage!.path,
-          resourceType: CloudinaryResourceType.Image,
-          folder: 'profile_images',
-          publicId: 'user_$userId',
-        ),
-      );
-
-      setState(() => _isUploading = false);
-
-      // ✅ Return Cloudinary URL
-      return response.secureUrl;
-
+      final result = await MediaUploadService.uploadFile(File(_profileImage!.path), kind: 'avatar');
+      return result.url;
     } catch (e) {
-      print('Cloudinary upload failed: $e');
-      setState(() => _isUploading = false);
-
-      // ✅ FALLBACK: Convert to base64 and save
-      try {
-        final bytes = await _profileImage!.readAsBytes();
-        final base64Image = base64Encode(bytes);
-        final base64String = 'data:image/jpeg;base64,$base64Image';
-
-        Get.snackbar(
-          'warning'.tr,
-          'image_saved_locally'.tr,
-          snackPosition: SnackPosition.BOTTOM,
-        );
-
-        return base64String; // ✅ Return base64 string
-
-      } catch (e2) {
-        print('Base64 conversion failed: $e2');
-        return null;
-      }
+      debugPrint('Avatar upload failed: $e');
+      Get.snackbar('warning'.tr, 'image_saved_locally'.tr, snackPosition: SnackPosition.BOTTOM);
+      return null; // registration continues without a photo
+    } finally {
+      if (mounted) setState(() => _isUploading = false);
     }
   }
 

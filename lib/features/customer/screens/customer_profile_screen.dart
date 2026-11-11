@@ -1,4 +1,5 @@
 // lib/features/customer/screens/customer_profile_screen.dart
+import 'package:saloon_app/core/services/media_upload_service.dart';
 import 'package:saloon_app/shared/widgets/reauth_dialog.dart';
 import 'dart:convert';
 import 'dart:io';
@@ -120,49 +121,19 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
 
   Future<void> _uploadToCloudinary(File imageFile) async {
     setState(() => _isUploading = true);
-
     try {
-      final cloudinary = CloudinaryPublic(
-        'dz6j2cdqu',
-        'salon_photos',
-        cache: false,
-      );
-
-      final response = await cloudinary.uploadFile(
-        CloudinaryFile.fromFile(
-          imageFile.path,
-          resourceType: CloudinaryResourceType.Image,
-          folder: 'profile_images',
-          publicId: 'user_$_userId',
-        ),
-      );
-
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_userId)
-          .update({
-        'profileImage': response.secureUrl,
+      final result = await MediaUploadService.uploadFile(imageFile, kind: 'avatar');
+      await FirebaseFirestore.instance.collection('users').doc(_userId).update({
+        'profileImage': result.url,
         'updatedAt': FieldValue.serverTimestamp(),
       });
-
       setState(() => _isUploading = false);
       userController.refreshProfile();
       Get.snackbar('success'.tr, 'profile_updated'.tr,
           backgroundColor: AppColors.success, colorText: Colors.white);
     } catch (e) {
       setState(() => _isUploading = false);
-      try {
-        final bytes = await imageFile.readAsBytes();
-        final base64Image = base64Encode(bytes);
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(_userId)
-            .update({'profileImage': 'data:image/jpeg;base64,$base64Image'});
-        userController.refreshProfile();
-        Get.snackbar('success'.tr, 'profile_updated'.tr);
-      } catch (e2) {
-        Get.snackbar('error'.tr, 'failed_save_profile'.tr);
-      }
+      Get.snackbar('error'.tr, 'failed_save_profile'.tr);
     }
   }
 

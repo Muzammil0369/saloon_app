@@ -1,3 +1,4 @@
+import 'package:saloon_app/core/services/media_upload_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -10,7 +11,6 @@ import 'package:saloon_app/core/theme/app_colors.dart';
 import 'package:saloon_app/core/theme/app_text_styles.dart';
 import 'package:saloon_app/core/theme/theme_helper.dart';
 
-const String _imgbbApiKey = '854c22d480dce931a496682c8cdbb164';
 
 class OwnerPaymentQrScreen extends StatefulWidget {
   const OwnerPaymentQrScreen({super.key});
@@ -43,24 +43,12 @@ class _OwnerPaymentQrScreenState extends State<OwnerPaymentQrScreen> {
 
     setState(() => _isUploading = true);
     try {
-      final bytes = await File(picked.path).readAsBytes();
-      final base64Image = base64Encode(bytes);
-
-      final response = await http.post(
-        Uri.parse('https://api.imgbb.com/1/upload?key=$_imgbbApiKey'),
-        body: {'image': base64Image},
-      );
-
-      final decoded = jsonDecode(response.body);
-      if (response.statusCode == 200 && decoded['success'] == true) {
-        await FirebaseFirestore.instance.collection('owners').doc(_ownerId).update({
-          'paymentQrUrl': decoded['data']['url'],
-          'updatedAt': FieldValue.serverTimestamp(),
-        });
-        Get.snackbar('success'.tr, 'payment_qr_updated'.tr);
-      } else {
-        throw Exception('Upload failed');
-      }
+      final result = await MediaUploadService.uploadFile(File(picked.path), kind: 'qr');
+      await FirebaseFirestore.instance.collection('owners').doc(_ownerId).update({
+        'paymentQrUrl': result.url,
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      Get.snackbar('success'.tr, 'payment_qr_updated'.tr);
     } catch (e) {
       Get.snackbar('error'.tr, 'failed_upload_image'.tr);
     } finally {

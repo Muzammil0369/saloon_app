@@ -1,3 +1,4 @@
+import 'package:saloon_app/core/services/media_upload_service.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -12,7 +13,6 @@ import 'package:saloon_app/core/theme/theme_helper.dart';
 
 import '../../../shared/widgets/ad_banner_card.dart';
 
-const String _imgbbApiKey = '854c22d480dce931a496682c8cdbb164';
 
 class OwnerAdScreen extends StatefulWidget {
   const OwnerAdScreen({super.key});
@@ -46,23 +46,11 @@ class _OwnerAdScreenState extends State<OwnerAdScreen> {
 
     setState(() => _isUploadingImage = true);
     try {
-      final bytes = await File(picked.path).readAsBytes();
-      final base64Image = base64Encode(bytes);
-
-      final response = await http.post(
-        Uri.parse('https://api.imgbb.com/1/upload?key=$_imgbbApiKey'),
-        body: {'image': base64Image},
-      );
-
-      final decoded = jsonDecode(response.body);
-      if (response.statusCode == 200 && decoded['success'] == true) {
-        setState(() {
-          _customBackgroundUrl = decoded['data']['url'];
-          _isUploadingImage = false;
-        });
-      } else {
-        throw Exception('Upload failed');
-      }
+      final result = await MediaUploadService.uploadFile(File(picked.path), kind: 'ad');
+      setState(() {
+        _customBackgroundUrl = result.url;
+        _isUploadingImage = false;
+      });
     } catch (e) {
       setState(() => _isUploadingImage = false);
       Get.snackbar('error'.tr, 'failed_upload_image'.tr);
