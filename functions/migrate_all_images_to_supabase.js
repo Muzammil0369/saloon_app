@@ -1,128 +1,153 @@
-// One-time migration: moves base64 images that are stored inside Firestore
-// documents into Supabase Storage (public-media), then replaces each value with
-// the public link. Safe to re-run: converted values are no longer base64, so
-// they are skipped. ImgBB / Cloudinary links are left untouched.
+// migrate_all_images_to_supabase.js
+// Moves every image in users/ and owners/ (base64, ImgBB, Cloudinary, or any
+// other external image URL) into Supabase Storage bucket "public-media" and
+// writes the new public URL back in place of the old value.
 //
-// Private documents (CNIC / licence) are NOT touched here. They need the admin
-// screen to switch to signed links first.
+// Usage (run from the functions folder):
+//   node migrate_all_images_to_supabase.js --dry   report only, writes nothing
+//   node migrate_all_images_to_supabase.js         migrate and write back
 //
-// Run from the functions folder:
-//   $env:GOOGLE_APPLICATION_CREDENTIALS="...\serviceAccountKey.json"
-//   $env:SUPABASE_URL="https://rzypfwjhngpwlxfbxtcg.supabase.co"
-//   $env:SUPABASE_SERVICE_ROLE_KEY="<from Supabase > Settings > API>"
-//   node migrate_images_to_supabase.js --dry     (counts only)
-//   node migrate_images_to_supabase.js           (does the work)
+// Env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, GOOGLE_APPLICATION_CREDENTIALS
 
 const admin = require('firebase-admin');
 const { createClient } = require('@supabase/supabase-js');
+const crypto = require('crypto');
 
-admin.initializeApp();
-const db = admin.firestore();
 const DRY = process.argv.includes('--dry');
 const BUCKET = 'public-media';
-const MAX_BYTES = 3 * 1024 * 1024;
-const EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+const COLLECTIONS = ['users', 'owners']; // owner_private is intentionally excluded
+const EXTERNAL_HOSTS = ['ibb.co', 'imgbb.com', 'cloudinary.com'];
+const IMAGE_PATH = /\.(jpe?g|png|webp|gif)$/i;
+const MAX_BYTES = 15 * 1024 * 1024;
+const EXT = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/gif': 'gif' };
 
-const sb = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY, {
-  auth: { persistSession: false },
-});
+const SUPABASE_URL = process.env.SUPABASE_URL;
+const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+if (!SUPABASE_URL || !SUPABASE_KEY) {
+  console.error('Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY first.');
+  process.exit(1);
+}
+const supabaseHost = new URL(SUPABASE_URL).host;
 
-const stats = { uploaded: 0, failed: 0, docsChanged: 0 };
-const cache = new Map(); // same image stored twice (e.g. thumbnail + gallery) uploads once
+admin.initializeApp({ credential: admin.credential.applicationDefault() });
+const db = admin.firestore();
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY, { auth: { persistSession: false } });
 
-function isBase64Image(v) {
-  return typeof v === 'string' && v.startsWith('data:image/');
+const cache = new Map(); // source value -> new public URL (reuses duplicates)
+const stats = { found: 0, uploaded: 0, reused: 0, failed: 0, docsChanged: 0 };
+
+function parseUrl(s) {
+  try { return new URL(s); } catch { return null; }
 }
 
-async function convert(value, uid, kind) {
-  if (!isBase64Image(value)) return value;
-  if (cache.has(value)) return cache.get(value);
+function isPlainObject(v) {
+  return v !== null && typeof v === 'object' && Object.getPrototypeOf(v) === Object.prototype;
+}
 
-  const m = /^data:(image\/[a-z+]+);base64,(.*)$/s.exec(value);
-  if (!m || !EXT[m[1]]) { stats.failed++; return value; }
+function needsMigration(s) {
+  if (typeof s !== 'string') return false;
+  if (s.startsWith('data:image/')) return true;
+  if (!/^https?:\/\//i.test(s)) return false;
+  const u = parseUrl(s);
+  if (!u || u.host === supabaseHost) return false;
+  return EXTERNAL_HOSTS.some((h) => u.host.endsWith(h)) || IMAGE_PATH.test(u.pathname);
+}
 
-  const bytes = Buffer.from(m[2], 'base64');
-  if (bytes.length === 0 || bytes.length > MAX_BYTES) { stats.failed++; return value; }
+async function fetchBytes(src) {
+  if (src.startsWith('data:image/')) {
+    const m = src.match(/^data:(image\/[\w+.-]+);base64,(.*)$/s);
+    if (!m) throw new Error('malformed data URI');
+    return { buf: Buffer.from(m[2], 'base64'), type: m[1], ext: EXT[m[1]] || 'jpg' };
+  }
+  const res = await fetch(src, { redirect: 'follow' });
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const type = (res.headers.get('content-type') || '').split(';')[0].trim().toLowerCase();
+  const buf = Buffer.from(await res.arrayBuffer());
+  const urlExt = (parseUrl(src)?.pathname.match(/\.(jpe?g|png|webp|gif)$/i) || [])[1];
+  const ext = EXT[type] || (urlExt ? urlExt.toLowerCase().replace('jpeg', 'jpg') : 'jpg');
+  return { buf, type: EXT[type] ? type : 'image/jpeg', ext };
+}
 
-  if (DRY) { stats.uploaded++; return value; }
+async function migrateSource(src, ownerId) {
+  if (cache.has(src)) {
+    stats.reused++;
+    return cache.get(src);
+  }
+  if (DRY) {
+    stats.uploaded++;
+    const fake = `(dry run) ${src.slice(0, 60)}`;
+    cache.set(src, fake);
+    return fake;
+  }
+  const { buf, type, ext } = await fetchBytes(src);
+  if (buf.length === 0) throw new Error('empty image');
+  if (buf.length > MAX_BYTES) throw new Error('image over 15 MB');
 
-  const path = `${uid}/${kind}/${Date.now()}-${Math.random().toString(36).slice(2)}.${EXT[m[1]]}`;
-  const { error } = await sb.storage.from(BUCKET).upload(path, bytes, {
-    contentType: m[1],
-    cacheControl: '86400',
+  const path = `${ownerId}/migrated/${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${ext}`;
+  const { error } = await supabase.storage.from(BUCKET).upload(path, buf, {
+    contentType: type,
     upsert: false,
   });
-  if (error) {
-    console.error(`upload failed for ${uid} (${kind}): ${error.message}`);
-    stats.failed++;
-    return value; // keep the old value, so nothing is lost
-  }
-  const url = sb.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  if (error) throw new Error(`upload: ${error.message}`);
+
+  const url = `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${path}`;
+  cache.set(src, url);
   stats.uploaded++;
-  cache.set(value, url);
+  console.log(`    ok ${src.slice(0, 60)}`);
   return url;
 }
 
-async function migrateUsers() {
-  const snap = await db.collection('users').get();
-  for (const doc of snap.docs) {
-    const d = doc.data();
-    if (!isBase64Image(d.profileImage)) continue;
-    const url = await convert(d.profileImage, doc.id, 'avatar');
-    if (url !== d.profileImage) {
-      stats.docsChanged++;
-      if (!DRY) await doc.ref.update({ profileImage: url });
+// Walks any value (string, array, map) and replaces image sources it finds.
+async function transform(value, ownerId) {
+  if (typeof value === 'string') {
+    if (!needsMigration(value)) return value;
+    stats.found++;
+    try {
+      return await migrateSource(value, ownerId);
+    } catch (e) {
+      stats.failed++;
+      console.warn(`    keep old value (${e.message}): ${value.slice(0, 80)}`);
+      return value;
     }
   }
+  if (Array.isArray(value)) {
+    const out = [];
+    for (const v of value) out.push(await transform(v, ownerId));
+    return out;
+  }
+  if (isPlainObject(value)) {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = await transform(v, ownerId);
+    return out;
+  }
+  return value; // Timestamps, GeoPoints, numbers, booleans pass through
 }
 
-async function migrateOwners() {
-  const snap = await db.collection('owners').get();
-  for (const doc of snap.docs) {
-    const id = doc.id;
-    const d = doc.data();
-    const upd = {};
-
-    for (const field of ['ownerProfileImage', 'thumbnail', 'shopOutsidePhoto', 'logo']) {
-      if (!isBase64Image(d[field])) continue;
-      const kind = field === 'ownerProfileImage' ? 'avatar' : 'salon';
-      const url = await convert(d[field], id, kind);
-      if (url !== d[field]) upd[field] = url;
-    }
-
-    if (Array.isArray(d.salonPhotos) && d.salonPhotos.some(isBase64Image)) {
-      const list = [];
-      for (const p of d.salonPhotos) list.push(await convert(p, id, 'salon'));
-      upd.salonPhotos = list;
-    }
-
-    if (Array.isArray(d.workers) && d.workers.some(w => w && isBase64Image(w.profileImage))) {
-      const list = [];
-      for (const w of d.workers) {
-        if (w && isBase64Image(w.profileImage)) {
-          list.push({ ...w, profileImage: await convert(w.profileImage, id, 'worker') });
-        } else {
-          list.push(w);
-        }
+async function main() {
+  console.log(DRY ? 'DRY RUN: nothing will be written' : 'MIGRATING');
+  for (const col of COLLECTIONS) {
+    const snap = await db.collection(col).get();
+    console.log(`${col}: ${snap.size} documents`);
+    for (const doc of snap.docs) {
+      const data = doc.data();
+      const changedFields = {};
+      for (const [field, value] of Object.entries(data)) {
+        const next = await transform(value, doc.id);
+        if (JSON.stringify(next) !== JSON.stringify(value)) changedFields[field] = next;
       }
-      upd.workers = list;
-    }
-
-    if (Object.keys(upd).length > 0) {
-      stats.docsChanged++;
-      if (!DRY) await doc.ref.update(upd);
+      if (Object.keys(changedFields).length > 0) {
+        stats.docsChanged++;
+        console.log(`  ${col}/${doc.id}: ${Object.keys(changedFields).join(', ')}`);
+        if (!DRY) await doc.ref.update(changedFields);
+      }
     }
   }
+  console.log('\nfound=' + stats.found + ' uploaded=' + stats.uploaded +
+    ' reused=' + stats.reused + ' failed=' + stats.failed +
+    ' documents_changed=' + stats.docsChanged);
 }
 
-(async () => {
-  console.log(DRY ? '[dry run] counting only, nothing changes' : 'running migration');
-  await migrateUsers();
-  await migrateOwners();
-  const prefix = DRY ? '[dry] ' : '';
-  console.log(`${prefix}uploaded=${stats.uploaded} failed=${stats.failed} documents_changed=${stats.docsChanged}`);
-  console.log('Note: CNIC and licence images in owner_private are not migrated by this script.');
-})().catch(e => {
-  console.error('migration stopped:', e);
+main().catch((e) => {
+  console.error('Fatal:', e);
   process.exit(1);
 });

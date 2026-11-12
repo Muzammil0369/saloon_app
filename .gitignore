@@ -46,3 +46,5 @@ app.*.map.json
 
 functions/serviceAccountKey.json
 functions/migrate_owner_private.js
+
+functions/node_modules/
