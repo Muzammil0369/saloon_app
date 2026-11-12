@@ -23,6 +23,13 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
   bool _hasCoworkers = false;
   final List<Map<String, dynamic>> _workers = [];
 
+  /// Works for both local file paths and already-uploaded https URLs.
+  ImageProvider? _imageFor(String? path) {
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return NetworkImage(path);
+    return FileImage(File(path));
+  }
+
   void _addWorker() {
     showModalBottomSheet(
       context: context,
@@ -90,8 +97,7 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
               const SizedBox(height: 30),
 
               Text('${'your_team'.tr} 👥',
-                style: AppTextStyles.displayLarge.copyWith(fontSize: 25, color: theme.textColor),
-              ),
+                  style: AppTextStyles.displayLarge.copyWith(fontSize: 25, color: theme.textColor)),
               const SizedBox(height: 8),
               Text('do_you_have_workers'.tr,
                   style: AppTextStyles.tagline.copyWith(color: theme.mutedTextColor)),
@@ -131,11 +137,12 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
                               color: !_hasCoworkers ? AppColors.primaryPink : theme.mutedTextColor,
                             ),
                             const SizedBox(width: 12),
-                             Expanded(
+                            Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('work_alone'.tr, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                  Text('work_alone'.tr,
+                                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                                   Text('no_coworkers'.tr, style: TextStyle(fontSize: 12, color: Colors.grey)),
                                 ],
                               ),
@@ -169,7 +176,8 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text('have_coworkers'.tr, style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                  Text('have_coworkers'.tr,
+                                      style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
                                   Text('ustad_shagird'.tr, style: TextStyle(fontSize: 12, color: Colors.grey)),
                                 ],
                               ),
@@ -209,7 +217,8 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
                       children: [
                         const Icon(Icons.person_add_rounded, color: AppColors.primaryPink),
                         const SizedBox(width: 8),
-                        Text('add_coworker'.tr, style: AppTextStyles.buttonText.copyWith(color: AppColors.primaryPink)),
+                        Text('add_coworker'.tr,
+                            style: AppTextStyles.buttonText.copyWith(color: AppColors.primaryPink)),
                       ],
                     ),
                   ),
@@ -227,9 +236,12 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
                     'hasCoworkers': _hasCoworkers,
                     'workers': _hasCoworkers ? _workers : [],
                   };
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (context) => OwnerDocumentsScreen(salonData: updatedSalonData),
-                  ));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => OwnerDocumentsScreen(salonData: updatedSalonData),
+                    ),
+                  );
                 },
               ),
             ],
@@ -240,6 +252,7 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
   }
 
   Widget _buildWorkerCard(Map<String, dynamic> worker, int index, ThemeHelper theme) {
+    final photo = _imageFor(worker['profileImage'] as String?);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -256,11 +269,9 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: AppColors.lightPink,
-              image: worker['profileImage'] != null
-                  ? DecorationImage(image: FileImage(File(worker['profileImage'])), fit: BoxFit.cover)
-                  : null,
+              image: photo != null ? DecorationImage(image: photo, fit: BoxFit.cover) : null,
             ),
-            child: worker['profileImage'] == null
+            child: photo == null
                 ? const Icon(Icons.person, color: AppColors.primaryPink, size: 28)
                 : null,
           ),
@@ -270,11 +281,14 @@ class _OwnerCoworkersScreenState extends State<OwnerCoworkersScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(worker['name'] ?? 'Unnamed', style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
+                Text(worker['name'] ?? 'Unnamed',
+                    style: AppTextStyles.bodyLarge.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 2),
-                Text('Father: ${worker['fatherName'] ?? 'N/A'}', style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
+                Text('Father: ${worker['fatherName'] ?? 'N/A'}',
+                    style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
                 if (worker['cnic'] != null && worker['cnic'].toString().isNotEmpty)
-                  Text('CNIC: ${worker['cnic']}', style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
+                  Text('CNIC: ${worker['cnic']}',
+                      style: AppTextStyles.label.copyWith(color: theme.mutedTextColor)),
               ],
             ),
           ),
@@ -312,7 +326,8 @@ class _WorkerFormState extends State<_WorkerForm> {
   final TextEditingController _fatherNameController = TextEditingController();
   final TextEditingController _cnicController = TextEditingController();
   final ImagePicker _picker = ImagePicker();
-  File? _profileImage;
+  File? _profileImage;        // newly picked local file
+  String? _existingImageUrl;  // photo already uploaded (https URL) from a saved registration
 
   @override
   void initState() {
@@ -321,8 +336,11 @@ class _WorkerFormState extends State<_WorkerForm> {
       _nameController.text = widget.existingWorker!['name'] ?? '';
       _fatherNameController.text = widget.existingWorker!['fatherName'] ?? '';
       _cnicController.text = widget.existingWorker!['cnic'] ?? '';
-      if (widget.existingWorker!['profileImage'] != null) {
-        _profileImage = File(widget.existingWorker!['profileImage']);
+      final existingImg = widget.existingWorker!['profileImage'] as String?;
+      if (existingImg != null && existingImg.startsWith('http')) {
+        _existingImageUrl = existingImg;
+      } else if (existingImg != null && existingImg.isNotEmpty) {
+        _profileImage = File(existingImg);
       }
     }
   }
@@ -344,18 +362,23 @@ class _WorkerFormState extends State<_WorkerForm> {
         maxHeight: 500,
       );
       if (image != null) {
-        setState(() => _profileImage = File(image.path));
+        setState(() {
+          _profileImage = File(image.path);
+          _existingImageUrl = null; // a new pick replaces the old photo
+        });
       }
     } catch (e) {
       // Ignore
     }
   }
 
-  // In _WorkerForm build method, wrap the Column with SingleChildScrollView:
-
   @override
   Widget build(BuildContext context) {
     final theme = ThemeHelper(context);
+
+    final ImageProvider? preview = _profileImage != null
+        ? FileImage(_profileImage!)
+        : (_existingImageUrl != null ? NetworkImage(_existingImageUrl!) : null);
 
     return Container(
       padding: EdgeInsets.only(
@@ -366,7 +389,6 @@ class _WorkerFormState extends State<_WorkerForm> {
         color: theme.cardColor,
         borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
       ),
-      // ✅ WRAP IN SINGLECHILDSCROLLVIEW
       child: SingleChildScrollView(
         child: Form(
           key: _formKey,
@@ -377,7 +399,10 @@ class _WorkerFormState extends State<_WorkerForm> {
               Center(
                 child: Container(
                   width: 40, height: 4,
-                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade300,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
@@ -386,46 +411,44 @@ class _WorkerFormState extends State<_WorkerForm> {
                 widget.existingWorker != null ? 'edit_coworker'.tr : 'add_coworker'.tr,
                 style: AppTextStyles.headingLarge.copyWith(color: theme.textColor),
               ),
-              const SizedBox(height: 16),  // Reduced from 24
+              const SizedBox(height: 16),
 
               // Profile Image
               Center(
                 child: GestureDetector(
                   onTap: _pickImage,
                   child: Container(
-                    width: 70, height: 70,  // Reduced from 80
+                    width: 70, height: 70,
                     decoration: BoxDecoration(
                       color: AppColors.lightPink,
                       borderRadius: BorderRadius.circular(20),
-                      image: _profileImage != null
-                          ? DecorationImage(image: FileImage(_profileImage!), fit: BoxFit.cover)
-                          : null,
+                      image: preview != null ? DecorationImage(image: preview, fit: BoxFit.cover) : null,
                     ),
-                    child: _profileImage == null
+                    child: preview == null
                         ? const Icon(Icons.camera_alt, color: AppColors.primaryPink, size: 26)
                         : null,
                   ),
                 ),
               ),
-              const SizedBox(height: 12),  // Reduced from 16
+              const SizedBox(height: 12),
 
               // Name
               _buildField('${'full_name'.tr} *', 'e.g. Ahmed Khan', _nameController, theme),
-              const SizedBox(height: 12),  // Reduced from 16
+              const SizedBox(height: 12),
 
               // Father Name
               _buildField('${'father_name'.tr} *', 'e.g. Muhammad Khan', _fatherNameController, theme),
-              const SizedBox(height: 12),  // Reduced from 16
+              const SizedBox(height: 12),
 
               // CNIC (Optional)
               _buildField('cnic_optional'.tr, 'e.g. 17301-1234567-8', _cnicController, theme,
                   keyboardType: TextInputType.number),
-              const SizedBox(height: 20),  // Reduced from 24
+              const SizedBox(height: 20),
 
               // Save Button
               SizedBox(
                 width: double.infinity,
-                height: 48,  // Reduced from 52
+                height: 48,
                 child: ElevatedButton(
                   onPressed: () {
                     if (_formKey.currentState!.validate()) {
@@ -433,7 +456,7 @@ class _WorkerFormState extends State<_WorkerForm> {
                         'name': _nameController.text.trim(),
                         'fatherName': _fatherNameController.text.trim(),
                         'cnic': _cnicController.text.trim(),
-                        'profileImage': _profileImage?.path,
+                        'profileImage': _profileImage?.path ?? _existingImageUrl,
                       });
                     }
                   },

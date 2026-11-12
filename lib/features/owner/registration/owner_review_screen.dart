@@ -60,14 +60,14 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
     }
 
     try {
-      // Upload all images to Supabase Storage
+      // Upload documents
       final cnicFrontFinal = await _uploadPrivate(widget.salonData['cnicFront'], 'cnic_front');
       final cnicBackFinal = await _uploadPrivate(widget.salonData['cnicBack'], 'cnic_back');
       final shopLicenseFinal = await _uploadPrivate(widget.salonData['shopLicense'], 'shop_license');
       final shopOutsideFinal = await _uploadPublic(widget.salonData['shopOutsidePhoto'], 'salon');
       final ownerProfileFinal = await _uploadPublic(widget.salonData['ownerProfileImage'], 'avatar');
 
-      // Convert salon photos
+      // Salon photos
       List<String> salonPhotosFinal = [];
       if (widget.salonData['salonPhotos'] != null) {
         setState(() => _uploadStatus = 'Processing salon photos...');
@@ -76,8 +76,9 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
         }
       }
 
-      // Convert worker photos
-      List<Map<String, dynamic>> workersFinal = [];
+      // Worker photos, and split out CNIC / father's name
+      final List<Map<String, dynamic>> workersPublic = [];
+      final List<Map<String, dynamic>> workersPrivate = [];
       if (widget.salonData['workers'] != null) {
         setState(() => _uploadStatus = 'Processing worker photos...');
         for (var worker in (widget.salonData['workers'] as List)) {
@@ -86,23 +87,37 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
             if (w['profileImage'] != null) {
               w['profileImage'] = await _uploadPublic(w['profileImage'].toString(), 'worker');
             }
-            workersFinal.add(w);
+            workersPrivate.add({
+              'name': w['name'] ?? '',
+              'fatherName': w['fatherName'] ?? '',
+              'cnic': w['cnic'] ?? '',
+            });
+            final pub = Map<String, dynamic>.from(w)
+              ..remove('cnic')
+              ..remove('fatherName');
+            workersPublic.add(pub);
           }
         }
       }
 
       setState(() => _uploadStatus = 'Saving...');
 
+      // Private docs FIRST: if this fails, nothing public is written
+      await FirebaseFirestore.instance.collection('owner_private').doc(uid).set({
+        'cnicFront': cnicFrontFinal,
+        'cnicBack': cnicBackFinal,
+        'shopLicense': shopLicenseFinal,
+        'workers': workersPrivate,
+        'updatedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+
       final location = GeoPoint(widget.salonData['lat'], widget.salonData['lng']);
 
-      // Get translation service
       final translationService = Get.find<TranslationService>();
 
-// Translate if Urdu translations don't exist yet
       String salonNameUr = widget.salonData['salonName_ur'] ?? '';
       String addressUr = widget.salonData['address_ur'] ?? '';
 
-// If translations are empty, translate them now
       if (salonNameUr.isEmpty && widget.salonData['salonName'] != null) {
         salonNameUr = await translationService.translateEnToUr(widget.salonData['salonName']);
       }
@@ -113,16 +128,16 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
       await dbService.registerSalon(uid, {
         'ownerName': widget.salonData['ownerName'] ?? '',
         'salonName': widget.salonData['salonName'] ?? '',
-        'salonName_ur': salonNameUr, // ✅ Add Urdu translation
+        'salonName_ur': salonNameUr,
         'phoneNumber': widget.salonData['phoneNumber'] ?? '',
         'address': widget.salonData['address'] ?? '',
-        'address_ur': addressUr, // ✅ Add Urdu translation
+        'address_ur': addressUr,
         'fullName': widget.salonData['ownerName'] ?? '',
         'location': location,
         'lat': widget.salonData['lat'],
         'lng': widget.salonData['lng'],
         'services': widget.salonData['services'] ?? [],
-        'workers': workersFinal.isNotEmpty ? workersFinal : (widget.salonData['workers'] ?? []),
+        'workers': workersPublic, // no CNIC or father's name here
         'hasCoworkers': widget.salonData['hasCoworkers'] ?? false,
         'shopOutsidePhoto': shopOutsideFinal,
         'salonPhotos': salonPhotosFinal,
@@ -133,18 +148,10 @@ class _OwnerReviewScreenState extends State<OwnerReviewScreen> {
         'showOnMap': false,
         'isOpenNow': false,
         'cnicVerified': false,
-        'isCompleted': true, // ✅ Add completion flag
+        'isCompleted': true,
         'createdAt': FieldValue.serverTimestamp(),
         'updatedAt': FieldValue.serverTimestamp(),
       }, location);
-
-      // Sensitive verification documents go to a private doc (admin + owner only)
-      await FirebaseFirestore.instance.collection('owner_private').doc(uid).set({
-        'cnicFront': cnicFrontFinal,
-        'cnicBack': cnicBackFinal,
-        'shopLicense': shopLicenseFinal,
-        'updatedAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
 
       await dbService.saveUserProfile(uid, {
         'role': 'owner',

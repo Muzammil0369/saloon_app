@@ -33,60 +33,76 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
         stream: FirebaseFirestore.instance.collection('owners').doc(_ownerId).snapshots(),
         builder: (context, snapshot) {
           if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-
           final data = snapshot.data!.data() as Map<String, dynamic>;
-          final workers = data['workers'] as List? ?? [];
-          final hasCoworkers = data['hasCoworkers'] ?? false;
 
-          if (!hasCoworkers || workers.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.people_outline, size: 80, color: theme.mutedTextColor),
-                  const SizedBox(height: 16),
-                  Text('no_staff_members'.tr, style: TextStyle(fontSize: 18, color: theme.textColor)),
-                  const SizedBox(height: 8),
-                  Text('you_are_working_alone'.tr, style: TextStyle(color: theme.mutedTextColor)),
-                ],
-              ),
-            );
-          }
-
-          return ListView.builder(
-            padding: const EdgeInsets.all(20),
-            itemCount: workers.length + 1, // +1 for owner (Ustad)
-            itemBuilder: (context, index) {
-              if (index == 0) {
-                // Owner (Ustad) card
-                return _buildStaffCard(
-                  name: data['ownerName'] ?? data['fullName'] ?? 'owner'.tr,
-                  role: 'ustad_owner'.tr,
-                  phone: data['phoneNumber'] ?? 'N/A',
-                  imageUrl: data['logo'] ?? data['ownerProfileImage'],
-                  isOwner: true,
-                  rating: (data['ownerStaffRating'] ?? 0.0).toDouble(),
-                  reviewCount: data['ownerStaffReviewCount'] ?? 0,
-                  theme: theme,
-                );
-              }
-
-              final worker = workers[index - 1] as Map<String, dynamic>;
-              return _buildStaffCard(
-                name: worker['name'] ?? 'Unknown',
-                role: 'shagird_worker'.tr,
-                fatherName: worker['fatherName'],
-                cnic: worker['cnic'],
-                imageUrl: worker['profileImage'],
-                isOwner: false,
-                rating: (worker['rating'] ?? 0.0).toDouble(),
-                reviewCount: worker['reviewCount'] ?? 0,
-                theme: theme,
-              );
+          // Sensitive worker fields (CNIC, father's name) live in owner_private
+          return StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance.collection('owner_private').doc(_ownerId).snapshots(),
+            builder: (context, privSnap) {
+              final privData = privSnap.data?.data() as Map<String, dynamic>?;
+              final privateWorkers = privData?['workers'] as List? ?? [];
+              return _buildList(data, privateWorkers, theme);
             },
           );
         },
       ),
+    );
+  }
+
+  Widget _buildList(Map<String, dynamic> data, List privateWorkers, ThemeHelper theme) {
+    final workers = data['workers'] as List? ?? [];
+    final hasCoworkers = data['hasCoworkers'] ?? false;
+
+    if (!hasCoworkers || workers.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.people_outline, size: 80, color: theme.mutedTextColor),
+            const SizedBox(height: 16),
+            Text('no_staff_members'.tr, style: TextStyle(fontSize: 18, color: theme.textColor)),
+            const SizedBox(height: 8),
+            Text('you_are_working_alone'.tr, style: TextStyle(color: theme.mutedTextColor)),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(20),
+      itemCount: workers.length + 1, // +1 for owner (Ustad)
+      itemBuilder: (context, index) {
+        if (index == 0) {
+          // Owner (Ustad) card
+          return _buildStaffCard(
+            name: data['ownerName'] ?? data['fullName'] ?? 'owner'.tr,
+            role: 'ustad_owner'.tr,
+            phone: data['phoneNumber'] ?? 'N/A',
+            imageUrl: data['logo'] ?? data['ownerProfileImage'],
+            isOwner: true,
+            rating: (data['ownerStaffRating'] ?? 0.0).toDouble(),
+            reviewCount: data['ownerStaffReviewCount'] ?? 0,
+            theme: theme,
+          );
+        }
+
+        final worker = workers[index - 1] as Map<String, dynamic>;
+        final priv = index - 1 < privateWorkers.length
+            ? privateWorkers[index - 1] as Map<String, dynamic>
+            : <String, dynamic>{};
+
+        return _buildStaffCard(
+          name: worker['name'] ?? 'Unknown',
+          role: 'shagird_worker'.tr,
+          fatherName: priv['fatherName'],
+          cnic: priv['cnic'],
+          imageUrl: worker['profileImage'],
+          isOwner: false,
+          rating: (worker['rating'] ?? 0.0).toDouble(),
+          reviewCount: worker['reviewCount'] ?? 0,
+          theme: theme,
+        );
+      },
     );
   }
 
@@ -152,7 +168,8 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
                           color: AppColors.primaryPink.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text('ustad'.tr, style: TextStyle(fontSize: 10, color: AppColors.primaryPink, fontWeight: FontWeight.w600)),
+                        child: Text('ustad'.tr,
+                            style: TextStyle(fontSize: 10, color: AppColors.primaryPink, fontWeight: FontWeight.w600)),
                       ),
                     ],
                   ],
@@ -162,7 +179,8 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Icon(Icons.star_rounded, size: 14, color: reviewCount > 0 ? Colors.amber : theme.mutedTextColor.withValues(alpha: 0.4)),
+                    Icon(Icons.star_rounded, size: 14,
+                        color: reviewCount > 0 ? Colors.amber : theme.mutedTextColor.withValues(alpha: 0.4)),
                     const SizedBox(width: 3),
                     Text(
                       reviewCount > 0 ? rating.toStringAsFixed(1) : 'no_ratings_yet'.tr,
@@ -186,7 +204,8 @@ class _OwnerStaffScreenState extends State<OwnerStaffScreen> {
                 ],
                 if (fatherName != null && fatherName.toString().isNotEmpty) ...[
                   const SizedBox(height: 2),
-                  Text('${'son_of'.tr}: $fatherName', style: TextStyle(fontSize: 11, color: theme.mutedTextColor)),
+                  Text('${'son_of'.tr}: $fatherName',
+                      style: TextStyle(fontSize: 11, color: theme.mutedTextColor)),
                 ],
                 if (cnic != null && cnic.toString().isNotEmpty) ...[
                   const SizedBox(height: 2),
